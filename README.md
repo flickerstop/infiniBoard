@@ -1,0 +1,2 @@
+# infiniBoard
+ An infinite Whiteboard

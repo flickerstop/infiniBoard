@@ -1,0 +1,37 @@
+{
+    "cSpell.words": [
+        "alch"
+    ],
+    "git.ignoreMissingGitWarning": true,
+    "smartsemicolon.autoLineChange": false,
+    "todohighlight.keywords": [
+        {
+            "text": "TODO",
+            "color": "#2ecc71",
+            "border": "1px solid #2ecc71",
+            "borderRadius": "2px",
+            "backgroundColor": "rgba(0,0,0,.2)",
+            "overviewRulerColor": "#2ecc71",
+            "isWholeLine": true
+        },
+        {
+            "text": "NOTE",
+            "color": "#f1c40f",
+            "border": "1px solid #f1c40f",
+            "borderRadius": "2px",
+            "backgroundColor": "rgba(0,0,0,.2)",
+            "overviewRulerColor": "#f1c40f",
+            "isWholeLine": true
+        },
+        {
+            "text": "FIXME",
+            "color": "#e74c3c",
+            "border": "1px solid #e74c3c",
+            "borderRadius": "2px",
+            "backgroundColor": "rgba(0,0,0,.2)",
+            "overviewRulerColor": "#e74c3c",
+            "isWholeLine": true
+        }
+        
+    ]
+}

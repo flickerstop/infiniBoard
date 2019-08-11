@@ -1,0 +1,134 @@
+<!----------------------------------------------------------
+> CSS
+<----------------------------------------------------------->
+
+
+<!----------------------------------------------------------
+> HTML
+<----------------------------------------------------------->
+<!-- #region -->
+<html>
+    <head>
+        <link rel="stylesheet" href="./css/main.css">
+        <!-- <script src="./js/data.js"></script> -->
+
+        <script src="./js/d3.js"></script>
+    </head>
+    <body>
+        
+        <div id="drawingBoard">
+
+        </div>
+
+        <div id="toolbar">
+            <div id="toolbar-background"></div>
+            <div id="toolbar-pen" class="toolbar-icon">P</div>
+        </div>
+    </body>
+</html>
+
+<!-- #endregion -->
+
+<!----------------------------------------------------------
+> JAVASCRIPT
+<----------------------------------------------------------->
+
+<script>
+    window.onload = function () { 
+        let svg = d3.select("#drawingBoard").append("svg")
+            .attr("width", "100%")
+            .attr("height", "100%");
+
+        svg.append("g").attr("id","temp-line");
+
+        let isDrawing = false;
+        let buffer = [];
+        let lastPointTime = 0;
+
+        // When the mouse is down, set the drawing to true
+        svg.on("mousedown",()=>{
+            isDrawing = true;
+        });
+
+        // When the mouse is up, stop drawing
+        svg.on("mouseup",()=>{
+            isDrawing = false;
+            console.log(buffer);
+
+            // Draw the line in the buffer
+            drawLine(buffer,svg);
+
+            // clear the buffer
+            buffer = [];
+
+            // clear the temp line
+            d3.select("#temp-line").html(null);
+        })
+
+        svg.on("mousemove", function() {
+            // Get the current mouse coordinates
+            var coordinates= d3.mouse(this);
+            var x = coordinates[0];
+            var y = coordinates[1];
+
+            let currentTime = Date.now();
+            
+            // if the user is drawing, add the x,y to the buffer
+            if(isDrawing){
+                // if it has been x milliseconds since the last coordinate saved
+                if(currentTime>=lastPointTime+10){
+                    buffer.push({x:x,y:y});
+                    lastPointTime = currentTime;
+                    //add the temp line
+                    d3.select("#temp-line").append("circle")
+                        .attr("fill","red")
+                        .attr("r",3)
+                        .attr("cx",x)
+                        .attr("cy",y);
+                }
+            }
+        });
+
+    }
+
+    // draw a line with the buffer
+    function drawLine(buffer,svg){
+
+        // https://www.d3indepth.com/shapes/#line-generator
+        // https://github.com/d3/d3-shape/blob/v1.3.4/README.md#line
+        // https://www.dashingd3js.com/svg-paths-and-d3js
+
+        // Create the line
+        let line = d3.line().curve(d3.curveCardinal);
+
+        // for every x and y, set the value to (object passed).x
+        line.x((d)=>{
+            return d.x;
+        });
+        line.y((d)=>{
+            return d.y;
+        });
+
+        // Apped the line
+        svg.append("path")
+            .attr("d", line(buffer))
+            .attr("stroke", "white")
+            .attr("stroke-width", 2)
+            .attr("fill", "none");
+
+        // for(let i = 0; i<buffer.length-1;i++){
+        //     svg.append("line").style("stroke","white")
+        //         .attr("stroke-width",20)
+        //         .attr("x1",buffer[i].x)
+        //         .attr("x2",buffer[i+1].x)
+        //         .attr("y1",buffer[i].y)
+        //         .attr("y2",buffer[i+1].y)
+            
+        //     svg.append("circle")
+        //         .attr("fill","white")
+        //         .attr("r",10)
+        //         .attr("cx",buffer[i].x)
+        //         .attr("cy",buffer[i].y)
+        // }
+    }
+</script>

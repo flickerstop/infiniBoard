@@ -1,0 +1,14 @@
+{
+  "name": "infiniboard",
+  "version": "0.1.0",
+  "description": "An infinite scrolling and recursive whiteboard application",
+  "main": "src/backend/app.js",
+  "scripts": {
+    "test": "electron ."
+  },
+  "author": "flickerstop",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^6.0.1"
+  }
+}
