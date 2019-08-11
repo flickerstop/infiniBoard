@@ -22,7 +22,8 @@
 
         <div id="toolbar">
             <div id="toolbar-background"></div>
-            <div id="toolbar-pen" class="toolbar-icon">P</div>
+            <div class="toolbar-icon" style="background-image:url('./images/pen_white.png')" onclick="whiteboard.setTool(0)">P</div>
+            <div class="toolbar-icon" style="background-image:url('./images/hand_white.png')" onclick="whiteboard.setTool(1)">H</div>
         </div>
     </body>
 </html>
@@ -35,100 +36,177 @@
 
 <script>
     window.onload = function () { 
-        let svg = d3.select("#drawingBoard").append("svg")
-            .attr("width", "100%")
-            .attr("height", "100%");
+        
+        whiteboard.init();
+        
+    }
 
-        svg.append("g").attr("id","temp-line");
-
+    whiteboard = function(){
+        let svg = null;
         let isDrawing = false;
         let buffer = [];
         let lastPointTime = 0;
 
-        // When the mouse is down, set the drawing to true
-        svg.on("mousedown",()=>{
-            isDrawing = true;
-        });
+        // Current tool being used
+        let currentTool = 0;
+        // 0 -> Pen
+        // 1 -> Hand
 
-        // When the mouse is up, stop drawing
-        svg.on("mouseup",()=>{
-            isDrawing = false;
-            console.log(buffer);
+        // Point where the mouse was pressed down
+        let mouseDownPoint = null;
 
-            // Draw the line in the buffer
-            drawLine(buffer,svg);
+        // Current viewbox
+        let viewbox = null;
 
-            // clear the buffer
-            buffer = [];
+        function init(){
 
-            // clear the temp line
-            d3.select("#temp-line").html(null);
-        })
-
-        svg.on("mousemove", function() {
-            // Get the current mouse coordinates
-            var coordinates= d3.mouse(this);
-            var x = coordinates[0];
-            var y = coordinates[1];
-
-            let currentTime = Date.now();
-            
-            // if the user is drawing, add the x,y to the buffer
-            if(isDrawing){
-                // if it has been x milliseconds since the last coordinate saved
-                if(currentTime>=lastPointTime+10){
-                    buffer.push({x:x,y:y});
-                    lastPointTime = currentTime;
-                    //add the temp line
-                    d3.select("#temp-line").append("circle")
-                        .attr("fill","red")
-                        .attr("r",3)
-                        .attr("cx",x)
-                        .attr("cy",y);
-                }
+            // Create the current viewbox
+            viewbox = {
+                x:0,
+                y:0,
+                h:getSVGSize().h,
+                w:getSVGSize().w
             }
-        });
 
-    }
 
-    // draw a line with the buffer
-    function drawLine(buffer,svg){
+            svg = d3.select("#drawingBoard").append("svg")
+            .attr("id","drawingBoard-svg")
+            .attr("width", "100%")
+            .attr("height", "100%");
 
-        // https://www.d3indepth.com/shapes/#line-generator
-        // https://github.com/d3/d3-shape/blob/v1.3.4/README.md#line
-        // https://www.dashingd3js.com/svg-paths-and-d3js
+            updateViewbox();
 
-        // Create the line
-        let line = d3.line().curve(d3.curveCardinal);
-
-        // for every x and y, set the value to (object passed).x
-        line.x((d)=>{
-            return d.x;
-        });
-        line.y((d)=>{
-            return d.y;
-        });
-
-        // Apped the line
-        svg.append("path")
-            .attr("d", line(buffer))
-            .attr("stroke", "white")
-            .attr("stroke-width", 2)
-            .attr("fill", "none");
-
-        // for(let i = 0; i<buffer.length-1;i++){
-        //     svg.append("line").style("stroke","white")
-        //         .attr("stroke-width",20)
-        //         .attr("x1",buffer[i].x)
-        //         .attr("x2",buffer[i+1].x)
-        //         .attr("y1",buffer[i].y)
-        //         .attr("y2",buffer[i+1].y)
             
-        //     svg.append("circle")
-        //         .attr("fill","white")
-        //         .attr("r",10)
-        //         .attr("cx",buffer[i].x)
-        //         .attr("cy",buffer[i].y)
-        // }
-    }
+
+            svg.append("g").attr("id","temp-line");
+            // When the mouse is down, set the drawing to true
+            svg.on("mousedown",()=>{
+                if(isPen()){
+                    isDrawing = true;
+                }
+                if(isHand()){
+                    // Get the current mouse coordinates
+                    let coordinates= d3.mouse(d3.event.currentTarget);
+                    mouseDownPoint = {
+                        x:coordinates[0],
+                        y:coordinates[1],
+                        vx: viewbox.x,
+                        vy: viewbox.y
+                    };
+                }
+            });
+
+            // When the mouse is up, stop drawing
+            svg.on("mouseup",()=>{
+                if(isPen()){
+                    isDrawing = false;
+                    // Draw the line in the buffer
+                    drawLine(buffer,svg);
+                    // clear the buffer
+                    buffer = [];
+                    // clear the temp line
+                    d3.select("#temp-line").html(null);
+                }
+                if(isHand()){
+                    mouseDownPoint = null;
+                }
+            })
+
+            svg.on("mousemove", function() {
+                // Get the current mouse coordinates
+                let coordinates= d3.mouse(this);
+                let x = coordinates[0];
+                let y = coordinates[1];
+
+                if(isPen()){
+                    let currentTime = Date.now();
+                    
+                    // if the user is drawing, add the x,y to the buffer
+                    if(isDrawing){
+                        // if it has been x milliseconds since the last coordinate saved
+                        if(currentTime>=lastPointTime+10){
+                            buffer.push({x:x,y:y});
+                            lastPointTime = currentTime;
+                            //add the temp line
+                            d3.select("#temp-line").append("circle")
+                                .attr("fill","red")
+                                .attr("r",3)
+                                .attr("cx",x)
+                                .attr("cy",y);
+                        }
+                    }
+                }
+                if(isHand()){
+                    // If the mouse has been down
+                    if(mouseDownPoint != null){
+                        /**
+                         * Move the viewbox by taking the position the box was at when the mouse was first clicked.
+                         * the (/1.2) is there to slow down the movement, no idea how to get around this atm 
+                         */
+                        viewbox.x = mouseDownPoint.vx-(x-mouseDownPoint.x)/1.2;
+                        viewbox.y = mouseDownPoint.vy-(y-mouseDownPoint.y)/1.2;
+                        updateViewbox();
+                    }
+                }
+            });
+        
+        }
+
+        // draw a line with the buffer
+        function drawLine(buffer,svg){
+
+            // https://www.d3indepth.com/shapes/#line-generator
+            // https://github.com/d3/d3-shape/blob/v1.3.4/README.md#line
+            // https://www.dashingd3js.com/svg-paths-and-d3js
+
+            // Create the line
+            let line = d3.line().curve(d3.curveCardinal);
+
+            // for every x and y, set the value to (object passed).x
+            line.x((d)=>{
+                return d.x;
+            });
+            line.y((d)=>{
+                return d.y;
+            });
+
+            // Append the line
+            svg.append("path")
+                .attr("d", line(buffer))
+                .attr("stroke", "white")
+                .attr("stroke-width", 2)
+                .attr("fill", "none");
+        }
+
+        function getSVGSize(){
+            return {
+                w:d3.select("#drawingBoard").node().getBoundingClientRect().width,
+                h:d3.select("#drawingBoard").node().getBoundingClientRect().height
+            }
+        }
+
+        function setTool(toolID){
+            currentTool = toolID;
+        }
+
+        function isPen(){
+            return currentTool==0?true:false;
+        }
+
+        function isHand(){
+            return currentTool==1?true:false;
+        }
+
+        function updateViewbox(){
+            svg.attr("viewBox",`${viewbox.x},${viewbox.y},${viewbox.w},${viewbox.h}`);
+        }
+
+        return{
+            init:init,
+            getSVGSize:getSVGSize,
+            setTool:setTool
+        }
+    }();
+
+    
 </script>
