@@ -28,7 +28,7 @@ const fs = require("fs-extra");
 let logFileName = "./logs/"+Date.now()+".txt";
 
 let startTime = null;
-let isTest = false;
+let isTest = true;
 
 if(!fs.pathExistsSync("./logs")){
     fs.ensureDirSync("./logs");

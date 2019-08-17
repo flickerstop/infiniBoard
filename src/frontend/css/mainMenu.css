@@ -1,0 +1,29 @@
+#mainMenu{
+    width: 50%;
+    margin-left: 25%;
+    height: 500px;
+    margin-top: calc(40% - 250px); /*FIXME This screws up when the window width is large*/
+}
+
+#mainMenu-title{
+    width: 100%;
+    text-align: center;
+    font-size: 50px;
+    margin-bottom: 25px;
+}
+
+.mainMenu-option{
+    width: 200px;
+    height: 50px;
+    text-align: center;
+    line-height: 50px;
+    border: 1px solid var(--text);
+    margin-top: 25px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.mainMenu-option:hover{
+    background-color: var(--blue);
+    cursor: pointer;
+}
