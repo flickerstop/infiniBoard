@@ -14,11 +14,13 @@
         <link rel="stylesheet" href="./css/popup.css">
         <!-- <script src="./js/data.js"></script> -->
 
-        <script src="./js/d3.js"></script>
+        <script src="./js/extern/jscolor.js"></script>
+        <script src="./js/extern/d3.js"></script>
         <script src="./js/whiteboard.js"></script>
         <script src="./js/mainMenu.js"></script>
         <script src="./js/comm.js"></script>
         <script src="./js/popup.js"></script>
+        <script src="./js/util.js"></script>
     </head>
     <style id="themeStyle">
         :root {
@@ -38,6 +40,7 @@
             <div id="popup-box"></div>
         </div>
 
+        
 
         <div id="mainMenu">
             <div id="mainMenu-title">Infiniboard</div>
@@ -66,6 +69,9 @@
                 <div id="toolbar-background"></div>
                 <div class="toolbar-icon" style="background-image:url('./images/pen_white.png')" onclick="whiteboard.setTool(0)">P</div>
                 <div class="toolbar-icon" style="background-image:url('./images/hand_white.png')" onclick="whiteboard.setTool(1)">H</div>
+            </div>
+            <div id="colourBar">
+                    <button id="colourBar-newColour" class="jscolor {onFineChange:'whiteboard.changeColour()' ,width:243, height:150,value:'66ccff',borderColor:'var(--highlight)', backgroundColor:'var(--main)'}"></button>
             </div>
         </div>
         

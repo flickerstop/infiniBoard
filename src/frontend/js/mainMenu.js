@@ -13,10 +13,14 @@ mainMenu = function(){
      * Button function for when selecting "new boardbox"
      */
     function createBoardBox(){
-        popup.newBoardBox((boardName,bgcolor)=>{
+        popup.newBoardBox((boardBoxName,boardName,bgcolor)=>{
             //NOTE color can't be set correctly ATM
-            console.log(boardName + " " + bgcolor);
-            whiteboard.newBoardBox(boardName,bgcolor);
+            console.log({
+                boxName: boardBoxName,
+                boardName: boardName,
+                bgColor: bgcolor
+            });
+            whiteboard.newBoardBox(boardBoxName,boardName,bgcolor);
             switchToWhiteboard();
             whiteboard.init();
         });

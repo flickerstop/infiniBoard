@@ -33,6 +33,8 @@ whiteboard = function(){
         saveTimeout: null
     }
 
+    let colourBar = null;
+
     /**
      * Function that runs to initialize the whiteboard and load the current board
      */
@@ -45,6 +47,8 @@ whiteboard = function(){
             w:getSVGSize().w
         }
 
+
+        currentColor = thisBoard.pens[0];
 
         // Create the svg
         svg = d3.select("#drawingBoard").append("svg")
@@ -64,7 +68,7 @@ whiteboard = function(){
             drawLine(svg,line.dots,line.stroke,line.color,line.type);
         }
         
-        //TODO set the background colour
+        svg.style("background-color",thisBoard.bgColour);
         
         // When the mouse is down, set the drawing to true
         svg.on("mousedown",mouseDown);
@@ -73,6 +77,8 @@ whiteboard = function(){
         svg.on("mouseup",mouseUp)
 
         svg.on("mousemove", mouseMove);
+
+        initColourBar();
     
     }
 
@@ -138,6 +144,15 @@ whiteboard = function(){
     function mouseDown(){
         if(isPen()){
             isDrawing = true;
+
+            // check if this line is a new colour
+            for(let pen of thisBoard.pens){
+                if(pen == currentColor){
+                    return;
+                }
+            }
+            colourBar.addPen(currentColor);
+
         }
         if(isHand()){
             // Get the current mouse coordinates
@@ -149,6 +164,8 @@ whiteboard = function(){
                 vy: viewbox.y
             };
         }
+
+        
     }
 
     function mouseUp(){
@@ -220,6 +237,13 @@ whiteboard = function(){
      * Send the current boardbox to the main process to save
      */
     function save(){
+        // get the pens from the colour bar
+        let pens = [];
+        for(let pen of colourBar.pens){
+            pens.push(pen.getColour());
+        }
+        thisBoard.pens = pens;
+
         // Send a message with the tag "save" and payload of the boardbox
         comm.sendMessage("save", getBoardBox());
         autoSave.isSaved = true;
@@ -276,7 +300,8 @@ whiteboard = function(){
             name: boardName,
             bgType: 0, // make this do something like 0 -> solid color, 1 -> grid etc
             bgColour: bgColour,
-            lines: []
+            lines: [],
+            pens:defaultPens()
         });
     }
 
@@ -296,6 +321,19 @@ whiteboard = function(){
             link:link,
             dots:buffer
         });
+    }
+
+    /**
+     * Checks to see if a board name is already used, TRUE = used
+     * @param {String} boardName Name of the board to check
+     */
+    function checkBoardName(boardName){
+        for(let board of boardbox){
+            if(boardName == board.name){
+                return true;
+            }
+        }
+        return false;
     }
 
     // #endregion
@@ -356,6 +394,155 @@ whiteboard = function(){
 
     // #endregion
     //////////////////////////
+    // Colour bar
+    // #region
+    function initColourBar(){
+        colourBar = {
+            pens: [],
+            svg: null,
+            maxPens: 10,
+            changeColour: null
+        }
+        colourBar.svg = d3.select("#colourBar").append("svg");
+        let x=10;
+
+        let currentPenGroup = colourBar.svg.append("g");
+
+        // Draw the current pen
+        // Ellipse for the "tip"
+        let currentPenTip = currentPenGroup.append("ellipse")
+            .attr("cx", x+15)
+            .attr("cy", 15+5)
+            .attr("rx", 6)
+            .attr("ry", 15)
+            .attr("fill", currentColor)
+            .attr("stroke-width", 2)
+            .attr("stroke", "var(--text)");
+
+        // Rectangle for the "shaft"
+        let currentPenShaft = currentPenGroup.append("rect")
+            .attr("x",x-2)
+            .attr("y",-15+5)
+            .attr("width", 34)
+            .attr("height", 25)
+            .attr("fill", currentColor)
+            .attr("stroke-width", 2)
+            .attr("stroke", "var(--text)");
+
+        // Polygon for the "neck"
+        currentPenGroup.append("polygon")
+            .attr("points",`${x},15
+            ${x+7},20
+            ${x+23},20
+            ${x+30},15`)
+            .attr("fill", "var(--text)")
+            .attr("stroke-width", 2)
+            .attr("stroke", "var(--text)");
+
+        colourBar.changeColour = function(newColour){
+            currentColor = newColour;
+            currentPenTip.attr("fill",newColour);
+            currentPenShaft.attr("fill",newColour);
+        }
+
+        colourBar.addPen = function(newColour){
+            thisBoard.pens.pop()
+            thisBoard.pens.unshift(newColour);
+
+            for(let i = 0;i < colourBar.maxPens;i++){
+                colourBar.pens[i].changeColour(thisBoard.pens[i]);
+            }
+        }
+
+        // Line between current pen and past pens
+
+        colourBar.svg.append("line")
+            .attr("x1",x+45)
+            .attr("x2",x+45)
+            .attr("y1",5)
+            .attr("y2","35")
+            .attr("stroke-width", 2)
+            .attr("stroke", "var(--highlight)");
+        ///////////////////////////////
+        // Draw the pen board
+        x+= 60;
+        for(let i = 0;i < colourBar.maxPens;i++){
+            let colour = thisBoard.pens[i];
+
+            let group = colourBar.svg.append("g");
+            // Ellipse for the "tip"
+            let tip = group.append("ellipse")
+                .attr("cx", x+15)
+                .attr("cy", 15)
+                .attr("rx", 6)
+                .attr("ry", 15)
+                .attr("fill", colour)
+                .attr("stroke-width", 2)
+                .attr("stroke", "var(--text)");
+
+            // Rectangle for the "shaft"
+            let shaft = group.append("rect")
+                .attr("x",x-2)
+                .attr("y",-15)
+                .attr("width", 34)
+                .attr("height", 25)
+                .attr("fill", colour)
+                .attr("stroke-width", 2)
+                .attr("stroke", "var(--text)");
+
+            // Polygon for the "neck"
+            group.append("polygon")
+                .attr("points",`${x},10
+                ${x+7},15
+                ${x+23},15
+                ${x+30},10`)
+                .attr("fill", "var(--text)")
+                .attr("stroke-width", 2)
+                .attr("stroke", "var(--text)");
+
+            group.on("mouseover",function(){
+                d3.select(this).transition()
+                .duration(100).attr("transform", "translate(0,10)");
+            });
+            group.on("mouseout",function(){
+                d3.select(this).transition()
+                .duration(100).attr("transform", "translate(0,0)");
+            });
+
+            group.on("click",function(){
+                colourBar.changeColour(colour);
+            });
+
+            colourBar.pens.push({
+                colour: colour,
+                changeColour: function(newColour){
+                    tip.attr("fill",newColour);
+                    shaft.attr("fill",newColour);
+                    this.colour = newColour;
+                },
+                getColour: function(){
+                    return this.colour
+                }
+            })
+            x+=45;
+        }
+    }
+
+    function defaultPens(){
+        return ["#ffffff","#2ecc71","#3498db","#9b59b6","#34495e","#f1c40f","#e67e22","#e74c3c","#000000","#bada55"];
+    }
+
+    function getPens(){
+        return colourBar;
+    }
+    // #endregion
+
+    function changeColour(){
+        let newColour = "#"+d3.select("#colourBar-newColour").html();
+        // Check if there's a # before
+        currentColor = newColour;
+        colourBar.changeColour(newColour);
+    }
 
     return{
         init:init,
@@ -365,6 +552,9 @@ whiteboard = function(){
         newBoardBox:newBoardBox,
         getThisBoard:getThisBoard,
         getBoardBox:getBoardBox,
-        save:save
+        save:save,
+        checkBoardName:checkBoardName,
+        getPens:getPens,
+        changeColour:changeColour
     }
 }();
