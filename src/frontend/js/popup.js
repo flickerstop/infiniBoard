@@ -56,7 +56,7 @@ popup = function(){
                 return;
             }
             // Check if the name is already used
-            if(mainMenu.checkBoxNameUsed(boxName)){ 
+            if(boxManager.checkBoxNameUsed(boxName)){ 
                 d3.select("#popup-boardBoxName").style("background-color","#c0392b");
                 d3.select("#popup-error").html("This name is already in use!");
                 return;
