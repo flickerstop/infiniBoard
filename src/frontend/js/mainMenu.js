@@ -126,9 +126,11 @@ mainMenu = function(){
      * @param {String} newName Name of the box to Check
      */
     function checkBoxNameUsed(newName){
-        for(let box of loadedBoxes){
-            if(box.saveName == newName){
-                return true;
+        if (loadedBoxes != null){
+            for(let box of loadedBoxes){
+                if(box.saveName == newName){
+                    return true;
+                }
             }
         }
         return false;

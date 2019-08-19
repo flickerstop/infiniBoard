@@ -24,18 +24,20 @@ console.log("Starting application");
 
 
 app.on('ready', ()=>{
-    loadBoxes().then((boxes)=>{
-        window.webContents.on('did-finish-load', () => {
-            window.webContents.send('loadedData', boxes);
-        })
-    });
     createWindow();
 });
 
 
 // Calls from main to render
-ipcMain.on("save", (event, payload) => {
+ipcMain.on('save', (event, payload) => {
     saveBox(payload);
+});
+
+// 
+ipcMain.on('getBoxes', (event) => {
+    loadBoxes().then((boxes)=>{
+        event.reply('getBoxes-reply', boxes);
+    });
 });
 
 /////////////////////////////////////////////////////

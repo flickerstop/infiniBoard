@@ -46,7 +46,7 @@
             <div id="mainMenu-title">Infiniboard</div>
             <div id="mainMenu-lastBoard" class="mainMenu-option">Last Board</div>
             <div id="mainMenu-newBoard" class="mainMenu-option" onclick="mainMenu.createBoardBox()">New Board</div>
-            <div id="mainMenu-loadBoard" class="mainMenu-option" onclick="mainMenu.loadMenu()">Load Board</div>
+            <div id="mainMenu-loadBoard" class="mainMenu-option" onclick=" comm.sendMessage('getBoxes')">Load Board</div>
         </div>
 
         <div id="loadBox" style="display: none">
