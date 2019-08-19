@@ -13,7 +13,6 @@ whiteboard = function(){
     let buffer = []; // Buffer for the currently drawing ling
     let lastPointTime = 0; // Time of the last drawing point
     
-    let boardbox = null; // the current board box
     let thisBoard = null; // The current infiniboard that's being drawn on
 
     let currentTool = 0; // Current tool being used
@@ -38,7 +37,10 @@ whiteboard = function(){
     /**
      * Function that runs to initialize the whiteboard and load the current board
      */
-    function init(){
+    function init(id){
+        thisBoard = boxManager.getBoard(id);
+
+
         // Create the current viewbox
         viewbox = {
             x:0,
@@ -245,7 +247,7 @@ whiteboard = function(){
         thisBoard.pens = pens;
 
         // Send a message with the tag "save" and payload of the boardbox
-        comm.sendMessage("save", getBoardBox());
+        comm.sendMessage("save", boxManager.getBox());
         autoSave.isSaved = true;
         autoSave.lastSaveTime = Date.now();
     }
@@ -266,44 +268,7 @@ whiteboard = function(){
     // Functions for new lines/boards/boxes
     // #region
 
-    /**
-     * Creates a brand new boardbox with the first board
-     * @param {String} boardboxName Name of the new board box
-     * @param {String} boardName Name of the first board in the box
-     * @param {String} bgColour Code of the colour of the first board's background
-     */
-    function newBoardBox(boardboxName,boardName,bgColour){
-        // create the box for all the boards
-        boardbox = {
-            saveName: boardboxName,
-            lastUsed: Date.now(),
-            boardCount: 0,
-            boards: []
-        };
-
-        // Create the first board to put in the box
-        newBoard(boardName,bgColour);
-
-        // Set the current board to the first (newly created) board
-        thisBoard = boardbox.boards.find(x=>x.id == 0);
-
-    }
-
-    /**
-     * Creates a new board in the current boardbox
-     * @param {String} boardName Name for the new board
-     * @param {String} bgColour Colour for the background
-     */
-    function newBoard(boardName,bgColour){
-        boardbox.boards.push({
-            id: boardbox.boardCount++,
-            name: boardName,
-            bgType: 0, // make this do something like 0 -> solid color, 1 -> grid etc
-            bgColour: bgColour,
-            lines: [],
-            pens:defaultPens()
-        });
-    }
+    
 
     /**
      * Saves the line to the current board
@@ -321,19 +286,6 @@ whiteboard = function(){
             link:link,
             dots:buffer
         });
-    }
-
-    /**
-     * Checks to see if a board name is already used, TRUE = used
-     * @param {String} boardName Name of the board to check
-     */
-    function checkBoardName(boardName){
-        for(let board of boardbox){
-            if(boardName == board.name){
-                return true;
-            }
-        }
-        return false;
     }
 
     // #endregion
@@ -367,30 +319,6 @@ whiteboard = function(){
     //////////////////////////
     // Getters/setters
     // #region
-
-    /**
-     * Get the current board
-     */
-    function getThisBoard(){
-        return thisBoard;
-    }
-
-    /**
-     * Get the current box
-     */
-    function getBoardBox(){
-        return boardbox;
-    }
-
-    /**
-     * Sets the current boardbox to the passed. Then loads board id 0 to the current board
-     * @param {Object} newBoards Object holding the new boardbox
-     */
-    function setBoardBox(newBoards){
-        boardbox = newBoards;
-        // Set the current board to the first (newly created) board
-        thisBoard = boardbox.boards.find(x=>x.id == 0);
-    }
 
     // #endregion
     //////////////////////////
@@ -510,7 +438,7 @@ whiteboard = function(){
             });
 
             group.on("click",function(){
-                colourBar.changeColour(colour);
+                colourBar.changeColour(colourBar.pens[i].getColour());
             });
 
             colourBar.pens.push({
@@ -526,10 +454,6 @@ whiteboard = function(){
             })
             x+=45;
         }
-    }
-
-    function defaultPens(){
-        return ["#ffffff","#2ecc71","#3498db","#9b59b6","#34495e","#f1c40f","#e67e22","#e74c3c","#000000","#bada55"];
     }
 
     function getPens(){
@@ -548,12 +472,7 @@ whiteboard = function(){
         init:init,
         getSVGSize:getSVGSize,
         setTool:setTool,
-        setBoardBox:setBoardBox,
-        newBoardBox:newBoardBox,
-        getThisBoard:getThisBoard,
-        getBoardBox:getBoardBox,
         save:save,
-        checkBoardName:checkBoardName,
         getPens:getPens,
         changeColour:changeColour
     }

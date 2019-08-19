@@ -1,29 +1,10 @@
 mainMenu = function(){
 
-    let loadedBoxes = null;
-
     /**
      * Does nothing atm
      */
     function init(){
 
-    }
-
-    /**
-     * Button function for when selecting "new boardbox"
-     */
-    function createBoardBox(){
-        popup.newBoardBox((boardBoxName,boardName,bgcolor)=>{
-            //NOTE color can't be set correctly ATM
-            console.log({
-                boxName: boardBoxName,
-                boardName: boardName,
-                bgColor: bgcolor
-            });
-            whiteboard.newBoardBox(boardBoxName,boardName,bgcolor);
-            switchToWhiteboard();
-            whiteboard.init();
-        });
     }
 
     /**
@@ -36,6 +17,16 @@ mainMenu = function(){
     }
 
     /**
+     * Function for UI button
+     */
+    function createNewBox(){
+        boxManager.createBox((id)=>{
+            switchToWhiteboard();
+            whiteboard.init(id);
+        });
+    }
+
+    /**
      * Menu option to load a previous box
      */
     function loadMenu(){
@@ -44,7 +35,7 @@ mainMenu = function(){
         d3.select("#loadBox").style("display",null);
 
         // For each box that was has been previously saved
-        for(let box of loadedBoxes){
+        for(let box of boxManager.getShelf()){
             let numberOfLines = 0;
             // Calculate number of lines
             for(let board of box.boards){
@@ -102,43 +93,9 @@ mainMenu = function(){
         }
     }
 
-    /**
-     * Loads the passed boardbox, loads up the first inifiboard by default
-     * @param {object} box Box object to load up
-     */
-    function loadBox(box){
-        console.log(box);
-        whiteboard.setBoardBox(box);
-        switchToWhiteboard();
-        whiteboard.init();
-    }
-
-    /**
-     * Sets the loaded boxes to the passed object
-     * @param {object} boxes Array of all saved boxes
-     */
-    function setLoadBoxes(boxes){
-        loadedBoxes=boxes;
-    }
-
-    /**
-     * Checks to see if this name is good to use. True = Already used
-     * @param {String} newName Name of the box to Check
-     */
-    function checkBoxNameUsed(newName){
-        for(let box of loadedBoxes){
-            if(box.saveName == newName){
-                return true;
-            }
-        }
-        return false;
-    }
-
     return {
         init:init,
-        createBoardBox:createBoardBox,
-        loadMenu:loadMenu,
-        setLoadBoxes:setLoadBoxes,
-        checkBoxNameUsed:checkBoxNameUsed
+        createNewBox:createNewBox,
+        loadMenu:loadMenu
     }
 }();
