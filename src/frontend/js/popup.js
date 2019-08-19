@@ -56,11 +56,12 @@ popup = function(){
                 return;
             }
             // Check if the name is already used
-            if(boxManager.checkBoxNameUsed(boxName)){ 
-                d3.select("#popup-boardBoxName").style("background-color","#c0392b");
-                d3.select("#popup-error").html("This name is already in use!");
-                return;
-            }
+            //FIXME UNCOMMENT THIS AFTER MOE FIXES HIS CODE
+            // if(boxManager.checkBoxNameUsed(boxName)){ 
+            //     d3.select("#popup-boardBoxName").style("background-color","#c0392b");
+            //     d3.select("#popup-error").html("This name is already in use!");
+            //     return;
+            // }
 
             d3.select("#popup").style("display","none");
             d3.select("#popup-box").html(null);

@@ -18,6 +18,8 @@ whiteboard = function(){
     let currentTool = 0; // Current tool being used
     // 0 -> Pen
     // 1 -> Hand
+    // 2 -> Eraser
+
     let currentStroke = 2; // Current selected stroke
     let currentColor = "white"; // Current selected colour
 
@@ -67,7 +69,7 @@ whiteboard = function(){
 
         // draw all the lines in the current whiteboard
         for(line of thisBoard.lines){
-            drawLine(svg,line.dots,line.stroke,line.color,line.type);
+            drawLine(svg,line.dots,line.stroke,line.color,line.type,line.id);
         }
         
         svg.style("background-color",thisBoard.bgColour);
@@ -93,7 +95,7 @@ whiteboard = function(){
      * @param {String} colour Colour of the line 
      * @param {Number} type Type of the line
      */
-    function drawLine(svg,buffer,stroke,colour,type){
+    function drawLine(svg,buffer,stroke,colour,type,id){
         //TODO draw the line according to line "type"
         //FIXME does not draw line of 1 length, maybe draw a dot instead?
 
@@ -113,13 +115,25 @@ whiteboard = function(){
         });
 
         // Append the line
-        svg.append("path")
+        let svgLine = svg.append("path")
             .attr("d", line(buffer))
             .attr("stroke", colour)
             .attr("stroke-width", stroke)
-            .attr("fill", "none");
+            .attr("fill", "none")
+            .attr("id",`line${id}`);
 
-        // Add the buffer to the whiteboard object
+        // if the mouse moves over this line
+        svgLine.on("mouseover",()=>{
+            // if the tools is set to erasers and is drawing (mouse down)
+            if(isEraser() && isDrawing){
+                // Delete the line from the array
+                deleteLine(id);
+                // Delete the line from the svg
+                d3.select(`#line${id}`).remove();
+                // set the save timeout
+                autoSaveTimeout();
+            }
+        })
 
     }
 
@@ -166,7 +180,9 @@ whiteboard = function(){
                 vy: viewbox.y
             };
         }
-
+        if(isEraser()){
+            isDrawing = true;
+        }
         
     }
 
@@ -174,10 +190,16 @@ whiteboard = function(){
         if(isPen()){
             //FIXME Saves line of 0 length, should always be min 1
             isDrawing = false;
-            // Draw the line in the buffer
-            drawLine(svg,buffer,currentStroke,currentColor,0);
+            if(buffer.length <= 1){
+                buffer = [];
+                return;
+            }
 
-            newLine(buffer,0,currentColor,currentStroke);
+            // Draw the line in the buffer
+            let id = thisBoard.lines.length;
+            drawLine(svg,buffer,currentStroke,currentColor,0,id);
+
+            newLine(buffer,0,currentColor,currentStroke,id);
             // clear the buffer
             buffer = [];
             // clear the temp line
@@ -188,6 +210,9 @@ whiteboard = function(){
         }
         if(isHand()){
             mouseDownPoint = null;
+        }
+        if(isEraser()){
+            isDrawing = false;
         }
     }
 
@@ -265,7 +290,7 @@ whiteboard = function(){
 
     // #endregion
     //////////////////////////
-    // Functions for new lines/boards/boxes
+    // Functions for new lines
     // #region
 
     
@@ -278,14 +303,20 @@ whiteboard = function(){
      * @param {Number} stroke Stroke size of the line
      * @param {?String} link id to link to
      */
-    function newLine(buffer,type,color,stroke,link=null){
+    function newLine(buffer,type,color,stroke,id,link=null){
         thisBoard.lines.push({
+            id: id,
             type:type,
             color:color,
             stroke:stroke,
             link:link,
             dots:buffer
         });
+    }
+
+
+    function deleteLine(id){
+        thisBoard.lines.splice((thisBoard.lines.findIndex(x=>x.id == id)),1);
     }
 
     // #endregion
@@ -298,7 +329,9 @@ whiteboard = function(){
      * @param {Number} toolID number for the tool
      */
     function setTool(toolID){
+        d3.select("#toolbar-icon-"+currentTool).attr("class","toolbar-icon");
         currentTool = toolID;
+        d3.select("#toolbar-icon-"+currentTool).attr("class","toolbar-icon selected");
     }
 
     /**
@@ -315,10 +348,9 @@ whiteboard = function(){
         return currentTool==1?true:false;
     }
 
-    // #endregion
-    //////////////////////////
-    // Getters/setters
-    // #region
+    function isEraser(){
+        return currentTool==2?true:false;
+    }
 
     // #endregion
     //////////////////////////
@@ -333,7 +365,9 @@ whiteboard = function(){
         }
         colourBar.svg = d3.select("#colourBar").append("svg");
         let x=10;
-
+        ///////////////////////////////
+        // draw the current pen
+        // #region 
         let currentPenGroup = colourBar.svg.append("g");
 
         // Draw the current pen
@@ -371,6 +405,7 @@ whiteboard = function(){
             currentColor = newColour;
             currentPenTip.attr("fill",newColour);
             currentPenShaft.attr("fill",newColour);
+            colourBar.strokeSizeLine.attr("stroke", newColour);
         }
 
         colourBar.addPen = function(newColour){
@@ -383,7 +418,6 @@ whiteboard = function(){
         }
 
         // Line between current pen and past pens
-
         colourBar.svg.append("line")
             .attr("x1",x+45)
             .attr("x2",x+45)
@@ -391,8 +425,11 @@ whiteboard = function(){
             .attr("y2","35")
             .attr("stroke-width", 2)
             .attr("stroke", "var(--highlight)");
+
+        // #endregion
         ///////////////////////////////
         // Draw the pen board
+        // #region
         x+= 60;
         for(let i = 0;i < colourBar.maxPens;i++){
             let colour = thisBoard.pens[i];
@@ -454,6 +491,97 @@ whiteboard = function(){
             })
             x+=45;
         }
+        // #endregion
+        ///////////////////////////////
+        // Draw the Stroke sizer
+        // #region
+        x+= 30;
+
+        let strokeIncreaseGroup = colourBar.svg.append("g")
+            .attr("id","colourBar-strokeIncreaseButton");
+
+        strokeIncreaseGroup.on("click",()=>{
+            currentStroke++;
+            colourBar.strokeSizeLine.attr("stroke-width", currentStroke)
+        });
+
+        strokeIncreaseGroup.append("rect")
+            .attr("x",x)
+            .attr("y",0)
+            .attr("width", 40)
+            .attr("height", 40)
+            .attr("fill", "transparent")
+
+        strokeIncreaseGroup.append("line")
+            .attr("x1",x+10)
+            .attr("y1",20)
+            .attr("x2",x+30)
+            .attr("y2",20)
+            .attr("stroke", "var(--text)")
+            .attr("stroke-width", 2)
+            .attr("class","colourBar-strokeIncreaseLine");
+
+        strokeIncreaseGroup.append("line")
+            .attr("x1",x+20)
+            .attr("y1",10)
+            .attr("x2",x+20)
+            .attr("y2",30)
+            .attr("stroke", "var(--text)")
+            .attr("stroke-width", 2)
+            .attr("class","colourBar-strokeIncreaseLine");
+        
+        x+= 50;
+        // Create the line
+        let line = d3.line().curve(d3.curveCardinal);
+
+        // for every x and y, set the value to (object passed).x
+        line.x((d)=>{
+            return d.x;
+        });
+        line.y((d)=>{
+            return d.y;
+        });
+
+        // Append the line
+        colourBar.strokeSizeLine = colourBar.svg.append("path")
+            .attr("d", line([
+                {x:x,y:20},
+                {x:x+25,y:10},
+                {x:x+50,y:20},
+                {x:x+75,y:30},
+                {x:x+100,y:20}
+            ]))
+            .attr("stroke", currentColor)
+            .attr("stroke-width", currentStroke)
+            .attr("fill", "none");
+
+        x+= 110;     
+        let strokeDecreaseGroup = colourBar.svg.append("g")
+            .attr("id","colourBar-strokeDecreaseButton");
+
+        strokeDecreaseGroup.on("click",()=>{
+            if(currentStroke-1 >=1){
+                currentStroke--;
+                colourBar.strokeSizeLine.attr("stroke-width", currentStroke)
+            }
+        });
+
+        strokeDecreaseGroup.append("rect")
+            .attr("x",x)
+            .attr("y",0)
+            .attr("width", 40)
+            .attr("height", 40)
+            .attr("fill", "transparent");
+
+        strokeDecreaseGroup.append("line")
+            .attr("x1",x+10)
+            .attr("y1",20)
+            .attr("x2",x+30)
+            .attr("y2",20)
+            .attr("stroke", "var(--text)")
+            .attr("stroke-width", 2)
+            .attr("class","colourBar-strokeDecreaseLine");
+        // #endregion
     }
 
     function getPens(){
@@ -466,6 +594,7 @@ whiteboard = function(){
         // Check if there's a # before
         currentColor = newColour;
         colourBar.changeColour(newColour);
+        colourBar.strokeSizeLine.attr("stroke", newColour);
     }
 
     return{

@@ -10,6 +10,7 @@
 <html>
     <head>
         <link rel="stylesheet" href="./css/main.css">
+        <link rel="stylesheet" href="./css/frame.css">
         <link rel="stylesheet" href="./css/mainMenu.css">
         <link rel="stylesheet" href="./css/popup.css">
         <!-- <script src="./js/data.js"></script> -->
@@ -36,47 +37,57 @@
         }
     </style>
     <body>
-        <div id="popup" style="display: none;">
-            <div id="popup-blackout"></div>
-            <div id="popup-box"></div>
-        </div>
 
-        
-
-        <div id="mainMenu">
-            <div id="mainMenu-title">Infiniboard</div>
-            <div id="mainMenu-lastBoard" class="mainMenu-option">Last Board</div>
-            <div id="mainMenu-newBoard" class="mainMenu-option" onclick="mainMenu.createNewBox()">New Board</div>
-            <div id="mainMenu-loadBoard" class="mainMenu-option" onclick="comm.sendMessage('getBoxes')">Load Board</div>
-        </div>
-
-        <div id="loadBox" style="display: none">
-            <table>
-                <thead>
-                    <th style="width: 15%">Name</th>
-                    <th style="width: 15%">Last Saved</th>
-                    <th style="width: 15%">Number of Infiniboards</th>
-                    <th style="width: 15%">Number of Lines</th>
-                    <th style="width: 30%">Preview</th>
-                </thead>
-                <tbody id="loadBox-table"></tbody>
-            </table>
-        </div>
-
-        <div id="whiteboard" style="display: none">
-            <div id="drawingBoard">
-
-            </div>
-            <div id="toolbar">
-                <div id="toolbar-background"></div>
-                <div class="toolbar-icon" style="background-image:url('./images/pen_white.png')" onclick="whiteboard.setTool(0)">P</div>
-                <div class="toolbar-icon" style="background-image:url('./images/hand_white.png')" onclick="whiteboard.setTool(1)">H</div>
-            </div>
-            <div id="colourBar">
-                    <button id="colourBar-newColour" class="jscolor {onFineChange:'whiteboard.changeColour()' ,width:243, height:150,value:'66ccff',borderColor:'var(--highlight)', backgroundColor:'var(--main)'}"></button>
+        <div id="frame">
+            <div id="frame-title">Infiniboard</div>
+            <div id="frame-dragArea"></div>
+            <div id="frame-buttons">
+                <svg style="height: 20px" id="frame-buttons-svg"></svg>
             </div>
         </div>
-        
+        <div id="mainPanel">
+            <div id="popup" style="display: none;">
+                <div id="popup-blackout"></div>
+                <div id="popup-box"></div>
+            </div>
+
+            
+
+            <div id="mainMenu">
+                <div id="mainMenu-title">Infiniboard</div>
+                <div id="mainMenu-lastBoard" class="mainMenu-option">Last Board</div>
+                <div id="mainMenu-newBoard" class="mainMenu-option" onclick="mainMenu.createNewBox()">New Board</div>
+                <div id="mainMenu-loadBoard" class="mainMenu-option" onclick="comm.sendMessage('getBoxes')">Load Board</div>
+            </div>
+
+            <div id="loadBox" style="display: none">
+                <table>
+                    <thead>
+                        <th style="width: 15%">Name</th>
+                        <th style="width: 15%">Last Saved</th>
+                        <th style="width: 15%">Number of Infiniboards</th>
+                        <th style="width: 15%">Number of Lines</th>
+                        <th style="width: 30%">Preview</th>
+                    </thead>
+                    <tbody id="loadBox-table"></tbody>
+                </table>
+            </div>
+
+            <div id="whiteboard" style="display: none">
+                <div id="drawingBoard">
+
+                </div>
+                <div id="toolbar">
+                    <div id="toolbar-background"></div>
+                    <div id="toolbar-icon-0" class="toolbar-icon selected" style="background-image:url('./images/pen_white.png')" onclick="whiteboard.setTool(0)">P</div>
+                    <div id="toolbar-icon-2" class="toolbar-icon" style="background-image:url('./images/eraser_white.png')" onclick="whiteboard.setTool(2)">E</div>
+                    <div id="toolbar-icon-1" class="toolbar-icon" style="background-image:url('./images/hand_white.png')" onclick="whiteboard.setTool(1)">H</div>
+                </div>
+                <div id="colourBar">
+                        <button id="colourBar-newColour" class="jscolor {onFineChange:'whiteboard.changeColour()' ,width:243, height:150,value:'66ccff',borderColor:'var(--highlight)', backgroundColor:'var(--main)'}"></button>
+                </div>
+            </div>
+        </div>
     </body>
 </html>
 
@@ -88,7 +99,8 @@
 
 <script>
     window.onload = function () { 
-        
+        buildWindowsButtons();
+        //changeTheme();
     }
 
     function changeTheme(){
@@ -103,5 +115,104 @@
             --blue: #3498db;
             --image-filter: invert(1);
         }`);
+    }
+
+    function buildWindowsButtons(){
+        let svg = d3.select("#frame-buttons-svg");
+        let x = 90;
+        let buttonStroke = 1;
+        svg.style("width",x);
+
+        // close button
+        // #region
+        let closeGroup = svg.append("g").attr("id","frame-closeButton");
+
+        closeGroup.append("rect")
+            .attr("x",x-30)
+            .attr("y",0)
+            .attr("width", 30)
+            .attr("height", 20)
+            .attr("fill", "transparent")
+            .attr("class","frame-closeButton-background");
+
+        closeGroup.append("line")
+            .attr("x1",x-20)
+            .attr("y1",15)
+            .attr("x2",x-10)
+            .attr("y2",5)
+            .attr("stroke", "var(--highlight)")
+            .attr("stroke-width", buttonStroke)
+            .attr("class","frame-closeButton-lines");
+
+        closeGroup.append("line")
+            .attr("x1",x-20)
+            .attr("y1",5)
+            .attr("x2",x-10)
+            .attr("y2",15)
+            .attr("stroke", "var(--highlight)")
+            .attr("stroke-width", buttonStroke)
+            .attr("class","frame-closeButton-lines");
+
+        closeGroup.on("click",()=>{
+            console.log("Close window");
+            comm.sendMessage("windowsButtons","close");
+        })
+
+        // #endregion
+
+        // maximize button
+        // #region
+        x -= 30;
+        let maximizeGroup = svg.append("g").attr("id","frame-maximizeButton");
+        maximizeGroup.append("rect")
+            .attr("x",x-30)
+            .attr("y",0)
+            .attr("width", 30)
+            .attr("height", 20)
+            .attr("fill", "transparent")
+            .attr("class","frame-maximizeButton-background");
+
+        maximizeGroup.append("rect")
+            .attr("x",x-20)
+            .attr("y",5)
+            .attr("width", 10)
+            .attr("height", 10)
+            .attr("fill", "none")
+            .attr("stroke", "var(--highlight)")
+            .attr("stroke-width", buttonStroke)
+            .attr("class","frame-maximizeButton-lines");
+
+        maximizeGroup.on("click",()=>{
+            console.log("Maximize window");
+            comm.sendMessage("windowsButtons","maximize");
+        })
+        // #endregion
+
+        // minimize button
+        // #region
+        x -= 30;
+        let minimizeGroup = svg.append("g").attr("id","frame-minimizeButton");
+        minimizeGroup.append("rect")
+            .attr("x",x-30)
+            .attr("y",0)
+            .attr("width", 30)
+            .attr("height", 20)
+            .attr("fill", "transparent")
+            .attr("class","frame-minimizeButton-background");
+
+        minimizeGroup.append("line")
+            .attr("x1",x-20)
+            .attr("y1",10)
+            .attr("x2",x-10)
+            .attr("y2",10)
+            .attr("stroke", "var(--highlight)")
+            .attr("stroke-width", buttonStroke)
+            .attr("class","frame-minimizeButton-lines");
+
+        minimizeGroup.on("click",()=>{
+            console.log("Minimize Button");
+            comm.sendMessage("windowsButtons","minimize");
+        })
+        // #endregion
     }
 </script>

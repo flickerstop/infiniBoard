@@ -22,17 +22,6 @@ boxManager = function(){
     let shelf = null;
 
     /**
-     * Creates a brand new boardbox with the first board
-     * @param {String} boardboxName Name of the new board box
-     * @param {String} boardName Name of the first board in the box
-     * @param {String} bgColour Code of the colour of the first board's background
-     */
-    function newBoardBox(boardboxName,boardName,bgColour){
-        
-
-    }
-
-    /**
      * Sets the loaded boxes to the passed object
      * @param {object} boxes Array of all saved boxes
      */
@@ -54,7 +43,6 @@ boxManager = function(){
                 boardName: boardName,
                 bgColor: bgColor
             });
-            newBoardBox(boardBoxName,boardName,bgColor);
 
             // create the box for all the boards
             currentBox = {
@@ -131,7 +119,7 @@ boxManager = function(){
      * Checks to see if a board name is already used, TRUE = used
      * @param {String} boardName Name of the board to check
      */
-    function checkBoardName(boardName){
+    function checkBoardNameUsed(boardName){
         for(let board of currentBox){
             if(boardName == board.name){
                 return true;
@@ -151,7 +139,8 @@ boxManager = function(){
         getBoard:getBoard,
         setShelf:setShelf,
         getShelf:getShelf,
-        checkBoxNameUsed:checkBoxNameUsed
+        checkBoxNameUsed:checkBoxNameUsed,
+        checkBoardNameUsed:checkBoardNameUsed
     }
 }();
 /////////////////////////////////////////////////////

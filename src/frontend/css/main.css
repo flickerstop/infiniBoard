@@ -2,10 +2,18 @@
     color: var(--text);
     margin: 0px;
     font-family: Tahoma;
+    user-select: none;
 }
 
 html{
     background-color: var(--main);
+}
+
+#mainPanel{
+    width: 100%;
+    height: calc(100% - 20px);
+    position: absolute;
+    top: 20px;
 }
 
 #drawingBoard{
@@ -13,9 +21,6 @@ html{
     margin-top: 41px;
     width: calc(100% - 51px);
     height: calc(100% - 41px);
-}
-#drawingBoard svg{
-    /* border: 1px solid white; */
 }
 
 /* TOOLBAR */
@@ -32,26 +37,29 @@ html{
 
 .toolbar-icon{
     margin: 5px;
-    width: 40px;
+    width: 35px;
     height: 40px;
+    font-size: 10px;
     float: left;
     background-color: var(--main-bg-color);
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center center;
+    padding-left: 5px;
     color: white;
     opacity: 0.3;
     filter: var(--image-filter);
 }
 
+.toolbar-icon.selected{
+    opacity: 1.0;
+    background-color: var(--highlight);
+    border-radius: 10px;
+}
+
 .toolbar-icon:hover{
     cursor: pointer;
     opacity: 1;
-}
-
-.toolbar-icon.selected{
-    color: #3498db;
-    opacity: 1.0;
 }
 
 #colourBar{
@@ -75,4 +83,28 @@ html{
     border: 1px solid var(--highlight);
     opacity: 0.0;
     cursor: pointer;
+}
+
+#colourBar-strokeIncreaseButton:hover{
+    cursor: pointer;
+}
+
+#colourBar-strokeIncreaseButton:hover .colourBar-strokeIncreaseLine{
+    stroke: var(--blue);
+}
+
+#colourBar-strokeIncreaseButton:active .colourBar-strokeIncreaseLine{
+    stroke: var(--red);
+}
+
+#colourBar-strokeDecreaseButton:hover{
+    cursor: pointer;
+}
+
+#colourBar-strokeDecreaseButton:hover .colourBar-strokeDecreaseLine{
+    stroke: var(--blue);
+}
+
+#colourBar-strokeDecreaseButton:active .colourBar-strokeDecreaseLine{
+    stroke: var(--red);
 }

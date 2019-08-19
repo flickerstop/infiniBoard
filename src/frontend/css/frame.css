@@ -1,0 +1,74 @@
+#frame{
+    height: 20px;
+    background-color: var(--darklight);
+}
+
+#frame-dragArea{
+    position: absolute;
+    height: 20px;
+    width: calc(100% - 90px);
+    -webkit-app-region: drag;
+}
+
+#frame-title{
+    position: absolute;
+    color: var(--highlight);
+    left: 10px;
+    line-height: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+#frame-buttons{
+    position: absolute;
+    right: 0px;
+    height: 20px;
+}
+
+/*************************************************/
+/* Close button */
+
+#frame-closeButton:hover{
+    cursor: pointer;
+}
+
+#frame-closeButton:hover .frame-closeButton-lines{
+    stroke: var(--text);
+}
+
+#frame-closeButton:hover .frame-closeButton-background{
+    fill: var(--red);
+}
+
+
+/*************************************************/
+/* Maximize button */
+
+#frame-maximizeButton:hover{
+    cursor: pointer;
+}
+
+#frame-maximizeButton:hover .frame-maximizeButton-lines{
+    stroke: var(--text);
+}
+
+#frame-maximizeButton:hover .frame-maximizeButton-background{
+    fill: var(--highlight);
+}
+
+
+/*************************************************/
+/* Minimize button */
+
+#frame-minimizeButton:hover{
+    cursor: pointer;
+}
+
+#frame-minimizeButton:hover .frame-minimizeButton-lines{
+    stroke: var(--text);
+}
+
+#frame-minimizeButton:hover .frame-minimizeButton-background{
+    fill: var(--highlight);
+}
+

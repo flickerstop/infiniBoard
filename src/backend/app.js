@@ -40,6 +40,27 @@ ipcMain.on('getBoxes', (event) => {
     });
 });
 
+ipcMain.on('windowsButtons', (event, payload) => {
+    switch(payload){
+        case "close":
+            app.quit();
+            break;
+        case "minimize":
+            window.minimize();
+            break;
+        case "maximize":
+            if(window.isMaximized()){
+                window.unmaximize();
+            }else{
+                window.maximize()
+            }
+            break;
+        default:
+            console.error("uhh, wtf","windows buttons channel was passed something odd: "+payload);
+            break;
+    }
+});
+
 /////////////////////////////////////////////////////
 // Local Functions
 // #region
@@ -48,12 +69,13 @@ function createWindow () {
     window = new BrowserWindow({
         width: 1600,
         height: 1000,
-        //frame: false, 
+        frame: false, 
         icon: './icon.png',
         webPreferences: {
             nodeIntegration: true
         }
     });
+
     //window.webContents.openDevTools();
     window.setMenu(null);
 
@@ -65,14 +87,14 @@ function createWindow () {
     window.loadFile("./src/frontend/index.html");
 
     //***//
+    globalShortcut.register('f11', function() {
+        console.log('f11 is pressed')
+        window.webContents.openDevTools();
+    });
 	globalShortcut.register('f5', function() {
 		console.log('f5 is pressed')
 		window.reload()
-	})
-	globalShortcut.register('CommandOrControl+R', function() {
-		console.log('CommandOrControl+R is pressed')
-		window.reload()
-	})
+	});
 }
 
 function saveBox(box){
