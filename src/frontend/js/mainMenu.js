@@ -6,7 +6,6 @@ mainMenu = function(){
     function init(){
 
     }
-
     /**
      * Hides the menu to show the whiteboard
      */

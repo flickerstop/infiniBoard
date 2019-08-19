@@ -83,7 +83,11 @@ whiteboard = function(){
         svg.on("mousemove", mouseMove);
 
         initColourBar();
-    
+
+        // Setup keys for tools
+        keyManager.newEvent(80,0,function(){return setTool(0)}); // pen
+        keyManager.newEvent(72,0,function(){return setTool(1)});
+        keyManager.newEvent(69,0,function(){return setTool(2)}); // eraser
     }
 
     
@@ -158,6 +162,15 @@ whiteboard = function(){
     // #region
 
     function mouseDown(){
+        // Get the current mouse coordinates
+        let coordinates= d3.mouse(d3.event.currentTarget);
+            mouseDownPoint = {
+                x:coordinates[0],
+                y:coordinates[1],
+                vx: viewbox.x,
+                vy: viewbox.y
+            };
+
         if(isPen()){
             isDrawing = true;
 
@@ -171,14 +184,8 @@ whiteboard = function(){
 
         }
         if(isHand()){
-            // Get the current mouse coordinates
-            let coordinates= d3.mouse(d3.event.currentTarget);
-            mouseDownPoint = {
-                x:coordinates[0],
-                y:coordinates[1],
-                vx: viewbox.x,
-                vy: viewbox.y
-            };
+            
+            
         }
         if(isEraser()){
             isDrawing = true;
@@ -192,6 +199,7 @@ whiteboard = function(){
             isDrawing = false;
             if(buffer.length <= 1){
                 buffer = [];
+                d3.select("#temp-line").html(null);
                 return;
             }
 
@@ -229,14 +237,33 @@ whiteboard = function(){
             if(isDrawing){
                 // if it has been x milliseconds since the last coordinate saved
                 if(currentTime>=lastPointTime+10){
-                    buffer.push({x:x,y:y});
+                    
                     lastPointTime = currentTime;
                     //add the temp line
+
+                    let lastPoint = null;
+
+                    if(buffer.length == 0){
+                        lastPoint = mouseDownPoint;
+                    }else{
+                        lastPoint = buffer[buffer.length-1];
+                    }
+
                     d3.select("#temp-line").append("circle")
-                        .attr("fill","red")
-                        .attr("r",3)
+                        .attr("fill",currentColor)
+                        .attr("r",currentStroke/2)
                         .attr("cx",x)
                         .attr("cy",y);
+                    
+                    // d3.select("#temp-line").append("line")
+                    //     .attr("x1",x)
+                    //     .attr("y1",y)
+                    //     .attr("x2",lastPoint.x)
+                    //     .attr("y2",lastPoint.y)
+                    //     .attr("stroke", currentColor)
+                    //     .attr("stroke-width", currentStroke);
+
+                    buffer.push({x:x,y:y});
                 }
             }
         }

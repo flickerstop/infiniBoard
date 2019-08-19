@@ -1,11 +1,12 @@
 popup = function(){
-
-
     /**
      * Creates a popup to ask for box name and colour
      * @param {function} callback Function to callback to when popup is submitted
      */
     function newBoardBox(callback){
+        keyManager.newEvent(13,0,submit);
+        // Add the ability to click the background to close the popup
+        d3.select("#popup-blackout").on("click",closePopup);
 
         // Add the title
         d3.select("#popup-box").append("div").html("Create an Infiniboard Box").attr("class","popup-title");
@@ -23,7 +24,7 @@ popup = function(){
         // Add the row to get the colour for the first board
         let colorRow = d3.select("#popup-box").append("div").attr("class","popup-row");
         colorRow.append("div").html("First board bg color:").attr("class","popup-inputInfo");
-        colorRow.append("input").attr("id","popup-colorPicker").attr("class",`popup-input jscolor`).attr("value","ffffff");
+        colorRow.append("input").attr("id","popup-colorPicker").attr("class",`popup-input jscolor`).attr("value","202020");
         
 
         var input = document.getElementById('popup-colorPicker');
@@ -33,14 +34,19 @@ popup = function(){
         picker.borderColor = "var(--highlight)";
 
         // Add the submit button
-        let submit = d3.select("#popup-box").append("div");
-        submit.html("submit").attr("class","popup-submit");
+        let submitButton = d3.select("#popup-box").append("div");
+        submitButton.html("submit").attr("class","popup-submit");
 
         // Add the error message
         d3.select("#popup-box").append("div").attr("id","popup-error");
 
         // Setup the onClick for the submit button
-        submit.on("click",()=>{
+        submitButton.on("click",submit);
+
+        // Unhide the popup
+        d3.select("#popup").style("display",null);
+
+        function submit(){
             let boxName = util.getValueId("popup-boardBoxName");
             let boardName = util.getValueId("popup-boardName");
             let bgColour = util.getValueId("popup-colorPicker");
@@ -63,14 +69,17 @@ popup = function(){
             //     return;
             // }
 
+            keyManager.clearEvent(13,0);
             d3.select("#popup").style("display","none");
             d3.select("#popup-box").html(null);
             callback(boxName,boardName,bgColour);
-        })
+        }
+    }
 
-        // Unhide the popup
-        d3.select("#popup").style("display",null);
-
+    function closePopup(){
+        d3.select("#popup-box").html(null);
+        d3.select("#popup").style("display","none");
+        keyManager.clearEvent(13,0);
     }
 
     return{

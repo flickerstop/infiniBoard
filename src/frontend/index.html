@@ -23,6 +23,7 @@
         <script src="./js/popup.js"></script>
         <script src="./js/util.js"></script>
         <script src="./js/boxManager.js"></script>
+        <script src="./js/keyboardManager.js"></script>
     </head>
     <style id="themeStyle">
         :root {
@@ -98,6 +99,8 @@
 <----------------------------------------------------------->
 
 <script>
+    let keyManager = new keyboardManager();
+
     window.onload = function () { 
         buildWindowsButtons();
         //changeTheme();
