@@ -7,8 +7,9 @@ comm = function(){
 
     //////////////////////////
     // Messages to wait for
-    ipcRenderer.on('loadedData', (event, message) => {
-        boxManager.setShelf(message);
+    ipcRenderer.on('getBoxes-reply', (event, message) => {
+        mainMenu.setLoadBoxes(message);
+        mainMenu.loadMenu();
     });
     //////////////////////////
 
