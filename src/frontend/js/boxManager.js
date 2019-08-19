@@ -45,16 +45,6 @@ boxManager = function(){
     }
 
     /**
-     * Loads the passed boardbox, loads up the first inifiboard by default
-     * @param {object} box Box object to load up
-     */
-    function loadBox(box){
-        console.log(box);
-        whiteboard.setBoardBox(box);
-        switchToWhiteboard();
-        whiteboard.init();
-    }
-    /**
      * Button function for when selecting "new boardbox"
      */
     function createBox(callback){

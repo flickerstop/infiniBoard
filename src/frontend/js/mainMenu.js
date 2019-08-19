@@ -55,7 +55,9 @@ mainMenu = function(){
             }
 
             tableRow.on("click",()=>{
-                return loadBox(box);
+                boxManager.setBox(box);
+                switchToWhiteboard();
+                whiteboard.init(0);
             });
 
             // Draw the preview
