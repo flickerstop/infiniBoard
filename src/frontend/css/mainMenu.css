@@ -27,3 +27,25 @@
     background-color: var(--blue);
     cursor: pointer;
 }
+
+#loadBox{
+    width: 80%;
+    min-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+#loadBox-table tr{
+    max-height: 40px;
+    height: 40px;
+    margin-top: 25px;
+    text-align: center;
+}
+
+.loadBox-preview{
+    margin-left: auto;
+    margin-right: auto;
+    height: 200px;
+    width: 100%;
+}

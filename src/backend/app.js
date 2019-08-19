@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////
 // Requires
 // #region
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut  } = require('electron');
 const console = require("./modules/console/console.js");
 const fs = require("fs-extra");
 const packer = require("./modules/packer/packer");
@@ -61,6 +61,16 @@ function createWindow () {
 
     // and load the index.html of the app.
     window.loadFile("./src/frontend/index.html");
+
+    //***//
+	globalShortcut.register('f5', function() {
+		console.log('f5 is pressed')
+		window.reload()
+	})
+	globalShortcut.register('CommandOrControl+R', function() {
+		console.log('CommandOrControl+R is pressed')
+		window.reload()
+	})
 }
 
 function saveBox(box){

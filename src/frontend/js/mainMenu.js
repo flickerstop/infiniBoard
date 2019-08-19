@@ -56,9 +56,49 @@ mainMenu = function(){
             tableRow.append("td").html(box.lastUsed); //TODO convert to date
             tableRow.append("td").html(box.boardCount);
             tableRow.append("td").html(numberOfLines);
+            let svg = tableRow.append("td").append("svg");
+            svg.attr("viewBox",`0,0,1000,1000`).style("background-color","#"+box.boards[0].bgColour).attr("class","loadBox-preview");
+
+            for(let line of box.boards[0].lines){
+                drawLine(svg,line.dots,line.stroke,line.color);
+            }
+
             tableRow.on("click",()=>{
                 return loadBox(box);
             });
+
+            // Draw the preview
+
+        }
+
+        function drawLine(svg,buffer,stroke,colour){
+            //TODO draw the line according to line "type"
+            //FIXME does not draw line of 1 length, maybe draw a dot instead?
+    
+            // https://www.d3indepth.com/shapes/#line-generator
+            // https://github.com/d3/d3-shape/blob/v1.3.4/README.md#line
+            // https://www.dashingd3js.com/svg-paths-and-d3js
+    
+            // Create the line
+            let line = d3.line().curve(d3.curveCardinal);
+    
+            // for every x and y, set the value to (object passed).x
+            line.x((d)=>{
+                return d.x;
+            });
+            line.y((d)=>{
+                return d.y;
+            });
+    
+            // Append the line
+            svg.append("path")
+                .attr("d", line(buffer))
+                .attr("stroke", colour)
+                .attr("stroke-width", stroke)
+                .attr("fill", "none");
+    
+            // Add the buffer to the whiteboard object
+    
         }
     }
 
