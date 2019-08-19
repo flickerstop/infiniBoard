@@ -33,7 +33,7 @@ ipcMain.on('save', (event, payload) => {
     saveBox(payload);
 });
 
-// 
+// Loads boxes from directory and sends them to renderer 
 ipcMain.on('getBoxes', (event) => {
     loadBoxes().then((boxes)=>{
         event.reply('getBoxes-reply', boxes);
@@ -54,7 +54,7 @@ function createWindow () {
             nodeIntegration: true
         }
     });
-    window.webContents.openDevTools();
+    //window.webContents.openDevTools();
     window.setMenu(null);
 
     window.on('closed', () => {
