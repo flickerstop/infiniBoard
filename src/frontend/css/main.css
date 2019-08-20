@@ -7,6 +7,7 @@
 
 html{
     background-color: var(--main);
+    overflow: hidden;
 }
 
 #mainPanel{
@@ -21,6 +22,12 @@ html{
     margin-top: 41px;
     width: calc(100% - 51px);
     height: calc(100% - 41px);
+}
+
+.whiteboard-link:hover{
+    cursor: pointer;
+    stroke: var(--blue);
+    fill: var(--blue);
 }
 
 /* TOOLBAR */
@@ -107,4 +114,53 @@ html{
 
 #colourBar-strokeDecreaseButton:active .colourBar-strokeDecreaseLine{
     stroke: var(--red);
+}
+
+#navBar{
+    position: absolute;
+    right: -200px;
+    top: 40px;
+    background-color: var(--main);
+    width: 220px;
+    height: calc(100% - 40px);
+}
+
+#navBar-side{
+    width: 20px;
+    height: 100%;
+    background-size: 20px 20px;
+    background-repeat: no-repeat;
+    background-position: center center;
+    opacity: 0.3;
+    background-image: url("../images/chevron_left.png");
+    filter: var(--image-filter);
+}
+
+#navBar-content{
+    position: absolute;
+    left: 20px;
+    top: 0px;
+    background-color: var(--darklight);
+    height: 100%;
+    width: calc(100% - 20px);
+}
+
+#navBar-side:hover{
+    opacity: 1.0;
+    cursor: pointer;
+}
+
+.navBar-content-board{
+    text-align: center;
+    width: 100%;
+    height: 25px;
+}
+
+.navBar-content-board:hover{
+    cursor: pointer;
+    background-color: var(--highlight);
+}
+
+.navBar-content-board.current{
+    background-color: var(--blue);
 }

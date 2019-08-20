@@ -36,6 +36,10 @@
     margin-top: 15px;
 }
 
+.popup-row.disabled{
+    opacity: 0.2;
+}
+
 .popup-inputInfo{
     width: calc(50% - 5px);
     float: left;
@@ -47,6 +51,15 @@
 .popup-input{
     width: calc(50% - 0px);
     float: left;
+    line-height: 38px;
+    border: 1px solid var(--text);
+    background-color: var(--main);
+}
+
+.popup-select{
+    width: calc(50% - 0px);
+    float: left;
+    height: 40px;
     line-height: 38px;
     border: 1px solid var(--text);
     background-color: var(--main);

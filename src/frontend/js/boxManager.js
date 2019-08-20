@@ -120,7 +120,7 @@ boxManager = function(){
      * @param {String} boardName Name of the board to check
      */
     function checkBoardNameUsed(boardName){
-        for(let board of currentBox){
+        for(let board of currentBox.boards){
             if(boardName == board.name){
                 return true;
             }
@@ -136,6 +136,7 @@ boxManager = function(){
         setBox:setBox,
         getBox:getBox,
         createBox:createBox,
+        newBoard:newBoard,
         getBoard:getBoard,
         setShelf:setShelf,
         getShelf:getShelf,

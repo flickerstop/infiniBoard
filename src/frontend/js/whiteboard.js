@@ -36,12 +36,19 @@ whiteboard = function(){
 
     let colourBar = null;
 
+    let okToDraw = true;
+
     /**
      * Function that runs to initialize the whiteboard and load the current board
      */
     function init(id){
-        thisBoard = boxManager.getBoard(id);
+        // Clear all elements we're about to use (for reloading)
+        d3.select("#drawingBoard").html(null);
+        okToDraw = true;
+        isDrawing = false;
 
+
+        thisBoard = boxManager.getBoard(id);
 
         // Create the current viewbox
         viewbox = {
@@ -69,7 +76,7 @@ whiteboard = function(){
 
         // draw all the lines in the current whiteboard
         for(line of thisBoard.lines){
-            drawLine(svg,line.dots,line.stroke,line.color,line.type,line.id);
+            drawLine(svg,line.dots,line.stroke,line.color,line.type,line.id,line.linkID);
         }
         
         svg.style("background-color",thisBoard.bgColour);
@@ -83,11 +90,14 @@ whiteboard = function(){
         svg.on("mousemove", mouseMove);
 
         initColourBar();
+        initNavBar();
 
         // Setup keys for tools
         keyManager.newEvent(80,0,function(){return setTool(0)}); // pen
-        keyManager.newEvent(72,0,function(){return setTool(1)});
+        keyManager.newEvent(72,0,function(){return setTool(1)}); // Hand
         keyManager.newEvent(69,0,function(){return setTool(2)}); // eraser
+        keyManager.newEvent(76,0,function(){return setTool(3)}); // line
+        keyManager.newEvent(82,0,function(){return setTool(4)}); // rect
     }
 
     
@@ -99,46 +109,121 @@ whiteboard = function(){
      * @param {String} colour Colour of the line 
      * @param {Number} type Type of the line
      */
-    function drawLine(svg,buffer,stroke,colour,type,id){
-        //TODO draw the line according to line "type"
-        //FIXME does not draw line of 1 length, maybe draw a dot instead?
-
+    function drawLine(svg,buffer,stroke,colour,type,id,linkID = null){
         // https://www.d3indepth.com/shapes/#line-generator
         // https://github.com/d3/d3-shape/blob/v1.3.4/README.md#line
         // https://www.dashingd3js.com/svg-paths-and-d3js
 
-        // Create the line
-        let line = d3.line().curve(d3.curveCardinal);
+        if(type == 0){
+            // Create the line
+            let line = d3.line().curve(d3.curveCardinal);
 
-        // for every x and y, set the value to (object passed).x
-        line.x((d)=>{
-            return d.x;
-        });
-        line.y((d)=>{
-            return d.y;
-        });
+            // for every x and y, set the value to (object passed).x
+            line.x((d)=>{
+                return d.x;
+            });
+            line.y((d)=>{
+                return d.y;
+            });
 
-        // Append the line
-        let svgLine = svg.append("path")
-            .attr("d", line(buffer))
-            .attr("stroke", colour)
-            .attr("stroke-width", stroke)
-            .attr("fill", "none")
-            .attr("id",`line${id}`);
+            // Append the line
+            let svgLine = svg.append("path")
+                .attr("d", line(buffer))
+                .attr("stroke", colour)
+                .attr("stroke-width", stroke)
+                .attr("fill", "none")
+                .attr("id",`object${id}`);
 
-        // if the mouse moves over this line
-        svgLine.on("mouseover",()=>{
-            // if the tools is set to erasers and is drawing (mouse down)
-            if(isEraser() && isDrawing){
-                // Delete the line from the array
-                deleteLine(id);
-                // Delete the line from the svg
-                d3.select(`#line${id}`).remove();
-                // set the save timeout
-                autoSaveTimeout();
+            // if the mouse moves over this line
+            svgLine.on("mousemove",()=>{
+                // if the tools is set to erasers and is drawing (mouse down)
+                if(isEraser() && isDrawing){
+                    // Delete the line from the array
+                    deleteLine(id);
+                    // Delete the line from the svg
+                    d3.select(`#object${id}`).remove();
+                    // set the save timeout
+                    autoSaveTimeout();
+                }
+            });
+        }else if(type == 1){
+            let data = {
+                x1:buffer[0].x,
+                y1:buffer[0].y,
+                x2:buffer[1].x,
+                y2:buffer[1].y,
             }
-        })
+            let height = data.y1>=data.y2?data.y1-data.y2:data.y2-data.y1;
+            let width = data.x1>=data.x2?data.x1-data.x2:data.x2-data.x1;
 
+            let rectX = data.x1>=data.x2?data.x2:data.x1;
+            let rectY = data.y1>=data.y2?data.y2:data.y1;
+
+            let svgLine = svg.append("rect")
+                .attr("x",rectX)
+                .attr("y",rectY)
+                .attr("height",height)
+                .attr("width",width)
+                .attr("fill", colour)
+                .attr("id",`object${id}`);
+
+            // if the mouse moves over this line
+            svgLine.on("mousemove",()=>{
+                // if the tools is set to erasers and is drawing (mouse down)
+                if(isEraser() && isDrawing){
+                    // Delete the line from the array
+                    deleteLine(id);
+                    // Delete the line from the svg
+                    d3.select(`#object${id}`).remove();
+                    // set the save timeout
+                    autoSaveTimeout();
+                }
+            });
+        }else if(type == 2){
+            // Create the line
+            let line = d3.line().curve(d3.curveCardinal);
+
+            // for every x and y, set the value to (object passed).x
+            line.x((d)=>{
+                return d.x;
+            });
+            line.y((d)=>{
+                return d.y;
+            });
+
+            // Append the line
+            let svgLine = svg.append("path")
+                .attr("d", line(buffer))
+                .attr("stroke", colour)
+                .attr("stroke-width", stroke)
+                .attr("fill", colour)
+                .attr("fill-opacity",0.3)
+                .attr("id",`object${id}`)
+                .attr("class","whiteboard-link");
+
+            // if the mouse moves over this line
+            svgLine.on("mousemove",()=>{
+                // if the tools is set to erasers and is drawing (mouse down)
+                if(isEraser() && isDrawing){
+                    // Delete the line from the array
+                    deleteLine(id);
+                    // Delete the line from the svg
+                    d3.select(`#object${id}`).remove();
+                    // set the save timeout
+                    autoSaveTimeout();
+                }else{
+                    okToDraw = false;
+                }
+            });
+
+            svgLine.on("mouseout",()=>{
+                okToDraw = true;
+            });
+
+            svgLine.on("click",()=>{
+                init(linkID);
+            });
+        }
     }
 
     /**
@@ -157,9 +242,9 @@ whiteboard = function(){
     function updateViewbox(){
         svg.attr("viewBox",`${viewbox.x},${viewbox.y},${viewbox.w},${viewbox.h}`);
     }
-    //////////////////////////
+    //==//==//==//==//==//==//
     // Mouse Actions
-    // #region
+    // #region 
 
     function mouseDown(){
         // Get the current mouse coordinates
@@ -171,7 +256,7 @@ whiteboard = function(){
                 vy: viewbox.y
             };
 
-        if(isPen()){
+        if(isPen() && okToDraw){
             isDrawing = true;
 
             // check if this line is a new colour
@@ -181,22 +266,23 @@ whiteboard = function(){
                 }
             }
             colourBar.addPen(currentColor);
-
         }
-        if(isHand()){
-            
+        else if(isHand()){
             
         }
-        if(isEraser()){
-            isDrawing = true;
+        else if(isEraser() || isLine() || isRect() || isLink()){
+            if(okToDraw){
+                isDrawing = true;
+            }
         }
-        
     }
 
     function mouseUp(){
-        if(isPen()){
-            //FIXME Saves line of 0 length, should always be min 1
-            isDrawing = false;
+        // Get the current mouse coordinates
+        let coordinates= d3.mouse(this);
+        let x = coordinates[0];
+        let y = coordinates[1];
+        if(isPen() || isLink()){
             if(buffer.length <= 1){
                 buffer = [];
                 d3.select("#temp-line").html(null);
@@ -205,9 +291,31 @@ whiteboard = function(){
 
             // Draw the line in the buffer
             let id = thisBoard.lines.length;
-            drawLine(svg,buffer,currentStroke,currentColor,0,id);
 
-            newLine(buffer,0,currentColor,currentStroke,id);
+            if(isPen()){
+                drawLine(svg,buffer,currentStroke,currentColor,0,id);
+                newLine(buffer,0,currentColor,currentStroke,id);
+            }else if(isLink()){
+                // Make sure the line goes back to the start
+                buffer.push({x:buffer[0].x,y:buffer[0].y});
+
+                // Create a new popup getting what board to link to
+                popup.newBoard(buffer,(resID,boardName,bgColour,lineBuffer)=>{
+                    // if a new board is to be made
+                    if(resID == -1){
+                        let newBoardID = boxManager.newBoard(boardName,bgColour);
+                        drawLine(svg,lineBuffer,currentStroke,currentColor,2,id,newBoardID);
+                        newLine(lineBuffer,2,currentColor,currentStroke,id,newBoardID);
+                        save();
+                        //init(newBoardID);
+                    }else{
+                        drawLine(svg,lineBuffer,currentStroke,currentColor,2,id,resID);
+                        newLine(lineBuffer,2,currentColor,currentStroke,id,resID);
+                        save();
+                    }
+                });
+            }
+            
             // clear the buffer
             buffer = [];
             // clear the temp line
@@ -217,11 +325,37 @@ whiteboard = function(){
             autoSaveTimeout();
         }
         if(isHand()){
-            mouseDownPoint = null;
+            
         }
         if(isEraser()){
-            isDrawing = false;
+
         }
+        if(isLine() || isRect()){
+            buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:x,y:y}]
+
+            // Draw the line in the buffer
+            let id = thisBoard.lines.length;
+
+            if(isLine()){
+                drawLine(svg,buffer,currentStroke,currentColor,0,id);
+                newLine(buffer,0,currentColor,currentStroke,id);
+            }else if(isRect()){
+                drawLine(svg,buffer,currentStroke,currentColor,1,id);
+                newLine(buffer,1,currentColor,currentStroke,id);
+            }
+            
+
+            // clear the buffer
+            buffer = [];
+            // clear the temp line
+            d3.select("#temp-line").html(null);
+
+            // Save in x seconds
+            autoSaveTimeout();
+        }
+
+        isDrawing = false;
+        mouseDownPoint = null;
     }
 
     function mouseMove(){
@@ -230,7 +364,7 @@ whiteboard = function(){
         let x = coordinates[0];
         let y = coordinates[1];
 
-        if(isPen()){
+        if(isPen() || isLink()){
             let currentTime = Date.now();
             
             // if the user is drawing, add the x,y to the buffer
@@ -241,13 +375,13 @@ whiteboard = function(){
                     lastPointTime = currentTime;
                     //add the temp line
 
-                    let lastPoint = null;
+                    // let lastPoint = null;
 
-                    if(buffer.length == 0){
-                        lastPoint = mouseDownPoint;
-                    }else{
-                        lastPoint = buffer[buffer.length-1];
-                    }
+                    // if(buffer.length == 0){
+                    //     lastPoint = mouseDownPoint;
+                    // }else{
+                    //     lastPoint = buffer[buffer.length-1];
+                    // }
 
                     d3.select("#temp-line").append("circle")
                         .attr("fill",currentColor)
@@ -279,13 +413,44 @@ whiteboard = function(){
                 updateViewbox();
             }
         }
+        if(isLine()){
+            if(isDrawing){
+                d3.select("#temp-line").html(null);
+
+                d3.select("#temp-line").append("line")
+                    .attr("x1",x)
+                    .attr("y1",y)
+                    .attr("x2",mouseDownPoint.x)
+                    .attr("y2",mouseDownPoint.y)
+                    .attr("stroke", currentColor)
+                    .attr("stroke-width", currentStroke);
+            }
+        }
+        if(isRect()){
+            if(isDrawing){
+                let height = mouseDownPoint.y>=y?mouseDownPoint.y-y:y-mouseDownPoint.y;
+                let width = mouseDownPoint.x>=x?mouseDownPoint.x-x:x-mouseDownPoint.x;
+
+                let rectX = mouseDownPoint.x>=x?x:mouseDownPoint.x;
+                let rectY = mouseDownPoint.y>=y?y:mouseDownPoint.y;
+
+                d3.select("#temp-line").html(null);
+
+                d3.select("#temp-line").append("rect")
+                    .attr("x",rectX)
+                    .attr("y",rectY)
+                    .attr("height",height)
+                    .attr("width",width)
+                    .attr("fill", currentColor);
+            }
+        }
     }
 
 
     // #endregion
-    //////////////////////////
+    //==//==//==//==//==//==//
     // Functions for saving
-    // #region
+    // #region 
 
     /**
      * Send the current boardbox to the main process to save
@@ -316,7 +481,7 @@ whiteboard = function(){
     }
 
     // #endregion
-    //////////////////////////
+    //==//==//==//==//==//==//
     // Functions for new lines
     // #region
 
@@ -336,7 +501,7 @@ whiteboard = function(){
             type:type,
             color:color,
             stroke:stroke,
-            link:link,
+            linkID:link,
             dots:buffer
         });
     }
@@ -347,9 +512,9 @@ whiteboard = function(){
     }
 
     // #endregion
-    //////////////////////////
+    //==//==//==//==//==//==//
     // Functions for tools
-    // #region
+    // #region [purple]
 
     /**
      * Changes the current tool to the passed number
@@ -375,15 +540,31 @@ whiteboard = function(){
         return currentTool==1?true:false;
     }
 
+    /**
+     * Is the current tool the eraser
+     */
     function isEraser(){
         return currentTool==2?true:false;
     }
 
+    function isLine(){
+        return currentTool==3?true:false;
+    }
+
+    function isRect(){
+        return currentTool==4?true:false;
+    }
+
+    function isLink(){
+        return currentTool==5?true:false;
+    }
+
     // #endregion
-    //////////////////////////
+    //==//==//==//==//==//==//
     // Colour bar
     // #region
     function initColourBar(){
+        d3.select("#colourBar").html(null);
         colourBar = {
             pens: [],
             svg: null,
@@ -392,7 +573,7 @@ whiteboard = function(){
         }
         colourBar.svg = d3.select("#colourBar").append("svg");
         let x=10;
-        ///////////////////////////////
+
         // draw the current pen
         // #region 
         let currentPenGroup = colourBar.svg.append("g");
@@ -454,7 +635,7 @@ whiteboard = function(){
             .attr("stroke", "var(--highlight)");
 
         // #endregion
-        ///////////////////////////////
+        //--//--//--//--//--//--//
         // Draw the pen board
         // #region
         x+= 60;
@@ -519,7 +700,7 @@ whiteboard = function(){
             x+=45;
         }
         // #endregion
-        ///////////////////////////////
+        //--//--//--//--//--//--//
         // Draw the Stroke sizer
         // #region
         x+= 30;
@@ -615,7 +796,47 @@ whiteboard = function(){
         return colourBar;
     }
     // #endregion
+    //==//==//==//==//==//==//
+    // Nav bar
+    // #region 
 
+    function initNavBar(){
+        d3.select("#navBar-content").html(null);
+        d3.select("#navBar-side").on("click",()=>{
+            openNavBar();
+        });
+
+        let panel = d3.select("#navBar-content");
+        let boards = boxManager.getBox().boards;
+        for(let board of boards){
+            let selector = panel.append("div").html(board.name).attr("class","navBar-content-board");
+            if(board.name == thisBoard.name){
+                selector.attr("class","navBar-content-board current");
+            }
+            selector.on("click",()=>{
+                init(board.id)
+            });
+        }
+    }
+
+    function openNavBar(){
+        d3.select("#navBar").transition().duration(100).style("right","0px");
+        d3.select("#navBar-side").style("background-image",`url("./images/chevron_right.png")`);
+        d3.select("#navBar-side").on("click",()=>{
+            closeNavBar();
+        });
+    }
+
+    function closeNavBar(){
+        d3.select("#navBar").transition().duration(100).style("right","-200px");
+        d3.select("#navBar-side").style("background-image",`url("./images/chevron_left.png")`);
+        d3.select("#navBar-side").on("click",()=>{
+            openNavBar();
+        });
+    }
+
+    // #endregion
+    //==//==//==//==//==//==//
     function changeColour(){
         let newColour = "#"+d3.select("#colourBar-newColour").html();
         // Check if there's a # before
