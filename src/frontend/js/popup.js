@@ -1,6 +1,6 @@
 popup = function(){
     /**
-     * Creates a popup to ask for box name and colour
+     * Creates a popup to ask for box name and color
      * @param {function} callback Function to callback to when popup is submitted
      */
     function newBoardBox(callback){
@@ -21,7 +21,7 @@ popup = function(){
         boardNameRow.append("div").html("First Board Name:").attr("class","popup-inputInfo");
         boardNameRow.append("input").attr("id","popup-boardName").attr("class","popup-input");
 
-        // Add the row to get the colour for the first board
+        // Add the row to get the color for the first board
         let colorRow = d3.select("#popup-box").append("div").attr("class","popup-row");
         colorRow.append("div").html("First board bg color:").attr("class","popup-inputInfo");
         colorRow.append("input").attr("id","popup-colorPicker").attr("class",`popup-input jscolor`).attr("value","202020");
@@ -49,7 +49,7 @@ popup = function(){
         function submit(){
             let boxName = util.getValueId("popup-boardBoxName");
             let boardName = util.getValueId("popup-boardName");
-            let bgColour = util.getValueId("popup-colorPicker");
+            let bgcolor = util.getValueId("popup-colorPicker");
             // Make sure they wrote a name
             if(boxName == ""){
                 d3.select("#popup-boardBoxName").style("background-color","#c0392b");
@@ -72,7 +72,7 @@ popup = function(){
             keyManager.clearEvent(13,0);
             d3.select("#popup").style("display","none");
             d3.select("#popup-box").html(null);
-            callback(boxName,boardName,bgColour);
+            callback(boxName,boardName,bgcolor);
         }
 
         function closePopup(){
@@ -105,10 +105,10 @@ popup = function(){
         boardNameRow.append("div").html("Board Name:").attr("class","popup-inputInfo");
         let boardNameInput = boardNameRow.append("input").attr("id","popup-boardName").attr("class","popup-input");
 
-        // Add the row to get the colour for the first board
+        // Add the row to get the color for the first board
         let colorRow = d3.select("#popup-box").append("div").attr("class","popup-row");
         colorRow.append("div").html("First board bg color:").attr("class","popup-inputInfo");
-        let colourInput = colorRow.append("input").attr("id","popup-colorPicker").attr("class",`popup-input jscolor`).attr("value","202020");
+        let colorInput = colorRow.append("input").attr("id","popup-colorPicker").attr("class",`popup-input jscolor`).attr("value","202020");
 
         // Add the submit button
         let submitButton = d3.select("#popup-box").append("div");
@@ -137,20 +137,20 @@ popup = function(){
                 boardNameRow.attr("class","popup-row disabled");
 
                 // Disable the inputs
-                colourInput.property("disabled", true);
+                colorInput.property("disabled", true);
                 boardNameInput.property("disabled", true);
 
                 // Change the values to reflect the selected board
                 boardNameInput.property("value",board.name);
-                picker.fromString(board.bgColour);
-                //d3.select("#popup-colorPicker").property("value",board.bgColour).style("background-color",board.bgColour);
+                picker.fromString(board.bgcolor);
+                //d3.select("#popup-colorPicker").property("value",board.bgcolor).style("background-color",board.bgcolor);
             }else{
                 // Enable the rows 
                 colorRow.attr("class","popup-row");
                 boardNameRow.attr("class","popup-row");
 
                 // Enable the inputs
-                colourInput.property("disabled", false);
+                colorInput.property("disabled", false);
                 boardNameInput.property("disabled", false);
 
                 // Set back to default inputs
@@ -167,7 +167,7 @@ popup = function(){
 
         function submit(){
             let boardName = util.getValueId("popup-boardName");
-            let bgColour = util.getValueId("popup-colorPicker");
+            let bgcolor = util.getValueId("popup-colorPicker");
             let id = util.getValueId("popup-selectBoard");
 
             if(id == -1){
@@ -188,7 +188,7 @@ popup = function(){
             keyManager.clearEvent(13,0);
             d3.select("#popup").style("display","none");
             d3.select("#popup-box").html(null);
-            callback(id,boardName,bgColour,lineBuffer);
+            callback(id,boardName,bgcolor,lineBuffer);
         }
 
         function closePopup(){

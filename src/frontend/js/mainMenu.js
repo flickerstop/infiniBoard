@@ -47,10 +47,12 @@ mainMenu = function(){
             tableRow.append("td").html(box.boardCount);
             tableRow.append("td").html(numberOfLines);
             let svg = tableRow.append("td").append("svg");
-            svg.attr("viewBox",`0,0,1000,1000`).style("background-color","#"+box.boards[0].bgColour).attr("class","loadBox-preview");
+            svg.attr("viewBox",`0,0,1000,1000`).style("background-color","#"+box.boards[0].bgcolor).attr("class","loadBox-preview");
 
             for(let line of box.boards[0].lines){
-                drawLine(svg,line.dots,line.stroke,line.color);
+
+                //FIXME preview is disabled since drawline isn't updated
+                //drawLine(svg,line.dots,line.stroke,line.color);
             }
 
             tableRow.on("click",()=>{
@@ -63,9 +65,8 @@ mainMenu = function(){
 
         }
 
-        function drawLine(svg,buffer,stroke,colour){
+        function drawLine(svg,buffer,stroke,color){
             //TODO draw the line according to line "type"
-            //FIXME does not draw line of 1 length, maybe draw a dot instead?
     
             // https://www.d3indepth.com/shapes/#line-generator
             // https://github.com/d3/d3-shape/blob/v1.3.4/README.md#line
@@ -85,7 +86,7 @@ mainMenu = function(){
             // Append the line
             svg.append("path")
                 .attr("d", line(buffer))
-                .attr("stroke", colour)
+                .attr("stroke", color)
                 .attr("stroke-width", stroke)
                 .attr("fill", "none");
     

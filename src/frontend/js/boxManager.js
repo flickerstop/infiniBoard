@@ -77,16 +77,17 @@ boxManager = function(){
     /**
      * Creates a new board in the current boardbox
      * @param {String} boardName Name for the new board
-     * @param {String} bgColour Colour for the background
+     * @param {String} bgcolor color for the background
      */
-    function newBoard(boardName,bgColour){
+    function newBoard(boardName,bgcolor){
         let id = currentBox.boardCount++;
 
         currentBox.boards.push({
             id: id,
             name: boardName,
             bgType: 0, // make this do something like 0 -> solid color, 1 -> grid etc
-            bgColour: bgColour,
+            bgcolor: bgcolor,
+            idCounter:0,
             lines: [],
             pens:defaultPens()
         });
