@@ -148,7 +148,7 @@
     height: calc(100% - 45px);
     text-align: center;
     margin-top: 45px;
-    text-shadow: -2px -2px 2px #000, 2px -2px 2px #000, -2px 2px 2px #000, 2px 2px 2px #
+    text-shadow: -2px -2px 2px #000, 2px -2px 2px #000, -2px 2px 2px #000, 2px 2px 2px;
 }
 .myBoxes-boxItem-Info-Name{
     font-size: 22px;
