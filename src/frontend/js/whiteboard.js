@@ -34,6 +34,7 @@ whiteboard = function(){
         saveTimeout: null
     }
 
+
     let colorBar = null;
 
     let textDrawArea = null;
@@ -52,7 +53,7 @@ whiteboard = function(){
 
         svg = {};
 
-
+        // Set this board to the board with the passed ID
         thisBoard = boxManager.getBoard(id);
 
         // Create the current viewbox
@@ -66,24 +67,25 @@ whiteboard = function(){
             scale:1
         }
 
-
+        // Set the current colour to the
         currentColor = thisBoard.pens[0];
 
         // Create the svg
         svg.parent = d3.select("#drawingBoard").append("svg")
-        .attr("id","drawingBoard-svg")
-        .attr("width", "100%")
-        .attr("height", "100%");
+            .attr("id","drawingBoard-svg")
+            .attr("width", "100%")
+            .attr("height", "100%");
 
         // Update the viewbox html with the viewbox object
         updateViewbox();
 
         
-        // Add the group element that holds the temp line when drawing
+        // Set the groups where to draw the objects
+        // Main is lines/rects/text
+        // Links will always be ontop of lines so you can always click then
+        // Temp is always ontop of everything else to see what you're drawing
         svg.main = svg.parent.append("g");
-
         svg.link = svg.parent.append("g");
-
         svg.temp = svg.parent.append("g").attr("id","temp-line");
 
         
@@ -98,54 +100,50 @@ whiteboard = function(){
             
         }
         
+        // Set the background colour
         svg.parent.style("background-color",thisBoard.bgcolor);
         
-        // When the mouse is down, set the drawing to true
+        // Set the mouse events
         svg.parent.on("mousedown",mouseDown);
-
-        // When the mouse is up, stop drawing
         svg.parent.on("mouseup",mouseUp)
-
         svg.parent.on("mousemove", mouseMove);
 
+        // Init the colour/nav bar
         initcolorBar();
         initNavBar();
+
+        // Setup the keyboard shortcuts
         setupKeyboardShortcuts();
 
         setTool(7); // Set the tool to the direct selection
-        keyManager.newEvent(32,0,function(){
-            viewbox = {
-                x:0,
-                y:0,
-                h:getSVGSize().h,
-                w:getSVGSize().w,
-                dh:getSVGSize().h,
-                dw:getSVGSize().w,
-                scale:1
-            }
-            updateViewbox();
-        });
 
-        //NOTE this took fucking 5 hours to figure out...
+        // Mouse event for scrolling in/out (zooming)
+        // this took fucking 5 hours to figure out...
         svg.parent.on("wheel",function(){
 
+            // Get the mouse coordinateds
             let coordinates= d3.mouse(this);
             let x = coordinates[0];
             let y = coordinates[1];
 
+            // Check which direction the mouse is scrolling
             let direction = d3.event.wheelDelta < 0 ? 'out' : 'in';
 
+            // If it's in, make the scale smaller, vise versa
             if(direction == "in"){
                 viewbox.scale = viewbox.scale/1.2;
             }else{
                 viewbox.scale = viewbox.scale*1.2;
             }
+
             // Zoom in and set the mouse x,y to the origin (top left)
             viewbox.h = viewbox.dh*viewbox.scale;
             viewbox.w = viewbox.dw*viewbox.scale;
             viewbox.x = x;
             viewbox.y = y;
+
             updateViewbox();
+
             // Then set the origin back to the new mouse coordinates
             coordinates = d3.mouse(this);
             let x2 = coordinates[0];
@@ -161,16 +159,14 @@ whiteboard = function(){
     /**
      * Draws a line on the passed svg
      * @param {Object} svg d3 object for the svg
-     * @param {Array} buffer Array holding the dots for the line
-     * @param {Number} stroke Size of the stroke for this line
-     * @param {String} color color of the line 
-     * @param {Number} type Type of the line
+     * @param {object} line The object that holds all the data about the line
      */
     function drawLine(svg,line){
         // https://www.d3indepth.com/shapes/#line-generator
         // https://github.com/d3/d3-shape/blob/v1.3.4/README.md#line
         // https://www.dashingd3js.com/svg-paths-and-d3js
 
+        // Append a new group for the draw object
         svg = svg.append("g");
 
         if(line.type == 0){ // Normal Line
@@ -186,45 +182,32 @@ whiteboard = function(){
             });
 
             // Append the line
-            let svgLine = svg.append("path")
+            svg.append("path")
                 .attr("d", drawLine(line.dots))
                 .attr("stroke", line.color)
                 .attr("stroke-width", line.stroke)
                 .attr("fill", "none")
                 .attr("id",`object${line.id}`);
 
-            // if the mouse moves over this line
-            svgLine.on("mousemove",()=>{
-                // if the tools is set to erasers and is drawing (mouse down)
-                if(isEraser() && isDrawing){
-                    // Delete the line from the array
-                    deleteLine(line.id);
-                    // Delete the line from the svg
-                    d3.select(`#object${line.id}`).remove();
-                    // set the save timeout
-                    autoSaveTimeout();
-                }
-            });
-
-            svgLine.on("mousedown",()=>{
-                if(isMove()){
-                    selectedElement = line.id;
-                }
-            });
         }else if(line.type == 1){ // Rectangle
+
+            // set the bounding box for the rect
             let data = {
                 x1:line.dots[0].x,
                 y1:line.dots[0].y,
                 x2:line.dots[1].x,
                 y2:line.dots[1].y,
             }
+            // Calculate height/width depends on which x/y is greater (want a positive height/width)
             let height = data.y1>=data.y2?data.y1-data.y2:data.y2-data.y1;
             let width = data.x1>=data.x2?data.x1-data.x2:data.x2-data.x1;
 
+            // Which coordinate is going to be the top/left most
             let rectX = data.x1>=data.x2?data.x2:data.x1;
             let rectY = data.y1>=data.y2?data.y2:data.y1;
 
-            let svgLine = svg.append("rect")
+            // draw the rectangle
+            svg.append("rect")
                 .attr("x",rectX)
                 .attr("y",rectY)
                 .attr("height",height)
@@ -232,24 +215,7 @@ whiteboard = function(){
                 .attr("fill", line.color)
                 .attr("id",`object${line.id}`);
 
-            // if the mouse moves over this line
-            svgLine.on("mousemove",()=>{
-                // if the tools is set to erasers and is drawing (mouse down)
-                if(isEraser() && isDrawing){
-                    // Delete the line from the array
-                    deleteLine(line.id);
-                    // Delete the line from the svg
-                    d3.select(`#object${line.id}`).remove();
-                    // set the save timeout
-                    autoSaveTimeout();
-                }
-            });
 
-            svgLine.on("mousedown",()=>{
-                if(isMove()){
-                    selectedElement = line.id;
-                }
-            });
         }else if(line.type == 2){ // Link
             // Create the line
             let drawLine = d3.line().curve(d3.curveCardinal);
@@ -272,69 +238,62 @@ whiteboard = function(){
                 .attr("id",`object${line.id}`)
                 .attr("class","whiteboard-link");
 
-            // if the mouse moves over this line
-            svgLine.on("mousemove",()=>{
-                // if the tools is set to erasers and is drawing (mouse down)
-                if(isEraser() && isDrawing){
-                    // Delete the line from the array
-                    deleteLine(line.id);
-                    // Delete the line from the svg
-                    d3.select(`#object${line.id}`).remove();
-                    // set the save timeout
-                    autoSaveTimeout();
-                }
-            });
-
+            // If the tool is set to the mouse, portal to the linked whiteboard
             svgLine.on("click",()=>{
                 if(isMouse()){
                     init(line.linkID);
                 }
             });
-            
-            svgLine.on("mousedown",()=>{
-                if(isMove()){
-                    selectedElement = line.id;
-                }
-            });
 
         }else if(line.type == 3){ // Text
 
+            // Set the font size
             let fontSize = 12 + (line.stroke*2);
+
+            // Group to draw the text
             let textGroup = svg.append("g").attr("id",`object${line.id}`);
 
             let lines = 0;
+            // For each line of text
             for(let textLine of line.dots.text.split("\n")){
+                // Draw a new line that's moved down x number of pixels
                 textGroup.append("text")
                     .attr("x",line.dots.x)
                     .style("font-size",`${fontSize}px`)
                     .attr("y",line.dots.y+(lines*fontSize))
-                    .style("fill",currentColor)
+                    .style("fill",line.color)
                     .html(textLine);
                 lines++;
             }
 
-            textGroup.on("mousemove",()=>{
-                // if the tools is set to erasers and is drawing (mouse down)
-                if(isEraser() && isDrawing){
-                    // Delete the line from the array
-                    deleteLine(line.id);
-                    // Delete the line from the svg
-                    d3.select(`#object${line.id}`).remove();
-                    // set the save timeout
-                    autoSaveTimeout();
-                }
-            });
-
-            textGroup.on("mousedown",()=>{
-                if(isMove()){
-                    selectedElement = line.id;
-                }
-            });
         }
 
+        // If the tool is the move tool, set the selected element to this one
+        svg.on("mousedown",()=>{
+            if(isMove()){
+                selectedElement = line.id;
+            }
+        });
+
+        // if the mouse moves over this line
+        svg.on("mousemove",()=>{
+            // if the tools is set to erasers and is drawing (mouse down)
+            if(isEraser() && isDrawing){
+                // Delete the line from the array
+                deleteLine(line.id);
+                // Delete the line from the svg
+                d3.select(`#object${line.id}`).remove();
+                // set the save timeout
+                autoSaveTimeout();
+            }
+        });
+
+        // If this element is currently being moved
         if(isMove() && line.id == selectedElement){
+            // Use the temp transform
             svg.attr("transform",`translate(${tempTransform.x} ${tempTransform.y})`);
         }else{
+            // Use the transform for this object
             svg.attr("transform",`translate(${line.transform.x} ${line.transform.y})`);
         }
     }
@@ -411,6 +370,9 @@ whiteboard = function(){
 
                 d3.select("#whiteboard-textInput-input").on("input",updateTextArea);
             }
+        }
+        else if(isImage()){
+            openImagePopup({x:1,y:0});
         }
     }
 
@@ -603,6 +565,7 @@ whiteboard = function(){
             tempTransform.y = y-mouseDownPoint.y+obj.transform.y;
 
             updateLine(obj);
+            autoSaveTimeout();
         }
     }
 
@@ -749,6 +712,10 @@ whiteboard = function(){
 
     function isMove(){
         return currentTool==8?true:false;
+    }
+
+    function isImage(){
+        return currentTool==9?true:false;
     }
 
     /**
@@ -1007,6 +974,14 @@ whiteboard = function(){
     function getPens(){
         return colorBar;
     }
+
+    function changecolor(){
+        let newcolor = "#"+d3.select("#colorBar-newcolor").html();
+        // Check if there's a # before
+        currentColor = newcolor;
+        colorBar.changecolor(newcolor);
+        colorBar.strokeSizeLine.attr("stroke", newcolor);
+    }
     // #endregion
     //==//==//==//==//==//==//
     // Nav bar
@@ -1069,14 +1044,20 @@ whiteboard = function(){
         }
     }
     // #endregion
-    
-    function changecolor(){
-        let newcolor = "#"+d3.select("#colorBar-newcolor").html();
-        // Check if there's a # before
-        currentColor = newcolor;
-        colorBar.changecolor(newcolor);
-        colorBar.strokeSizeLine.attr("stroke", newcolor);
+    //==//==//==//==//==//==//
+    // Image Tool
+    // #region
+
+    function openImagePopup(imageCoords){
+        popup.imageSelector(imageCoords,()=>{
+
+        });
     }
+
+
+    // #endregion
+
+    
 
     /**
      * Gets the size of the svg from d3

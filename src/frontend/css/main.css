@@ -10,6 +10,24 @@ html{
     overflow: hidden;
 }
 
+.scrollBarStyle::-webkit-scrollbar-track
+{
+	border: 1px solid var(--darklight);
+	background-color: var(--naub);
+}
+
+.scrollBarStyle::-webkit-scrollbar
+{
+	width: 10px;
+	background-color: var(--main);
+}
+
+.scrollBarStyle::-webkit-scrollbar-thumb
+{
+    border: 1px solid var(--highlight);
+	background-color: var(--main);
+}
+
 #mainPanel{
     width: 100%;
     height: calc(100% - 20px);

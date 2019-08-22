@@ -5,10 +5,11 @@
 /////////////////////////////////////////////////////
 // Requires
 // #region
-const { app, BrowserWindow, ipcMain, globalShortcut  } = require('electron');
+const { app, BrowserWindow, globalShortcut  } = require('electron');
 const console = require("./modules/console/console.js");
 const fs = require("fs-extra");
 const packer = require("./modules/packer/packer");
+const ipc = require("./modules/ipc/ipc");
 
 const saveLocation = "./boxes/";//(process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + 'Library/Preferences' : process.env.HOME + "/.local/share")).replace(/\\/gm,"/")+"/infiniboard/boxes/";
 // #endregion
@@ -29,18 +30,18 @@ app.on('ready', ()=>{
 
 
 // Calls from main to render
-ipcMain.on('save', (event, payload) => {
+ipc.on('save', (event, payload) => {
     saveBox(payload);
 });
 
 // Loads boxes from directory and sends them to renderer 
-ipcMain.on('getBoxes', (event) => {
+ipc.on('getBoxes', (event) => {
     loadBoxes().then((boxes)=>{
         event.reply('getBoxes-reply', boxes);
     });
 });
 
-ipcMain.on('windowsButtons', (event, payload) => {
+ipc.on('windowsButtons', (event, payload) => {
     switch(payload){
         case "close":
             app.quit();
@@ -61,6 +62,45 @@ ipcMain.on('windowsButtons', (event, payload) => {
     }
 });
 
+ipc.onReply("fileUpload",(payload)=>{
+    return new Promise(async function(resolve, reject) {
+        let folder = payload.box;
+        let files = payload.files;
+        
+        console.object(files);
+        // Check if the folder for the files exists
+        for(let file of files){
+            await fs.ensureDir(`${saveLocation}/images/${folder}/`);
+            await fs.copyFile(file.path,`${saveLocation}/images/${folder}/${file.name}`);
+        }
+        return resolve(files.length);
+    });    
+})
+
+ipc.onReply("getImages",(payload)=>{
+    return new Promise(async function(resolve, reject) {
+        let toSend = [];
+        let dir = await fs.readdir(`${saveLocation}/images/`);
+        for(let folder of dir){
+            let files = await fs.readdir(`${saveLocation}/images/${folder}`);
+            let boxData = {
+                boxName: folder,
+                images: []
+            }
+            for(let file of files){
+                boxData.images.push({
+                    file: escape(file),
+                    path: escape(`${saveLocation}images/${folder}/${file}`)
+                });
+            }
+            toSend.push(boxData);
+        }
+
+
+        return resolve(toSend);
+    });
+})
+
 /////////////////////////////////////////////////////
 // Local Functions
 // #region
@@ -75,6 +115,8 @@ function createWindow () {
             nodeIntegration: true
         }
     });
+
+    ipc.init(window);
 
     //window.webContents.openDevTools();
     window.setMenu(null);

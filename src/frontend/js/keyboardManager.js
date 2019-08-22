@@ -38,10 +38,18 @@ class keyboardManager{
         });
     }
 
+    /**
+     * Clears the specific key event with the given alt code
+     * @param {Number} key Event to clear
+     * @param {Number} altCode Alt code to look for
+     */
     clearEvent(key,altCode){
         this.events.splice((this.events.findIndex(x=>x.key == key && x.altCode == altCode)),1);
     }
 
+    /**
+     * Gets all the current key events
+     */
     getAllEvents(){
         return this.events;
     }

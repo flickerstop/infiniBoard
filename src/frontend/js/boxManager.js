@@ -3,18 +3,6 @@
 
 
 /////////////////////////////////////////////////////
-// Requires
-// #region
-
-
-// #endregion
-/////////////////////////////////////////////////////
-// Vars
-// #region
-
-
-// #endregion
-/////////////////////////////////////////////////////
 // Exported Class
 boxManager = function(){
     let currentBox = null;
@@ -29,6 +17,9 @@ boxManager = function(){
         shelf=boxes;
     }
 
+    /**
+     * Get the entire shelf of boxes
+     */
     function getShelf(){
         return shelf;
     }
@@ -129,6 +120,9 @@ boxManager = function(){
         return false;
     }
 
+    /**
+     * Gets the 10 default pen colours
+     */
     function defaultPens(){
         return ["#ffffff","#2ecc71","#3498db","#9b59b6","#34495e","#f1c40f","#e67e22","#e74c3c","#000000","#bada55"];
     }
