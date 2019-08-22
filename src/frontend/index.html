@@ -29,7 +29,7 @@
         :root {
             --main: rgb(37,37,37); 
             --highlight: rgb(103, 103, 103);
-            --darklight: rgb(20,20,20); 
+            --darklight: rgb(29, 29, 29); 
             --text: #ecf0f1;
             --green: #27ae60;
             --red: #e74c3c;
@@ -38,7 +38,6 @@
         }
     </style>
     <body>
-
         <div id="frame">
             <div id="frame-title">Infiniboard</div>
             <div id="frame-dragArea"></div>
@@ -47,13 +46,33 @@
             </div>
         </div>
         <div id="mainPanel">
-
-            <div id="mainMenu">
+            <div id="menuBar">
+                <div style="padding-top: 20px;">
+                    <div class="menuBar-navItem">
+                        <div class="menuBar-navItem-icon" style="background-image:url('./images/home_icon.png')"></div>
+                        Home
+                    </div>
+                    <div class="menuBar-navItem" onclick="mainMenu.loadMyBoxes();">
+                        <div class="menuBar-navItem-icon" style="background-image:url('./images/box_icon.png')" ></div>
+                        My Boxes
+                    </div>
+                    <div class="menuBar-navItem">
+                        <div class="menuBar-navItem-icon" style="background-image:url('./images/gear_icon.png')"></div>
+                        Settings
+                    </div>
+                </div>
+            </div>
+            <div id="mainSection">
+                <h2>My Boxes</h2>
+                <div id="myBoxes">
+                </div>
+            </div>
+            <!-- <div id="mainMenu">
                 <div id="mainMenu-title">Infiniboard</div>
                 <div id="mainMenu-lastBoard" class="mainMenu-option">Last Board</div>
                 <div id="mainMenu-newBoard" class="mainMenu-option" onclick="mainMenu.createNewBox()">New Board</div>
-                <div id="mainMenu-loadBoard" class="mainMenu-option" onclick="comm.sendMessage('getBoxes')">Load Board</div>
-            </div>
+                <div id="mainMenu-loadBoard" class="mainMenu-option" onclick="mainMenu.loadMenu();">Load Board</div>
+            </div> -->
 
             <div id="loadBox" style="display: none">
                 <table>
@@ -110,6 +129,7 @@
 
     window.onload = function () { 
         buildWindowsButtons();
+        mainMenu.init();
         //changeTheme();
     }
 

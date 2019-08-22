@@ -47,9 +47,124 @@
     background-color: var(--highlight);
 }
 
-.loadBox-preview{
-    margin-left: auto;
-    margin-right: auto;
+
+#menuBar{
+    position: absolute;
+    top:0px;
+    left:0px;
+    width: 200px;
+    height: 100%;
+    background-color: var(--darklight);
+}
+
+.menuBar-navItem{
+    padding: 9px 0px 9px 13px;
+    margin: 4px 6px;
+    font-weight: 550;
+    line-height: 40px;
+    border-radius: 3px;
+    font-size: 17px;
+    /* color: #b9b9b9; */
+    opacity: 0.7;
+    transition: 0.05s;
+    cursor: pointer;
+}
+
+.menuBar-navItem:hover{
+    background-color: #171717;
+    /* color: #ecf0f1; */
+    opacity: 1;
+}
+
+.menuBar-navItem-icon{
+    height: 40px;
+    width: 40px;
+    float: left;
+    background-size: 40px;
+    margin: 0px 10px 0px 0px;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+#mainSection{
+    position: absolute;
+    left: 200px;
+    height: 100%;
+    width: calc(100% - 300px);
+    padding: 20px 50px;
+    overflow-y:scroll; 
+}
+
+#myBoxes{
+    margin-top: 30px;
+    width: 100%;
+    height: 100%;
+}
+
+.myBoxes-boxItem{
+    position: relative;
+    height: 200px;
+    width: 300px;
+    float: left;
+    margin: 0px 20px 20px 0px;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 7px 7px 10px 0px rgba(0, 0, 0, 0.3);
+}
+
+.myBoxes-boxItem-svg-dimmer{
+    /* position: absolute; */
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    opacity: 0.5;
+    transition: 0.2s;
+    /* border-radius: 10px; */
+}
+.myBoxes-boxItem:hover .myBoxes-boxItem-svg-dimmer {
+    opacity: 0.35;
+}
+.myBoxes-boxItem:hover .myBoxes-boxItem-svg-preview {
+    filter: blur(0.0px);
+}
+/* .myBoxes-boxItem:hover{
+    height: 210px;
+    width: 310px;
+} */
+.myBoxes-boxItem-svg-preview{
+    position: absolute;
+    top:0px;
     height: 200px;
     width: 100%;
+    transition: 0.2s;
+    /* border-radius: 10px; */
+    filter: blur(3px);
+}
+.myBoxes-boxItem-Info{
+    position: absolute;
+    top:0px;
+    width: inherit;
+    height: calc(100% - 45px);
+    text-align: center;
+    margin-top: 45px;
+    text-shadow: -2px -2px 2px #000, 2px -2px 2px #000, -2px 2px 2px #000, 2px 2px 2px #
+}
+.myBoxes-boxItem-Info-Name{
+    font-size: 22px;
+}
+.myBoxes-boxItem-Info-Name span,
+.myBoxes-boxItem-Info-Details span,
+.myBoxes-boxItem-Info-Date span{
+    box-shadow: inset 0px 0px 0px 20px rgba(0, 0, 0, 0.2), 0px 0px 8px 4px rgba(0, 0, 0, 0.2);
+
+}
+.myBoxes-boxItem-Info-Details{
+}
+.myBoxes-boxItem-Info-Date{
+    position: absolute;
+    bottom: 3px;
+    right: 9px;
+    font-size: 14px;
+    opacity: 0.7;
 }

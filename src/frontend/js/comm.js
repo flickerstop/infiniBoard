@@ -9,7 +9,6 @@ comm = function(){
     // Messages to wait for
     ipcRenderer.on('getBoxes-reply', (event, message) => {
         boxManager.setShelf(message);
-        mainMenu.loadMenu();
     });
     //////////////////////////
 
