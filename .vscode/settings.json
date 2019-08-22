@@ -37,7 +37,7 @@
             "isWholeLine": true
         },
         {
-            "text": "//==//==//==//==//==//==//",
+            "text": "#region",
             "color": "#2ecc71",
             "border": "1px solid #000000",
             "borderRadius": "2px",

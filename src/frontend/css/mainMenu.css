@@ -47,6 +47,17 @@
     background-color: var(--highlight);
 }
 
+#mainSection{
+    position: absolute;
+    box-sizing: border-box;
+    left: 200px;
+    height: 100%;
+    padding: 35px 0px 0px 50px;
+    overflow-y: auto; 
+}
+#mainSection h2{
+    padding-bottom: 30px;
+}
 
 #menuBar{
     position: absolute;
@@ -64,16 +75,23 @@
     line-height: 40px;
     border-radius: 3px;
     font-size: 17px;
-    /* color: #b9b9b9; */
     opacity: 0.7;
-    transition: 0.05s;
+    transition: 0.08s;
     cursor: pointer;
 }
 
 .menuBar-navItem:hover{
-    background-color: #171717;
-    /* color: #ecf0f1; */
+    background-color: #1a1a1a;
     opacity: 1;
+}
+
+.menuBar-navItem:active {
+    background-color: #161616;
+    opacity: 1;
+}
+.menuBar-navItem-selected{
+    background-color: #242424 !important;
+    opacity: 1 !important;
 }
 
 .menuBar-navItem-icon{
@@ -86,17 +104,7 @@
     background-position: center center;
 }
 
-#mainSection{
-    position: absolute;
-    left: 200px;
-    height: 100%;
-    width: calc(100% - 300px);
-    padding: 20px 50px;
-    overflow-y:scroll; 
-}
-
 #myBoxes{
-    margin-top: 30px;
     width: 100%;
     height: 100%;
 }
@@ -107,10 +115,23 @@
     width: 300px;
     float: left;
     margin: 0px 20px 20px 0px;
-    border-radius: 10px;
+    border-radius: 7px;
     overflow: hidden;
     cursor: pointer;
     box-shadow: 7px 7px 10px 0px rgba(0, 0, 0, 0.3);
+    transition: 0.14s;
+}
+.myBoxes-boxItem:hover{
+    transform: scale(1.07);
+}
+.myBoxes-boxItem:hover .myBoxes-boxItem-svg-dimmer {
+    opacity: 0.35;
+}
+.myBoxes-boxItem:hover .myBoxes-boxItem-svg-preview {
+    filter: blur(0.0px);
+}
+.myBoxes-boxItem:hover .myBoxes-boxItem-Info {
+    opacity: 1;
 }
 
 .myBoxes-boxItem-svg-dimmer{
@@ -119,26 +140,14 @@
     height: 100%;
     background-color: black;
     opacity: 0.5;
-    transition: 0.2s;
-    /* border-radius: 10px; */
+    transition: inherit;
 }
-.myBoxes-boxItem:hover .myBoxes-boxItem-svg-dimmer {
-    opacity: 0.35;
-}
-.myBoxes-boxItem:hover .myBoxes-boxItem-svg-preview {
-    filter: blur(0.0px);
-}
-/* .myBoxes-boxItem:hover{
-    height: 210px;
-    width: 310px;
-} */
 .myBoxes-boxItem-svg-preview{
     position: absolute;
     top:0px;
     height: 200px;
     width: 100%;
-    transition: 0.2s;
-    /* border-radius: 10px; */
+    transition: inherit;
     filter: blur(3px);
 }
 .myBoxes-boxItem-Info{
@@ -148,23 +157,29 @@
     height: calc(100% - 45px);
     text-align: center;
     margin-top: 45px;
-    text-shadow: -2px -2px 2px #000, 2px -2px 2px #000, -2px 2px 2px #000, 2px 2px 2px;
+    opacity: 0.6;
+    transition: inherit;
 }
 .myBoxes-boxItem-Info-Name{
     font-size: 22px;
+    margin-bottom: 5px;
+    font-weight: 600;
 }
-.myBoxes-boxItem-Info-Name span,
-.myBoxes-boxItem-Info-Details span,
-.myBoxes-boxItem-Info-Date span{
-    box-shadow: inset 0px 0px 0px 20px rgba(0, 0, 0, 0.2), 0px 0px 8px 4px rgba(0, 0, 0, 0.2);
 
-}
 .myBoxes-boxItem-Info-Details{
+    line-height: 25px;
+    font-weight: 600;
 }
 .myBoxes-boxItem-Info-Date{
     position: absolute;
     bottom: 3px;
     right: 9px;
     font-size: 14px;
-    opacity: 0.7;
+   
+}
+
+.myBoxes-boxItem-Info-Name span,
+.myBoxes-boxItem-Info-Details span,
+.myBoxes-boxItem-Info-Date span{
+    box-shadow: inset 0px 0px 0px 20px rgba(0, 0, 0, 0.06), 0px 0px 8px 3px rgba(0, 0, 0, 0.06);
 }

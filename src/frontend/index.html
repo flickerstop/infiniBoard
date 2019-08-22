@@ -13,6 +13,8 @@
         <link rel="stylesheet" href="./css/frame.css">
         <link rel="stylesheet" href="./css/mainMenu.css">
         <link rel="stylesheet" href="./css/popup.css">
+
+        <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto&display=swap" rel="stylesheet">
         <!-- <script src="./js/data.js"></script> -->
 
         <script src="./js/extern/jscolor.js"></script>
@@ -63,7 +65,7 @@
                 </div>
             </div>
             <div id="mainSection">
-                <h2>My Boxes</h2>
+                <!-- <h2>My Boxes</h2> -->
                 <div id="myBoxes">
                 </div>
             </div>
@@ -131,6 +133,11 @@
         buildWindowsButtons();
         mainMenu.init();
         //changeTheme();
+
+        d3.selectAll(".menuBar-navItem").on("click", function() {
+            d3.selectAll(".menuBar-navItem").classed("menuBar-navItem-selected",false);
+            d3.select(this).classed("menuBar-navItem-selected",true);
+        });
     }
 
     function changeTheme(){

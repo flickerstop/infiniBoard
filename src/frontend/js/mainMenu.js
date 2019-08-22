@@ -24,27 +24,31 @@ mainMenu = function(){
             whiteboard.init(id);
         });
     }
-
+    /**
+     * Meny Bar Option to show list of users boxes
+     */
     function loadMyBoxes(){
+        let boxesArea = d3.select("#myBoxes").html("");
+        boxesArea.append("h2").html("My Boxes");
         for(let box of boxManager.getShelf()){
             
-            let boxesArea = d3.select("#myBoxes");
+            // Add main Box Item div
             let boxItem = boxesArea.append("div").attr("class","myBoxes-boxItem").style("background-color","#"+box.boards[0].bgcolor);
-            // tableRow.append("td").html(new Date(box.lastUsed).toLocaleString());
 
+            // Draw svg Preview
             let svg = boxItem.append("svg").attr("viewBox",`0,0,1000,1000`).attr("class","myBoxes-boxItem-svg-preview");
             for(let line of box.boards[0].lines){
                 drawLine(svg,line);
             }
             
-
+            // Add a dimmer for the svg
             boxItem.append("div").attr("class","myBoxes-boxItem-svg-dimmer");
            
-           
+            let numberOfLines = 0;
             let boxInfo = boxItem.append("div").attr("class","myBoxes-boxItem-Info");
+            // Show Box info (Name, Details, Date)
             boxInfo.append("div").attr("class","myBoxes-boxItem-Info-Name").append("span")
                 .html(box.saveName);
-            let numberOfLines = 0;
             box.boards.forEach(board => numberOfLines += board.lines.length)
             boxInfo.append("div").attr("class","myBoxes-boxItem-Info-Details").append("span")
                 .html(numberOfLines + ` Line${numberOfLines > 1 ? "s" : ""}` + "<br />"
@@ -52,15 +56,12 @@ mainMenu = function(){
             boxInfo.append("div").attr("class","myBoxes-boxItem-Info-Date").append("span")
                 .html(new Date(box.lastUsed).toLocaleString());  
 
-
-            // tableRow.on("click",()=>{
-            //     boxManager.setBox(box);
-            //     switchToWhiteboard();
-            //     whiteboard.init(0);
-            // });
-
-            // Draw the preview
-
+            // Add on click event to open box
+            boxItem.on("click",()=>{
+                boxManager.setBox(box);
+                switchToWhiteboard();
+                whiteboard.init(0);
+            });
         }
     }
 
@@ -131,51 +132,10 @@ mainMenu = function(){
         }
         svg.attr("transform",`translate(${line.transform.x} ${line.transform.y})`);
     }
-    /**
-     * Menu option to load a previous box
-     */
-    function loadMenu(){
-        // Hide the main menu but show the loading boxes screen
-        d3.select("#mainMenu").style("display","none");
-        d3.select("#loadBox").style("display",null);
-
-        // For each box that was has been previously saved
-        for(let box of boxManager.getShelf()){
-            let numberOfLines = 0;
-            // Calculate number of lines
-            for(let board of box.boards){
-                numberOfLines += board.lines.length;
-            }
-
-            let tableRow = d3.select("#loadBox-table").append("tr");
-            tableRow.append("td").html(box.saveName);
-            tableRow.append("td").html(new Date(box.lastUsed).toLocaleString());
-            tableRow.append("td").html(box.boardCount);
-            tableRow.append("td").html(numberOfLines);
-            let svg = tableRow.append("td").append("svg");
-            svg.attr("viewBox",`0,0,1000,1000`).style("background-color","#"+box.boards[0].bgColour).attr("class","loadBox-preview");
-
-            for(let line of box.boards[0].lines){
-                drawLine(svg,line.dots,line.stroke,line.color);
-            }
-
-            tableRow.on("click",()=>{
-                boxManager.setBox(box);
-                switchToWhiteboard();
-                whiteboard.init(0);
-            });
-
-            // Draw the preview
-
-        }
-
-        
-    }
-
+    
     return {
         init:init,
         createNewBox:createNewBox,
-        loadMenu:loadMenu,
         loadMyBoxes:loadMyBoxes
     }
 }();
