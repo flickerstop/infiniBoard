@@ -15,6 +15,24 @@ html{
     overflow: hidden;
 }
 
+.scrollBarStyle::-webkit-scrollbar-track
+{
+	border: 1px solid var(--darklight);
+	background-color: var(--naub);
+}
+
+.scrollBarStyle::-webkit-scrollbar
+{
+	width: 10px;
+	background-color: var(--main);
+}
+
+.scrollBarStyle::-webkit-scrollbar-thumb
+{
+    border: 1px solid var(--highlight);
+	background-color: var(--main);
+}
+
 #mainPanel{
     width: 100%;
     height: calc(100% - 20px);
@@ -49,10 +67,16 @@ html{
 
 
 #drawingBoard{
-    margin-left: 51px;
-    margin-top: 41px;
+    position: absolute;
+    left: 51px;
+    top: 41px;
     width: calc(100% - 51px);
     height: calc(100% - 41px);
+    z-index: 1;
+}
+
+#drawingBoard-svg{
+    z-index: 2;
 }
 
 .whiteboard-link:hover{
@@ -65,6 +89,7 @@ html{
 
 #toolbar{
     position: absolute;
+    z-index: 5;
     left: 0px;
     top: 0px;
     height: calc(100% - 5px);
@@ -100,8 +125,9 @@ html{
     opacity: 1;
 }
 
-#colourBar{
+#colorBar{
     position: absolute;
+    z-index: 5;
     height: 40px;
     width: calc(100% - 50px);
     top: 0px;
@@ -109,12 +135,12 @@ html{
     background-color: var(--main);
 }
 
-#colourBar svg{
+#colorBar svg{
     width: 100%;
     height: 40px;
 }
 
-#colourBar-newColour{
+#colorBar-newcolor{
     position: absolute;
     height: 40px;
     width: 50px;
@@ -123,32 +149,33 @@ html{
     cursor: pointer;
 }
 
-#colourBar-strokeIncreaseButton:hover{
+#colorBar-strokeIncreaseButton:hover{
     cursor: pointer;
 }
 
-#colourBar-strokeIncreaseButton:hover .colourBar-strokeIncreaseLine{
+#colorBar-strokeIncreaseButton:hover .colorBar-strokeIncreaseLine{
     stroke: var(--blue);
 }
 
-#colourBar-strokeIncreaseButton:active .colourBar-strokeIncreaseLine{
+#colorBar-strokeIncreaseButton:active .colorBar-strokeIncreaseLine{
     stroke: var(--red);
 }
 
-#colourBar-strokeDecreaseButton:hover{
+#colorBar-strokeDecreaseButton:hover{
     cursor: pointer;
 }
 
-#colourBar-strokeDecreaseButton:hover .colourBar-strokeDecreaseLine{
+#colorBar-strokeDecreaseButton:hover .colorBar-strokeDecreaseLine{
     stroke: var(--blue);
 }
 
-#colourBar-strokeDecreaseButton:active .colourBar-strokeDecreaseLine{
+#colorBar-strokeDecreaseButton:active .colorBar-strokeDecreaseLine{
     stroke: var(--red);
 }
 
 #navBar{
     position: absolute;
+    z-index: 5;
     right: -200px;
     top: 40px;
     background-color: var(--main);
@@ -194,4 +221,54 @@ html{
 
 .navBar-content-board.current{
     background-color: var(--blue);
+}
+
+#whiteboard-textInput-input{
+    position: absolute;
+    left: calc(50% - 130px);
+    top: 10px;
+    width: 260px;
+    height: 60px;
+    color: var(--text);
+    border: 1px solid var(--highlight);
+    background-color: var(--main);
+    resize: none;
+}
+
+#whiteboard-textInput-input:focus {
+    outline: none;
+}
+
+#whiteboard-textInput{
+    position: absolute;
+    z-index: 3;
+    top: -65px;
+    left: calc(50% - 100px);
+
+    background-color: var(--main);
+    border: 1px solid transparent;
+    
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+
+    color: var(--text);
+
+    width: 300px;
+    height: 100px;
+}
+
+#whiteboard-textInput-submit{
+    position: absolute;
+    width: 100px;
+    left: calc(50% - 50px);
+    bottom: 10px;
+    border: 1px solid var(--highlight);
+    color: var(--highlight);
+    text-align: center;
+}
+
+#whiteboard-textInput-submit:hover{
+    cursor: pointer;
+    background-color: var(--green);
+    color: var(--text);
 }

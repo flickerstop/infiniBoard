@@ -3,18 +3,6 @@
 
 
 /////////////////////////////////////////////////////
-// Requires
-// #region
-
-
-// #endregion
-/////////////////////////////////////////////////////
-// Vars
-// #region
-
-
-// #endregion
-/////////////////////////////////////////////////////
 // Exported Class
 boxManager = function(){
     let currentBox = null;
@@ -29,6 +17,9 @@ boxManager = function(){
         shelf=boxes;
     }
 
+    /**
+     * Get the entire shelf of boxes
+     */
     function getShelf(){
         return shelf;
     }
@@ -77,16 +68,17 @@ boxManager = function(){
     /**
      * Creates a new board in the current boardbox
      * @param {String} boardName Name for the new board
-     * @param {String} bgColour Colour for the background
+     * @param {String} bgcolor color for the background
      */
-    function newBoard(boardName,bgColour){
+    function newBoard(boardName,bgcolor){
         let id = currentBox.boardCount++;
 
         currentBox.boards.push({
             id: id,
             name: boardName,
             bgType: 0, // make this do something like 0 -> solid color, 1 -> grid etc
-            bgColour: bgColour,
+            bgcolor: bgcolor,
+            idCounter:0,
             lines: [],
             pens:defaultPens()
         });
@@ -128,6 +120,9 @@ boxManager = function(){
         return false;
     }
 
+    /**
+     * Gets the 10 default pen colours
+     */
     function defaultPens(){
         return ["#ffffff","#2ecc71","#3498db","#9b59b6","#34495e","#f1c40f","#e67e22","#e74c3c","#000000","#bada55"];
     }

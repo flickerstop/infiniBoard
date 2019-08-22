@@ -1,12 +1,21 @@
+#popup{
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    width: 100%;
+    height: 100%;
+}
+
 #popup-box{
     position: absolute;
     width: 400px;
     background-color: var(--main);
-    left: calc(50% - 200px);
+    left: 50%;
     top: 50%;
-    transform: translateY(-50%);
-    padding: 15px;
+    transform: translateY(-50%) translateX(-50%);
     border-radius: 5px;
+    overflow: hidden;
 }
 
 #popup-blackOut{
@@ -80,4 +89,167 @@
 .popup-submit:hover{
     background-color: var(--green);
     cursor: pointer;
+}
+
+#popup-navBar{
+    width: 200px;
+    height: 500px;
+    background-color: var(--darklight);
+    padding-top: 10px;
+    float: left;
+}
+
+.popup-navBar-row{
+    height: 30px;
+    margin-left: 10px;
+    margin-bottom: 10px;
+    padding: 5px 0px 5px 5px;
+}
+
+.popup-navBar-row.selected{
+    background-color: var(--main);
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+.popup-navBar-row.selected:hover{
+    background-color: var(--main);
+    cursor: default;
+}
+
+.popup-navBar-row:hover{
+    background-color: var(--highlight);
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    cursor: pointer;
+}
+
+.popup-navBar-boxName{
+    margin-left: 10px;
+    line-height: 30px;
+    float: left;
+}
+
+.popup-navBar-icon{
+    width: 30px;
+    height: 30px;
+    background-size: 30px 30px;
+    background-repeat: no-repeat;
+    background-position: center center;
+    float: left;
+}
+
+#popup-main{
+    position: relative;
+    width: 600px;
+    height: 500px;
+    float: left;
+    overflow-y: auto;
+}
+
+#popup-dropArea-uploadButton{
+    position: absolute;
+    left: 50%;
+    top: 50px;
+    transform: translateY(-50%) translateX(-50%);
+    padding: 5px 10px;
+    border-radius: 3px;
+    border: 1px solid var(--darkblue);
+    color: var(--darkblue);
+}
+
+#popup-dropArea-uploadButton:hover{
+    border: 1px solid var(--blue);
+    color: var(--blue);
+    cursor: pointer;
+}
+
+#popup-dropArea{
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translateY(-50%) translateX(-50%);
+    width: 400px;
+    height: 300px;
+    border: 2px dashed var(--text);
+    opacity: 0.6;
+}
+
+#popup-dropArea-infoRow{
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translateY(-50%) translateX(-50%);
+    width: 200px;
+    height: 200px;
+}
+
+#popup-dropArea-uploadCount{
+    position: absolute;
+    bottom: 50px;
+    transform: translateY(50%);
+    width: 100%;
+    text-align: center;
+    color: var(--text);
+    opacity: 0;
+}
+
+#popup-dropArea-infoRow-image{
+    width: 100%;
+    height: 120px;
+    background-size: auto 100%;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+#popup-dropArea-infoRow-text{
+    width: 100%;
+    text-align: center;
+    margin-top: 10px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+#popup-dropArea-input{
+    height: 100%;
+    width: 100%;
+    opacity: 0;
+    cursor: default;
+}
+
+#popup-dropArea.popup-dropArea-enter{
+    background-color: var(--blue);
+}
+
+.popup-imageCard{
+    position: relative;
+    width: 115px;
+    height: 120px;
+    padding: 10px;
+    float: left;
+    margin: 5px;
+    border-radius: 5px;
+    border: 1px solid var(--text);
+}
+
+.popup-imageCard:hover{
+    border: 1px solid var(--blue);
+    cursor: pointer;
+}
+
+.popup-imageCard-image{
+    width: 100%;
+    height: 100px;
+    background-size: 100% auto;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+.popup-imageCard-text{
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    bottom: 0px;
+    left: 0px;
+    font-size: 10px;
+    line-height: 20px;
 }

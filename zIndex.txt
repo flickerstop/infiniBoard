@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+0 -> default
+1 -> #drawingBoard
+2 -> Whiteboard SVG
+3 -> Whiteboard Text tool Input area
+
+5 -> NavBar & toolBar & colorBar
+
+50 -> popup
+
+
+100 -> Frame
+101 -> Frame dragable area
+102 -> Frame Title & Frame Buttons

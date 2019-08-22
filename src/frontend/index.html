@@ -36,6 +36,7 @@
             --green: #27ae60;
             --red: #e74c3c;
             --blue: #3498db;
+            --darkblue: #2980b9;
             --image-filter: invert(0); /*brightness(0) invert(1) to make image black*/
         }
     </style>
@@ -90,20 +91,29 @@
             </div>
 
             <div id="whiteboard" style="display: none">
+                <div id="whiteboard-textInput">
+                    <textarea id="whiteboard-textInput-input"></textarea>
+                    <div id="whiteboard-textInput-submit">Finish</div>
+                </div>
+                
                 <div id="drawingBoard">
 
                 </div>
                 <div id="toolbar">
                     <div id="toolbar-background"></div>
-                    <div id="toolbar-icon-0" class="toolbar-icon selected" style="background-image:url('./images/pen_white.png')" onclick="whiteboard.setTool(0)">P</div>
+                    <div id="toolbar-icon-7" class="toolbar-icon" style="background-image:url('./images/mouse_white.png')" onclick="whiteboard.setTool(7)"></div>
+                    <div id="toolbar-icon-8" class="toolbar-icon" style="background-image:url('./images/move_white.png')" onclick="whiteboard.setTool(8)">M</div>
+                    <div id="toolbar-icon-0" class="toolbar-icon" style="background-image:url('./images/pen_white.png')" onclick="whiteboard.setTool(0)">P</div>
                     <div id="toolbar-icon-2" class="toolbar-icon" style="background-image:url('./images/eraser_white.png')" onclick="whiteboard.setTool(2)">E</div>
                     <div id="toolbar-icon-1" class="toolbar-icon" style="background-image:url('./images/hand_white.png')" onclick="whiteboard.setTool(1)">H</div>
                     <div id="toolbar-icon-3" class="toolbar-icon" style="background-image:url('./images/line_white.png')" onclick="whiteboard.setTool(3)">L</div>
                     <div id="toolbar-icon-4" class="toolbar-icon" style="background-image:url('./images/rect_white.png')" onclick="whiteboard.setTool(4)">R</div>
                     <div id="toolbar-icon-5" class="toolbar-icon" style="background-image:url('./images/link_white.png')" onclick="whiteboard.setTool(5)">?</div>
+                    <div id="toolbar-icon-6" class="toolbar-icon" style="background-image:url('./images/text_white.png')" onclick="whiteboard.setTool(6)">T</div>
+                    <div id="toolbar-icon-9" class="toolbar-icon" style="background-image:url('./images/image_white.png')" onclick="whiteboard.setTool(9)">I</div>
                 </div>
-                <div id="colourBar">
-                        <button id="colourBar-newColour" class="jscolor {onFineChange:'whiteboard.changeColour()' ,width:243, height:150,value:'66ccff',borderColor:'var(--highlight)', backgroundColor:'var(--main)'}"></button>
+                <div id="colorBar">
+                    <button id="colorBar-newcolor" class="jscolor {onFineChange:'whiteboard.changecolor()' ,width:243, height:150,value:'66ccff',borderColor:'var(--highlight)', backgroundColor:'var(--main)'}"></button>
                 </div>
 
                 <div id="navBar">
@@ -119,7 +129,6 @@
         </div>
     </body>
 </html>
-
 <!-- #endregion -->
 
 <!----------------------------------------------------------
