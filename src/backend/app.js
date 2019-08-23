@@ -10,6 +10,8 @@ const console = require("./modules/console/console.js");
 const fs = require("fs-extra");
 const packer = require("./modules/packer/packer");
 const ipc = require("./modules/ipc/ipc");
+const sizeOf = require('image-size');
+const absolutePath = require('path').resolve;
 
 const saveLocation = "./boxes/";//(process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + 'Library/Preferences' : process.env.HOME + "/.local/share")).replace(/\\/gm,"/")+"/infiniboard/boxes/";
 // #endregion
@@ -67,13 +69,22 @@ ipc.onReply("fileUpload",(payload)=>{
         let folder = payload.box;
         let files = payload.files;
         
-        console.object(files);
+        let savedFiles = []
         // Check if the folder for the files exists
         for(let file of files){
             await fs.ensureDir(`${saveLocation}/images/${folder}/`);
             await fs.copyFile(file.path,`${saveLocation}/images/${folder}/${file.name}`);
+
+            let dimensions = await sizeOf(`${saveLocation}images/${folder}/${file.name}`);
+            savedFiles.push({
+                file: escape(file.name),
+                path: absolutePath(`${saveLocation}images/${folder}/${file.name}`),
+                width: dimensions.width,
+                height: dimensions.height
+            });
+
         }
-        return resolve(files.length);
+        return resolve(savedFiles);
     });    
 })
 
@@ -81,21 +92,27 @@ ipc.onReply("getImages",(payload)=>{
     return new Promise(async function(resolve, reject) {
         let toSend = [];
         let dir = await fs.readdir(`${saveLocation}/images/`);
+
         for(let folder of dir){
             let files = await fs.readdir(`${saveLocation}/images/${folder}`);
+            
             let boxData = {
                 boxName: folder,
                 images: []
             }
+
             for(let file of files){
+                let dimensions = await sizeOf(`${saveLocation}images/${folder}/${file}`);
                 boxData.images.push({
                     file: escape(file),
-                    path: escape(`${saveLocation}images/${folder}/${file}`)
+                    path: escape(`${saveLocation}images/${folder}/${file}`),
+                    absolutePath: absolutePath(`${saveLocation}images/${folder}/${file}`),
+                    width: dimensions.width,
+                    height: dimensions.height
                 });
             }
             toSend.push(boxData);
         }
-
 
         return resolve(toSend);
     });

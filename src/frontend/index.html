@@ -24,6 +24,7 @@
         <script src="./js/util.js"></script>
         <script src="./js/boxManager.js"></script>
         <script src="./js/keyboardManager.js"></script>
+        <script src="./js/dropManager.js"></script>
     </head>
     <style id="themeStyle">
         :root {
@@ -74,12 +75,7 @@
                 </table>
             </div>
 
-            <div id="whiteboard" style="display: none">
-                <div id="whiteboard-textInput">
-                    <textarea id="whiteboard-textInput-input"></textarea>
-                    <div id="whiteboard-textInput-submit">Finish</div>
-                </div>
-                
+            <div id="whiteboard" style="display: none">   
                 <div id="drawingBoard">
 
                 </div>
@@ -140,6 +136,8 @@
             --image-filter: invert(1);
         }`);
     }
+
+    
 
     function buildWindowsButtons(){
         let svg = d3.select("#frame-buttons-svg");

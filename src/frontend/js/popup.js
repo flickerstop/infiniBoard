@@ -215,30 +215,33 @@ popup = function(){
     }
 
     function imageSelector(mouseCoords, callback){
+        // Load all the images
         getImages();
 
         let currentSelected = -2;
-
         let boxes = [];
-
         let allImages = null;
 
-        keyManager.newEvent(13,0,submit);
         // Add the ability to click the background to close the popup
         d3.select("#popup-blackout").on("click",closePopup);
 
+        // Resize the popup box
         let popupBox = d3.select("#popup-box").style("width","800px");
 
+        // Create the navbar on the side
         let navBar = popupBox.append("div").attr("id","popup-navBar")
 
+        // Add the row in the navbar for adding an image
         let navBarRow = navBar.append("div").attr("class","popup-navBar-row").attr("id","popup-navBar-item-2").on("click",()=>{return showImages(-2)});
         navBarRow.append("div").attr("class","popup-navBar-icon").style("background-image","url('./images/add_white.png')");
         navBarRow.append("div").attr("class","popup-navBar-boxName").html("Add New Image");
 
+        // Add the row for all images
         navBarRow = navBar.append("div").attr("class","popup-navBar-row").attr("id","popup-navBar-item-1").on("click",()=>{return showImages(-1)});
         navBarRow.append("div").attr("class","popup-navBar-icon").style("background-image","url('./images/all_white.png')");
         navBarRow.append("div").attr("class","popup-navBar-boxName").html("All");
 
+        // Go through all the boxes and add a row for each of the boxes the user has
         let boxCount = 0;
         for(let box of boxManager.getShelf()){
             navBarRow = navBar.append("div").attr("class","popup-navBar-row").attr("id","popup-navBar-item"+boxCount).on("click",function(temp){return function(){showImages(temp)}}(boxCount));
@@ -248,18 +251,23 @@ popup = function(){
                 name: box.saveName,
                 id: boxCount
             });
+        
+            // // If this box is the current box
+            // if(box.saveName == boxManager.getBox().saveName){
+            //     // Set the currently selected item to this one
+            //     currentSelected = boxCount
+            // }
             boxCount++;
         }
 
+        // Create the div for the main content area
         let mainContent = popupBox.append("div").attr("id","popup-main").attr("class","scrollBarStyle");
 
-
+        // Show the images for the current selected box
         showImages(currentSelected);
+
         // Unhide the popup
         d3.select("#popup").style("display",null);
-        function submit(){
-
-        }
 
         /**
          * Forget all the info given and close the popup
@@ -267,9 +275,12 @@ popup = function(){
         function closePopup(){
             d3.select("#popup-box").html(null);
             d3.select("#popup").style("display","none");
-            keyManager.clearEvent(13,0);
         }
 
+        /**
+         * Shows the images for the current box. If negative number, it's either all boxes or add images
+         * @param {Number} boxId ID of the box to show
+         */
         function showImages(boxId){
             mainContent.html(null);
 
@@ -284,12 +295,21 @@ popup = function(){
                     for(let image of box.images){
                         let imageBox = imagePanel.append("div").attr("class","popup-imageCard");
                         imageBox.append("div").attr("class","popup-imageCard-image").style("background-image",`url('../../${image.path}')`);
-
                         if(image.file.length >= 30){
                             imageBox.append("div").attr("class","popup-imageCard-text").html(`(...).${image.file.split(".")[1]}`);
                         }else{
                             imageBox.append("div").attr("class","popup-imageCard-text").html(image.file);
                         }  
+                        imageBox.on("click",()=>{
+                            closePopup();
+                            callback({
+                                x: mouseCoords.x,
+                                y: mouseCoords.y,
+                                path: image.absolutePath,
+                                width: image.width,
+                                height: image.height
+                            });
+                        })
                     }
                 }
             }else{
@@ -309,11 +329,24 @@ popup = function(){
                         }else{
                             imageBox.append("div").attr("class","popup-imageCard-text").html(image.file);
                         }  
+                        imageBox.on("click",()=>{
+                            closePopup();
+                            callback({
+                                x: mouseCoords.x,
+                                y: mouseCoords.y,
+                                path: image.absolutePath,
+                                width: image.width,
+                                height: image.height
+                            });
+                        })
                     }
                 }
             }
         }
 
+        /**
+         * Draws the "Upload Images" on the main panel
+         */
         function drawUploadImage(){
             mainContent.html(null);
             let dragArea = mainContent.append("div").attr("id","popup-dropArea");
@@ -334,7 +367,28 @@ popup = function(){
                 .attr("type","file")
                 .attr("accept","image/*")
                 .attr("id","popup-dropArea-input")
-                .on("change",handleFiles);
+                .on("change",()=>{
+                    dropManager.handleDrop().then((files)=>{
+                        if(files.length == 1){
+                            d3.select("#popup-dropArea-uploadCount").html(`${files.length} file has been loaded...`)
+                                .style("opacity",1)
+                                .transition()
+                                .duration(2000)
+                                .transition()
+                                .duration(1000)
+                                .style("opacity",0);
+                        }else{
+                            d3.select("#popup-dropArea-uploadCount").html(`${files.length} files have been loaded...`)
+                                .style("opacity",1)
+                                .transition()
+                                .duration(2000)
+                                .transition()
+                                .duration(1000)
+                                .style("opacity",0);
+                        }
+                        getImages();
+                    })
+                });
 
             mainContent.append("div").attr("id","popup-dropArea-uploadCount").html("5 files loaded");
 
@@ -354,44 +408,12 @@ popup = function(){
                 dragArea.attr("class",null);
             });
 
-            function handleFiles(){
-                let toSend = {
-                    box: boxManager.getBox().saveName,
-                    files: []
-                }
-
-                for(let file of event.target.files){
-                    toSend.files.push({
-                        path:file.path,
-                        name:file.name
-                    });
-                }
-
-                comm.sendSync("fileUpload",toSend).then((filesCount)=>{
-                    if(filesCount == 1){
-                        d3.select("#popup-dropArea-uploadCount").html(`${filesCount} file has been loaded...`)
-                            .style("opacity",1)
-                            .transition()
-                            .duration(2000)
-                            .transition()
-                            .duration(1000)
-                            .style("opacity",0);
-                    }else{
-                        d3.select("#popup-dropArea-uploadCount").html(`${filesCount} files have been loaded...`)
-                            .style("opacity",1)
-                            .transition()
-                            .duration(2000)
-                            .transition()
-                            .duration(1000)
-                            .style("opacity",0);
-                    }
-                    getImages();
-                });
-            }
         }
 
 
-
+        /**
+         * Ask the main process for the images
+         */
         function getImages(){
             comm.sendSync("getImages","please").then((images)=>{
                 console.log(images);

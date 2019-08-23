@@ -43,12 +43,55 @@ whiteboard = function(){
 
     let tempTransform = {x:null,y:null};
 
+    let mouse = {x:0,y:0};
+
     /**
      * Function that runs to initialize the whiteboard and load the current board
      */
     function init(id){
         // Clear all elements we're about to use (for reloading)
-        d3.select("#drawingBoard").html(null);
+        d3.select("#drawingBoard").html(null).on("dragenter",()=>{
+            inputBox.style("display",null);
+        })
+
+        let inputBox = d3.select("#drawingBoard").append("input")
+            .attr("multiple",true)
+            .attr("type","file")
+            .attr("accept","image/*")
+            .attr("id","drawingBoard-input")
+            .style("display","none")
+            .on("change",()=>{
+                inputBox.style("display","none");
+                dropManager.handleDrop().then((files)=>{
+                    util.clearValueId("drawingBoard-input");
+
+                    //NOTE working here
+                    for(let file of files){
+                        let data = {
+                            x: mouse.x,
+                            y: mouse.y,
+                            w: file.width,
+                            h: file.height
+                        }
+                        let line = newLine(data,4,null,null,file.path);
+                        drawLine(svg.image,line);
+
+                        autoSaveTimeout();
+                    }
+                    
+                });
+            }).on("click",()=>{
+                d3.event.preventDefault();
+            }).on("dragleave",()=>{
+                inputBox.style("display","none");
+            }).on("dragover",()=>{
+                let coordinates= d3.mouse(d3.select("#drawingBoard-svg").node());
+                mouse = {
+                    x:coordinates[0],
+                    y:coordinates[1]
+                }
+            })
+
         isDrawing = false;
 
         svg = {};
@@ -84,9 +127,14 @@ whiteboard = function(){
         // Main is lines/rects/text
         // Links will always be ontop of lines so you can always click then
         // Temp is always ontop of everything else to see what you're drawing
+        svg.image = svg.parent.append("g");
         svg.main = svg.parent.append("g");
         svg.link = svg.parent.append("g");
         svg.temp = svg.parent.append("g").attr("id","temp-line");
+
+        svg.parent.on("mousedown",mouseDown);
+        svg.parent.on("mouseup",mouseUp)
+        svg.parent.on("mousemove", mouseMove);
 
         
 
@@ -94,6 +142,8 @@ whiteboard = function(){
         for(line of thisBoard.lines){
             if(line.type == 2){
                 drawLine(svg.link,line);
+            }else if(line.type == 4){
+                drawLine(svg.image,line);
             }else{
                 drawLine(svg.main,line);
             }
@@ -102,14 +152,9 @@ whiteboard = function(){
         
         // Set the background colour
         svg.parent.style("background-color",thisBoard.bgcolor);
-        
-        // Set the mouse events
-        svg.parent.on("mousedown",mouseDown);
-        svg.parent.on("mouseup",mouseUp)
-        svg.parent.on("mousemove", mouseMove);
 
         // Init the colour/nav bar
-        initcolorBar();
+        initColorBar();
         initNavBar();
 
         // Setup the keyboard shortcuts
@@ -167,7 +212,7 @@ whiteboard = function(){
         // https://www.dashingd3js.com/svg-paths-and-d3js
 
         // Append a new group for the draw object
-        svg = svg.append("g");
+        svg = svg.append("g").attr("id",`object${line.id}`);
 
         if(line.type == 0){ // Normal Line
             // Create the line
@@ -186,8 +231,7 @@ whiteboard = function(){
                 .attr("d", drawLine(line.dots))
                 .attr("stroke", line.color)
                 .attr("stroke-width", line.stroke)
-                .attr("fill", "none")
-                .attr("id",`object${line.id}`);
+                .attr("fill", "none");
 
         }else if(line.type == 1){ // Rectangle
 
@@ -212,8 +256,7 @@ whiteboard = function(){
                 .attr("y",rectY)
                 .attr("height",height)
                 .attr("width",width)
-                .attr("fill", line.color)
-                .attr("id",`object${line.id}`);
+                .attr("fill", line.color);
 
 
         }else if(line.type == 2){ // Link
@@ -235,7 +278,6 @@ whiteboard = function(){
                 .attr("stroke-width", line.stroke)
                 .attr("fill", line.color)
                 .attr("fill-opacity",0.3)
-                .attr("id",`object${line.id}`)
                 .attr("class","whiteboard-link");
 
             // If the tool is set to the mouse, portal to the linked whiteboard
@@ -251,7 +293,7 @@ whiteboard = function(){
             let fontSize = 12 + (line.stroke*2);
 
             // Group to draw the text
-            let textGroup = svg.append("g").attr("id",`object${line.id}`);
+            let textGroup = svg.append("g");
 
             let lines = 0;
             // For each line of text
@@ -266,6 +308,13 @@ whiteboard = function(){
                 lines++;
             }
 
+        }else if(line.type == 4){ // Image
+            svg.append("image")
+                .attr("xlink:href", `file://${line.linkID}`)
+                .attr("x",line.dots.x)
+                .attr("y",line.dots.y)
+                .attr("width",line.dots.w)
+                .attr("height",line.dots.h);
         }
 
         // If the tool is the move tool, set the selected element to this one
@@ -304,15 +353,20 @@ whiteboard = function(){
 
     function mouseDown(){
         // Get the current mouse coordinates
-        let coordinates= d3.mouse(d3.event.currentTarget);
-            mouseDownPoint = {
-                x:coordinates[0],
-                y:coordinates[1],
-                vx: viewbox.x,
-                vy: viewbox.y
-            };
+        let coordinates= d3.mouse(d3.select("#drawingBoard-svg").node());
+        mouseDownPoint = {
+            x:coordinates[0],
+            y:coordinates[1],
+            vx: viewbox.x,
+            vy: viewbox.y,
+            button: d3.event.button
+        };
 
-        if(isPen()){
+        function isLeftClick(){return d3.event.button==0}
+        function isRightClick(){return d3.event.button==2}
+        function isMiddleClick(){return d3.event.button==1}
+
+        if(isPen() && isLeftClick()){
             isDrawing = true;
 
             // check if this line is a new color
@@ -323,128 +377,169 @@ whiteboard = function(){
             }
             colorBar.addPen(currentColor);
         }
-        else if(isEraser() || isLine() || isRect() || isLink()){
+        else if((isEraser() || isLine() || isRect() || isLink()) && isLeftClick()){
             isDrawing = true;
         }
-        else if(isText()){
+        else if(isText() && isLeftClick()){
             if(!isTyping()){
-                // console.log("focus input")
-                textDrawArea = mouseDownPoint;
+                // Setup the data for the text input area
+                textDrawArea = {
+                    x:mouseDownPoint.x,
+                    y:mouseDownPoint.y,
+                    w: 215,
+                    h: 115,
+                    isMouseDownForMoving: false
+                };
 
-                d3.select("#whiteboard-textInput")
-                    .style("display",null)
-                    .transition().duration(100)
-                    .style("top","40px");
+                // Set the font size
+                let fontSize = 12 + (currentStroke*2);
 
-                setTimeout(()=>{
-                    d3.select("#whiteboard-textInput-input").node().focus();
-                },10);
+                // Build the foreign Object that holds the text area in the svg
+                svg.temp.append("foreignObject")
+                    .attr("id","whiteboard-textInputArea-container")
+                    .attr("x",textDrawArea.x)
+                    .attr("y",textDrawArea.y)
+                    .attr("width","100000px") // Technically the text area can't be bigger than 1000x1000
+                    .attr("height","100000px")// But that shouldn't ever happen
+                // Build the div that borders the text area and allows for dragging
+                .append("xhtml:div")
+                    .attr("id","whiteboard-textInputArea-moveBorder")
+                    .style("width",textDrawArea.w+20)
+                    .style("height",textDrawArea.h+20)
+                    .on("mouseenter",()=>{
+                        // Set the flag that says the mouse is over the text input area
+                        textDrawArea.isMouseOver = true;
+                    }).on("mouseleave",()=>{
+                        // Clear the flag
+                        textDrawArea.isMouseOver = false;
+                    })
+                    .on("mousedown",()=>{
+                        // Only allow the "isMouseDownForMoving" flag to only be set if the mouse isn't over the text area
+                        /*
+                            This solves the issue of when dragging starting from inside the text box and the mouse
+                            moves outside the box, it triggers the move event
+                        */
+                        if(textDrawArea.isDraggable){
+                            // Set the flag that says the mouse is held down to move the text area
+                            textDrawArea.isMouseDownForMoving = true;
+                            // Set the offset that makes it so the text area's origin isn't exactly at the mouse
+                            textDrawArea.offsetX = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[0];
+                            textDrawArea.offsetY = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[1];
+                        }
+                    }).on("mouseup",()=>{
+                        // Remove the flag
+                        textDrawArea.isMouseDownForMoving = false;
+                    })
+                // Build the textarea
+                .append("xhtml:textarea")
+                    .attr("id","whiteboard-textInputArea")
+                    .style("font-size",`${fontSize}px`)
+                    .style("line-height",`${fontSize}px`)
+                    .style("color",currentColor)
+                    .style("width",textDrawArea.w)
+                    .style("height",textDrawArea.h)
+                    .on("input",updateTextArea)
+                    .on("mouseenter",()=>{
+                        // Flag for saying the mouse is over the text area container AND over the textarea
+                        textDrawArea.isDraggable = false;
+                    }).on("mouseleave",()=>{
+                        // Remove the flag
+                        textDrawArea.isDraggable = true;
+                    })
 
-                d3.select("#whiteboard-textInput-submit").on("click",()=>{
-                    d3.select("#whiteboard-textInput")
-                        .transition().duration(100)
-                        .style("top","-65px");
-
-                    let data = {
-                        text: util.getValueId("whiteboard-textInput-input"),
-                        x: textDrawArea.x,
-                        y: textDrawArea.y
-                    };
-
-                    textDrawArea = null;
-                    let id = thisBoard.idCounter++;
-
-                    let line = newLine(data,3,currentColor,currentStroke,id);
-
-                    drawLine(svg.main,line);
-                    
-
-                    // clear the buffer
-                    buffer = [];
-                    // clear the temp line
-                    d3.select("#temp-line").html(null);
-
-                    // Save in x seconds
-                    autoSaveTimeout();
-                });
-
-                d3.select("#whiteboard-textInput-input").on("input",updateTextArea);
+                // After 10 milliseconds, select focus on the textarea
+                setTimeout(()=>{document.getElementById("whiteboard-textInputArea").focus()},10);
+            }else{ // If they are currently using a textarea
+                // And they click anyone not over the text area
+                if(!textDrawArea.isMouseOver){
+                    // Submit the text area
+                    submitTextArea();
+                }
             }
         }
-        else if(isImage()){
-            openImagePopup({x:1,y:0});
+        else if(isImage() && isLeftClick()){
+            popup.imageSelector(mouse,(image)=>{
+                let data = {
+                    x: image.x,
+                    y: image.y,
+                    w: image.width,
+                    h: image.height
+                }
+                let line = newLine(data,4,null,null,image.path);
+                drawLine(svg.image,line);
+
+                autoSaveTimeout();
+            });
         }
     }
 
     function mouseUp(){
-        // Get the current mouse coordinates
-        let coordinates= d3.mouse(this);
-        let x = coordinates[0];
-        let y = coordinates[1];
+        function isLeftClick(){return d3.event.button==0}
+        function isRightClick(){return d3.event.button==2}
+        function isMiddleClick(){return d3.event.button==1}
         if(isPen() || isLink()){
-            if(buffer.length <= 1){
-                buffer = [];
-                d3.select("#temp-line").html(null);
-                return;
+            if(buffer.length > 1){
+                // Draw the line in the buffer
+
+                if(isPen()){
+                    let line = newLine(buffer,0,currentColor,currentStroke);
+                    drawLine(svg.main,line);
+                    
+                }else if(isLink()){
+                    // Make sure the line goes back to the start
+                    buffer.push({x:buffer[0].x,y:buffer[0].y});
+
+                    // Create a new popup getting what board to link to
+                    popup.newBoard(buffer,(resID,boardName,bgcolor,lineBuffer)=>{
+                        // if a new board is to be made
+                        if(resID == -1){
+                            let newBoardID = boxManager.newBoard(boardName,bgcolor);
+                            
+                            let line = newLine(lineBuffer,2,currentColor,currentStroke,id,newBoardID);
+                            drawLine(svg.link,line);
+                            save();
+                            //init(newBoardID);
+                        }else{
+                            let line = newLine(lineBuffer,2,currentColor,currentStroke,resID);
+                            drawLine(svg.link,line);
+                            
+                            save();
+                        }
+                    });
+                }
+                autoSaveTimeout();
             }
-
-            // Draw the line in the buffer
-            let id = thisBoard.idCounter++;
-
-            if(isPen()){
-                let line = newLine(buffer,0,currentColor,currentStroke,id);
-                drawLine(svg.main,line);
-                
-            }else if(isLink()){
-                // Make sure the line goes back to the start
-                buffer.push({x:buffer[0].x,y:buffer[0].y});
-
-                // Create a new popup getting what board to link to
-                popup.newBoard(buffer,(resID,boardName,bgcolor,lineBuffer)=>{
-                    // if a new board is to be made
-                    if(resID == -1){
-                        let newBoardID = boxManager.newBoard(boardName,bgcolor);
-                        
-                        let line = newLine(lineBuffer,2,currentColor,currentStroke,id,newBoardID);
-                        drawLine(svg.link,line);
-                        save();
-                        //init(newBoardID);
-                    }else{
-                        let line = newLine(lineBuffer,2,currentColor,currentStroke,id,resID);
-                        drawLine(svg.link,line);
-                        
-                        save();
-                    }
-                });
-            }
-            
             // clear the buffer
             buffer = [];
             // clear the temp line
             d3.select("#temp-line").html(null);
 
             // Save in x seconds
-            autoSaveTimeout();
-        }
-        if(isHand()){
             
+        }
+        if(isHand() || isMiddleClick()){
+            mouseDownPoint = null;
         }
         if(isEraser()){
 
         }
         if(isLine() || isRect()){
-            buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:x,y:y}]
+            buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouse.y}]
 
             // Draw the line in the buffer
-            let id = thisBoard.idCounter++;
 
             if(isLine()){
-                let line = newLine(buffer,0,currentColor,currentStroke,id);
-                drawLine(svg.main,line);
-                
+                // Check if the height and width is 0
+                if((buffer[0].x - buffer[1].x) != 0 && (buffer[0].y - buffer[1].y) != 0){
+                    let line = newLine(buffer,0,currentColor,currentStroke);
+                    drawLine(svg.main,line);
+                }
             }else if(isRect()){
-                let line = newLine(buffer,1,currentColor,currentStroke,id);
-                drawLine(svg.main,line);
+                // Check if the height or width is 0
+                if((buffer[0].x - buffer[1].x) != 0 || (buffer[0].y - buffer[1].y) != 0){
+                    let line = newLine(buffer,1,currentColor,currentStroke);
+                    drawLine(svg.main,line);
+                }
             }
             
 
@@ -464,19 +559,31 @@ whiteboard = function(){
 
             selectedElement = null;
         }
+        if(textDrawArea != null && textDrawArea.isMouseDownForMoving){
+            textDrawArea.isMouseDownForMoving = false;
+        }
 
         isDrawing = false;
-
         
         mouseDownPoint = null;
-        
     }
 
     function mouseMove(){
         // Get the current mouse coordinates
-        let coordinates= d3.mouse(this);
-        let x = coordinates[0];
-        let y = coordinates[1];
+        mouse = {
+            // xy based on svg location
+            x: d3.mouse(d3.select("#drawingBoard-svg").node())[0],
+            y: d3.mouse(d3.select("#drawingBoard-svg").node())[1],
+            // last xy
+            lx: mouse.x,
+            ly: mouse.y,
+            // xy based on main panel position
+            gx: d3.mouse(d3.select("#mainPanel").node())[0],
+            gy: d3.mouse(d3.select("#mainPanel").node())[1],
+            // last xy
+            lgx: mouse.gx,
+            lgy: mouse.gy
+        }
 
         if(isPen() || isLink()){
             let currentTime = Date.now();
@@ -500,8 +607,8 @@ whiteboard = function(){
                     svg.temp.append("circle")
                         .attr("fill",currentColor)
                         .attr("r",currentStroke/2)
-                        .attr("cx",x)
-                        .attr("cy",y);
+                        .attr("cx",mouse.x)
+                        .attr("cy",mouse.y);
                     
                     // d3.select("#temp-line").append("line")
                     //     .attr("x1",x)
@@ -511,19 +618,14 @@ whiteboard = function(){
                     //     .attr("stroke", currentColor)
                     //     .attr("stroke-width", currentStroke);
 
-                    buffer.push({x:x,y:y});
+                    buffer.push({x:mouse.x,y:mouse.y});
                 }
             }
         }
-        if(isHand()){
-            // If the mouse has been down
-            if(mouseDownPoint != null){
-                /**
-                 * Move the viewbox by taking the position the box was at when the mouse was first clicked.
-                 * the (/1.2) is there to slow down the movement, no idea how to get around this atm 
-                 */
-                viewbox.x = mouseDownPoint.vx-(x-mouseDownPoint.x)/1.2;
-                viewbox.y = mouseDownPoint.vy-(y-mouseDownPoint.y)/1.2;
+        if(mouseDownPoint != null){  
+            if(isHand() || mouseDownPoint.button == 1){
+                viewbox.x = viewbox.x - (mouse.gx-mouse.lgx)*viewbox.scale;
+                viewbox.y = viewbox.y - (mouse.gy-mouse.lgy)*viewbox.scale;
                 updateViewbox();
             }
         }
@@ -532,8 +634,8 @@ whiteboard = function(){
                 svg.temp.html(null);
 
                 svg.temp.append("line")
-                    .attr("x1",x)
-                    .attr("y1",y)
+                    .attr("x1",mouse.x)
+                    .attr("y1",mouse.y)
                     .attr("x2",mouseDownPoint.x)
                     .attr("y2",mouseDownPoint.y)
                     .attr("stroke", currentColor)
@@ -542,11 +644,11 @@ whiteboard = function(){
         }
         if(isRect()){
             if(isDrawing){
-                let height = mouseDownPoint.y>=y?mouseDownPoint.y-y:y-mouseDownPoint.y;
-                let width = mouseDownPoint.x>=x?mouseDownPoint.x-x:x-mouseDownPoint.x;
+                let height = mouseDownPoint.y>=mouse.y?mouseDownPoint.y-mouse.y:mouse.y-mouseDownPoint.y;
+                let width = mouseDownPoint.x>=mouse.x?mouseDownPoint.x-mouse.x:mouse.x-mouseDownPoint.x;
 
-                let rectX = mouseDownPoint.x>=x?x:mouseDownPoint.x;
-                let rectY = mouseDownPoint.y>=y?y:mouseDownPoint.y;
+                let rectX = mouseDownPoint.x>=mouse.x?mouse.x:mouseDownPoint.x;
+                let rectY = mouseDownPoint.y>=mouse.y?mouse.y:mouseDownPoint.y;
 
                 svg.temp.html(null);
 
@@ -561,11 +663,17 @@ whiteboard = function(){
         if(isMove() && selectedElement != null){
             let obj = getLine(selectedElement);
 
-            tempTransform.x = x-mouseDownPoint.x+obj.transform.x;
-            tempTransform.y = y-mouseDownPoint.y+obj.transform.y;
+            tempTransform.x = mouse.x-mouseDownPoint.x+obj.transform.x;
+            tempTransform.y = mouse.y-mouseDownPoint.y+obj.transform.y;
 
             updateLine(obj);
             autoSaveTimeout();
+        }
+        if(textDrawArea != null && textDrawArea.isMouseDownForMoving && textDrawArea.isDraggable){ // Used for moving the text box when first writing text
+            
+            textDrawArea.x = mouse.x-textDrawArea.offsetX;
+            textDrawArea.y = mouse.y-textDrawArea.offsetY;
+            updateTextArea();
         }
     }
 
@@ -616,9 +724,9 @@ whiteboard = function(){
      * @param {Number} stroke Stroke size of the line
      * @param {?String} link id to link to
      */
-    function newLine(buffer,type,color,stroke,id,link=null){
+    function newLine(buffer,type,color,stroke,link=null){
         let obj = {
-            id: id,
+            id: thisBoard.idCounter++,
             type:type,
             color:color,
             stroke:stroke,
@@ -647,6 +755,8 @@ whiteboard = function(){
 
         if(line.type == 2){
             drawLine(svg.link,line);
+        }else if(line.type == 4){
+            drawLine(svg.image,line);
         }else{
             drawLine(svg.main,line);
         }
@@ -661,62 +771,36 @@ whiteboard = function(){
      * Changes the current tool to the passed number
      * @param {Number} toolID number for the tool
      */
-    function setTool(toolID){
-        if(!isTyping()){
-            d3.select("#toolbar-icon-"+currentTool).attr("class","toolbar-icon");
-            currentTool = toolID;
-            d3.select("#toolbar-icon-"+currentTool).attr("class","toolbar-icon selected");
+    function setTool(toolID,isKeyboardShortcut){
+        // If they're typing and a keyboard shortcut is clicked
+        if(isTyping() && isKeyboardShortcut){
+            // Ignore it
+            return;
         }
+
+        // If they are typing and want to change tools
+        if(isTyping()){
+            // let them but submit the text box
+            submitTextArea();
+        }
+
+        d3.select("#toolbar-icon-"+currentTool).attr("class","toolbar-icon");
+        currentTool = toolID;
+        d3.select("#toolbar-icon-"+currentTool).attr("class","toolbar-icon selected");
     }
 
-    /**
-     * Checks if the current tool is the pen tool
-     */
-    function isPen(){
-        return currentTool==0?true:false;
-    }
-
-    /**
-     * Checks if the current tool is the Hand tool
-     */
-    function isHand(){
-        return currentTool==1?true:false;
-    }
-
-    /**
-     * Is the current tool the eraser
-     */
-    function isEraser(){
-        return currentTool==2?true:false;
-    }
-
-    function isLine(){
-        return currentTool==3?true:false;
-    }
-
-    function isRect(){
-        return currentTool==4?true:false;
-    }
-
-    function isLink(){
-        return currentTool==5?true:false;
-    }
-
-    function isText(){
-        return currentTool==6?true:false;
-    }
-
-    function isMouse(){
-        return currentTool==7?true:false;
-    }
-
-    function isMove(){
-        return currentTool==8?true:false;
-    }
-
-    function isImage(){
-        return currentTool==9?true:false;
-    }
+    //Shortcuts to check what tool the user is on
+ 
+    function isPen(){return currentTool==0?true:false;}
+    function isHand(){return currentTool==1?true:false;}
+    function isEraser(){return currentTool==2?true:false;}
+    function isLine(){return currentTool==3?true:false;}
+    function isRect(){return currentTool==4?true:false;}
+    function isLink(){return currentTool==5?true:false;}
+    function isText(){return currentTool==6?true:false;}
+    function isMouse(){return currentTool==7?true:false;}
+    function isMove(){return currentTool==8?true:false;}
+    function isImage(){return currentTool==9?true:false;}
 
     /**
      * Checks to see if the user is typing something into the text tool
@@ -730,15 +814,16 @@ whiteboard = function(){
     //==//==//==//==//==//==//
     // color bar
     // #region
-    function initcolorBar(){
-        d3.select("#colorBar").html(null);
+    function initColorBar(){
+        
         colorBar = {
             pens: [],
             svg: null,
             maxPens: 10,
             changecolor: null
         }
-        colorBar.svg = d3.select("#colorBar").append("svg");
+        d3.select("#colorBar-penBar").remove();
+        colorBar.svg = d3.select("#colorBar").append("svg").attr("id","colorBar-penBar");
         let x=10;
 
         // draw the current pen
@@ -878,8 +963,64 @@ whiteboard = function(){
         // #region
         x+= 30;
 
+        let strokeDecreaseGroup = colorBar.svg.append("g")
+            .attr("id","colorBar-strokeDecreaseButton");
+
+        strokeDecreaseGroup.on("click",()=>{
+            if(currentStroke-1 >=1){
+                currentStroke--;
+                colorBar.strokeSizeLine.attr("stroke-width", currentStroke)
+            }
+            if(isTyping()){
+                updateTextArea();
+            }
+        });
+
+        strokeDecreaseGroup.append("rect")
+            .attr("x",x)
+            .attr("y",0)
+            .attr("width", 40)
+            .attr("height", 40)
+            .attr("fill", "transparent");
+
+        strokeDecreaseGroup.append("line")
+            .attr("x1",x+10)
+            .attr("y1",20)
+            .attr("x2",x+30)
+            .attr("y2",20)
+            .attr("stroke", "var(--text)")
+            .attr("stroke-width", 2)
+            .attr("class","colorBar-strokeDecreaseLine");
+        
+        x+= 50;
+        // Create the line
+        let line = d3.line().curve(d3.curveCardinal);
+
+        // for every x and y, set the value to (object passed).x
+        line.x((d)=>{
+            return d.x;
+        });
+        line.y((d)=>{
+            return d.y;
+        });
+
+        // Append the line
+        colorBar.strokeSizeLine = colorBar.svg.append("path")
+            .attr("d", line([
+                {x:x,y:20},
+                {x:x+25,y:10},
+                {x:x+50,y:20},
+                {x:x+75,y:30},
+                {x:x+100,y:20}
+            ]))
+            .attr("stroke", currentColor)
+            .attr("stroke-width", currentStroke)
+            .attr("fill", "none");
+
+        x+= 110;     
+
         let strokeIncreaseGroup = colorBar.svg.append("g")
-            .attr("id","colorBar-strokeIncreaseButton");
+        .attr("id","colorBar-strokeIncreaseButton");
 
         strokeIncreaseGroup.on("click",()=>{
             currentStroke++;
@@ -913,61 +1054,6 @@ whiteboard = function(){
             .attr("stroke", "var(--text)")
             .attr("stroke-width", 2)
             .attr("class","colorBar-strokeIncreaseLine");
-        
-        x+= 50;
-        // Create the line
-        let line = d3.line().curve(d3.curveCardinal);
-
-        // for every x and y, set the value to (object passed).x
-        line.x((d)=>{
-            return d.x;
-        });
-        line.y((d)=>{
-            return d.y;
-        });
-
-        // Append the line
-        colorBar.strokeSizeLine = colorBar.svg.append("path")
-            .attr("d", line([
-                {x:x,y:20},
-                {x:x+25,y:10},
-                {x:x+50,y:20},
-                {x:x+75,y:30},
-                {x:x+100,y:20}
-            ]))
-            .attr("stroke", currentColor)
-            .attr("stroke-width", currentStroke)
-            .attr("fill", "none");
-
-        x+= 110;     
-        let strokeDecreaseGroup = colorBar.svg.append("g")
-            .attr("id","colorBar-strokeDecreaseButton");
-
-        strokeDecreaseGroup.on("click",()=>{
-            if(currentStroke-1 >=1){
-                currentStroke--;
-                colorBar.strokeSizeLine.attr("stroke-width", currentStroke)
-            }
-            if(isTyping()){
-                updateTextArea();
-            }
-        });
-
-        strokeDecreaseGroup.append("rect")
-            .attr("x",x)
-            .attr("y",0)
-            .attr("width", 40)
-            .attr("height", 40)
-            .attr("fill", "transparent");
-
-        strokeDecreaseGroup.append("line")
-            .attr("x1",x+10)
-            .attr("y1",20)
-            .attr("x2",x+30)
-            .attr("y2",20)
-            .attr("stroke", "var(--text)")
-            .attr("stroke-width", 2)
-            .attr("class","colorBar-strokeDecreaseLine");
         // #endregion
     }
 
@@ -1027,32 +1113,64 @@ whiteboard = function(){
     // Text Tool
     // #region
     function updateTextArea(){
-        let textArea = svg.temp.html(null);
-        let input = util.getValueId("whiteboard-textInput-input");
 
+        //#whiteboard-textInputArea
         let fontSize = 12 + (currentStroke*2);
+        d3.select("#whiteboard-textInputArea")
+            .style("font-size",`${fontSize}px`)
+            .style("line-height",`${fontSize}px`)
+            .style("color",currentColor);
 
-        let lines = 0;
-        for(let line of input.split("\n")){
-            textArea.append("text")
-                .attr("x",textDrawArea.x)
-                .style("font-size",`${fontSize}px`)
-                .attr("y",textDrawArea.y+(lines*fontSize))
-                .style("fill",currentColor)
-                .html(line);
-            lines++;
+        d3.select("#whiteboard-textInputArea-container")
+            .attr("x",textDrawArea.x)
+            .attr("y",textDrawArea.y);
+
+
+        let element = document.getElementById("whiteboard-textInputArea");
+
+        // Check for overflow
+        let isXOverflow = element.scrollWidth > element.clientWidth;
+        let isYOverflow = element.scrollHeight > element.clientHeight;
+
+        if(isXOverflow){
+            textDrawArea.w += (element.scrollWidth-element.clientWidth);
+            d3.select("#whiteboard-textInputArea").style("width",textDrawArea.w);
         }
+        if(isYOverflow){
+            textDrawArea.h += 20;
+            d3.select("#whiteboard-textInputArea").style("height",textDrawArea.h);
+        }
+            
+        document.getElementById("whiteboard-textInputArea").focus();
+    }
+
+    function submitTextArea(){
+        let fontSize = 12 + (currentStroke*2);
+        //When hitting enter
+        let data = {
+            text: util.getValueId("whiteboard-textInputArea"),
+            x: textDrawArea.x+13,
+            y: textDrawArea.y+13+fontSize-(2+Math.floor(currentStroke/5)) // All this math adjusts the generated text to align the text area
+        };
+
+        let line = newLine(data,3,currentColor,currentStroke);
+
+        drawLine(svg.main,line);
+
+        // clear the buffer
+        buffer = [];
+        textDrawArea = null;
+        // clear the temp line
+        d3.select("#temp-line").html(null);
+
+        // Save in x seconds
+        autoSaveTimeout();
     }
     // #endregion
     //==//==//==//==//==//==//
     // Image Tool
     // #region
 
-    function openImagePopup(imageCoords){
-        popup.imageSelector(imageCoords,()=>{
-
-        });
-    }
 
 
     // #endregion
@@ -1078,13 +1196,13 @@ whiteboard = function(){
 
     function setupKeyboardShortcuts(){
         // https://keycode.info/
-        keyManager.newEvent(80,0,function(){return setTool(0)}); // pen
-        keyManager.newEvent(72,0,function(){return setTool(1)}); // Hand
-        keyManager.newEvent(69,0,function(){return setTool(2)}); // eraser
-        keyManager.newEvent(76,0,function(){return setTool(3)}); // line
-        keyManager.newEvent(82,0,function(){return setTool(4)}); // rect
-        keyManager.newEvent(77,0,function(){return setTool(8)}); // move
-        keyManager.newEvent(84,0,function(){return setTool(6)}); // text
+        keyManager.newEvent(80,0,function(){return setTool(0,true)}); // pen
+        keyManager.newEvent(72,0,function(){return setTool(1,true)}); // Hand
+        keyManager.newEvent(69,0,function(){return setTool(2,true)}); // eraser
+        keyManager.newEvent(76,0,function(){return setTool(3,true)}); // line
+        keyManager.newEvent(82,0,function(){return setTool(4,true)}); // rect
+        keyManager.newEvent(77,0,function(){return setTool(8,true)}); // move
+        keyManager.newEvent(84,0,function(){return setTool(6,true)}); // text
     }
 
 

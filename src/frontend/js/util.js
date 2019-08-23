@@ -3,7 +3,12 @@ util = function(){
         return d3.select("#"+id).property("value");
     }
 
+    function clearValueId(id){
+        return d3.select("#"+id).property("value","");
+    }
+
     return{
-        getValueId:getValueId
+        getValueId:getValueId,
+        clearValueId:clearValueId
     }
 }();
