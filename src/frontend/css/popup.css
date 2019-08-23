@@ -81,15 +81,16 @@
     line-height: 30px;
     margin-left: auto;
     margin-right: auto;
-    background-color: #27ae60;
     text-align: center;
-    border: 1px solid var(--text);
+    /* background-color: #27ae60; */
+    border: 1px solid #04ff00;
+    color: #02ef02;
 }
 
-.popup-submit:hover{
+/* .popup-submit:hover{
     background-color: var(--green);
     cursor: pointer;
-}
+} */
 
 #popup-navBar{
     width: 200px;

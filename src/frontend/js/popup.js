@@ -37,7 +37,7 @@ popup = function(){
 
         // Add the submit button
         let submitButton = d3.select("#popup-box").append("div");
-        submitButton.html("Submit").attr("class","popup-submit");
+        submitButton.html("Submit").attr("class","popup-submit button");
 
         // Add the error message
         d3.select("#popup-box").append("div").attr("id","popup-error");

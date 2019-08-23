@@ -65,6 +65,38 @@ html{
 }
 /* #endregion ScrollBar */
 
+/* #region Button */
+.button{
+    padding: 7px 15px 7px 13px;
+    margin: 4px 6px;
+    line-height: 40px;
+    border-radius: 8px;
+    opacity: 0.85;
+    background-color: var(--darklight);
+    cursor: pointer;
+    transition: 0.08s;
+}
+
+.button-icon{
+    height: 40px;
+    width: 40px;
+    float: left;
+    background-size: 40px;
+    margin: 0px 10px 0px 0px;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+.button:hover{
+    background-color: #1a1a1a;
+    opacity: 1;
+}
+
+.button:active {
+    background-color: #161616;
+    opacity: 1;
+}
+/* #endregion Button */
 
 #drawingBoard{
     position: absolute;

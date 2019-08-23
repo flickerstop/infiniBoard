@@ -4,63 +4,71 @@ mainMenu = function(){
      * Does nothing atm
      */
     function init(){
-        comm.sendMessage('getBoxes');
-    }
-    /**
-     * Hides the menu to show the whiteboard
-     */
-    function switchToWhiteboard(){
-        d3.select("#mainMenu").style("display","none");
-        d3.select("#loadBox").style("display","none");
-        d3.select("#whiteboard").style("display",null);
     }
 
-    /**
-     * Function for UI button
-     */
-    function createNewBox(){
-        boxManager.createBox((id)=>{
-            switchToWhiteboard();
-            whiteboard.init(id);
-        });
+    function changeState(stateID, boxName){
+        d3.selectAll(".stateSection").style("display","none");
+        d3.select("#" + stateID).style("display",null);
+        
+        switch (stateID) {
+            case "home":
+                break;
+            case "myBoxes":
+                comm.sendSync("getBoxes","please").then((boxes)=>{
+                    boxManager.setShelf(boxes);
+                    loadMyBoxes();
+                });
+                break;
+            case "whiteboard":
+                d3.select("#menuBar").style("display","none");
+                boxManager.setBox(boxName)
+                whiteboard.init(0);
+                break;
+            default:
+                break;
+        }
     }
+
+    function createNewBox(boardBoxName,boardName,bgColor){
+        boxManager.createBox(boardBoxName,boardName,bgColor);
+        changeState("whiteboard", boardBoxName);
+    }
+
     /**
      * Meny Bar Option to show list of users boxes
      */
     function loadMyBoxes(){
-        let boxesArea = d3.select("#myBoxes").html("");
-        boxesArea.append("h2").html("My Boxes");
+        let boxesArea = d3.select("#boxList").html("");
+        //boxesArea.append("h2").html("My Boxes");
         for(let box of boxManager.getShelf()){
             
             // Add main Box Item div
-            let boxItem = boxesArea.append("div").attr("class","myBoxes-boxItem").style("background-color","#"+box.boards[0].bgcolor);
+            let boxItem = boxesArea.append("div").attr("class","boxList-boxItem").style("background-color","#"+box.boards[0].bgcolor);
 
             // Draw svg Preview
-            let svg = boxItem.append("svg").attr("viewBox",`0,0,1000,1000`).attr("class","myBoxes-boxItem-svg-preview");
+            let svg = boxItem.append("svg").attr("viewBox",`0,0,1000,1000`).attr("class","boxList-boxItem-svg-preview");
             for(let line of box.boards[0].lines){
                 drawLine(svg,line);
             }
             
             // Add a dimmer for the svg
-            boxItem.append("div").attr("class","myBoxes-boxItem-svg-dimmer");
+            boxItem.append("div").attr("class","boxList-boxItem-svg-dimmer");
            
             let numberOfLines = 0;
-            let boxInfo = boxItem.append("div").attr("class","myBoxes-boxItem-Info");
+            let boxInfo = boxItem.append("div").attr("class","boxList-boxItem-Info");
             // Show Box info (Name, Details, Date)
-            boxInfo.append("div").attr("class","myBoxes-boxItem-Info-Name").append("span")
+            boxInfo.append("div").attr("class","boxList-boxItem-Info-Name").append("span")
                 .html(box.saveName);
             box.boards.forEach(board => numberOfLines += board.lines.length)
-            boxInfo.append("div").attr("class","myBoxes-boxItem-Info-Details").append("span")
+            boxInfo.append("div").attr("class","boxList-boxItem-Info-Details").append("span")
                 .html(numberOfLines + ` Line${numberOfLines > 1 ? "s" : ""}` + "<br />"
                     + box.boardCount + ` Board${box.boardCount > 1 ? "s" : ""}`);
-            boxInfo.append("div").attr("class","myBoxes-boxItem-Info-Date").append("span")
+            boxInfo.append("div").attr("class","boxList-boxItem-Info-Date").append("span")
                 .html(new Date(box.lastUsed).toLocaleString());  
 
             // Add on click event to open box
             boxItem.on("click",()=>{
-                boxManager.setBox(box);
-                switchToWhiteboard();
-                whiteboard.init(0);
+                changeState("whiteboard", box.saveName);
             });
         }
     }
@@ -136,6 +144,6 @@ mainMenu = function(){
     return {
         init:init,
         createNewBox:createNewBox,
-        loadMyBoxes:loadMyBoxes
+        changeState:changeState
     }
 }();

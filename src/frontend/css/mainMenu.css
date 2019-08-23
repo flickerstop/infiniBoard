@@ -1,64 +1,21 @@
-#mainMenu{
-    width: 50%;
-    margin-left: 25%;
-    height: 500px;
-    margin-top: calc(40% - 250px); /*FIXME This screws up when the window width is large*/
-}
-
-#mainMenu-title{
-    width: 100%;
-    text-align: center;
-    font-size: 50px;
-    margin-bottom: 25px;
-}
-
-.mainMenu-option{
-    width: 200px;
-    height: 50px;
-    text-align: center;
-    line-height: 50px;
-    border: 1px solid var(--text);
-    margin-top: 25px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.mainMenu-option:hover{
-    background-color: var(--blue);
-    cursor: pointer;
-}
-
-#loadBox{
-    width: 80%;
-    min-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
-}
-
-#loadBox-table tr{
-    max-height: 40px;
-    height: 40px;
-    margin-top: 25px;
-    text-align: center;
-}
-
-#loadBox-table tr:hover{
-    background-color: var(--highlight);
-}
-
+/* #region General */
 #mainSection{
     position: absolute;
     box-sizing: border-box;
     left: 200px;
     height: 100%;
+    width: calc(100% - 200px);
     padding: 35px 0px 0px 50px;
     overflow-y: auto; 
 }
+
 #mainSection h2{
     padding-bottom: 30px;
 }
 
+/* #endregion General */
+
+/* #region MenuBar */
 #menuBar{
     position: absolute;
     top:0px;
@@ -69,25 +26,8 @@
 }
 
 .menuBar-navItem{
-    padding: 9px 0px 9px 13px;
-    margin: 4px 6px;
-    font-weight: 550;
-    line-height: 40px;
-    border-radius: 3px;
+    border-radius: 3px !important;
     font-size: 17px;
-    opacity: 0.7;
-    transition: 0.08s;
-    cursor: pointer;
-}
-
-.menuBar-navItem:hover{
-    background-color: #1a1a1a;
-    opacity: 1;
-}
-
-.menuBar-navItem:active {
-    background-color: #161616;
-    opacity: 1;
 }
 .menuBar-navItem-selected{
     background-color: #242424 !important;
@@ -103,13 +43,25 @@
     background-repeat: no-repeat;
     background-position: center center;
 }
+/* #endregion MenuBar */
 
+/* #region My Boxes */
 #myBoxes{
     width: 100%;
     height: 100%;
 }
 
-.myBoxes-boxItem{
+#boxList{
+    width: 100%;
+}
+
+#newBoxButton{
+    position: absolute;
+    top: 20px;
+    right: 40px;
+}
+
+.boxList-boxItem{
     position: relative;
     height: 200px;
     width: 300px;
@@ -121,20 +73,20 @@
     box-shadow: 7px 7px 10px 0px rgba(0, 0, 0, 0.3);
     transition: 0.14s;
 }
-.myBoxes-boxItem:hover{
+.boxList-boxItem:hover{
     transform: scale(1.07);
 }
-.myBoxes-boxItem:hover .myBoxes-boxItem-svg-dimmer {
+.boxList-boxItem:hover .boxList-boxItem-svg-dimmer {
     opacity: 0.35;
 }
-.myBoxes-boxItem:hover .myBoxes-boxItem-svg-preview {
+.boxList-boxItem:hover .boxList-boxItem-svg-preview {
     filter: blur(0.0px);
 }
-.myBoxes-boxItem:hover .myBoxes-boxItem-Info {
+.boxList-boxItem:hover .boxList-boxItem-Info {
     opacity: 1;
 }
 
-.myBoxes-boxItem-svg-dimmer{
+.boxList-boxItem-svg-dimmer{
     /* position: absolute; */
     width: 100%;
     height: 100%;
@@ -142,7 +94,7 @@
     opacity: 0.5;
     transition: inherit;
 }
-.myBoxes-boxItem-svg-preview{
+.boxList-boxItem-svg-preview{
     position: absolute;
     top:0px;
     height: 200px;
@@ -150,7 +102,7 @@
     transition: inherit;
     filter: blur(3px);
 }
-.myBoxes-boxItem-Info{
+.boxList-boxItem-Info{
     position: absolute;
     top:0px;
     width: inherit;
@@ -160,17 +112,17 @@
     opacity: 0.6;
     transition: inherit;
 }
-.myBoxes-boxItem-Info-Name{
+.boxList-boxItem-Info-Name{
     font-size: 22px;
     margin-bottom: 5px;
     font-weight: 600;
 }
 
-.myBoxes-boxItem-Info-Details{
+.boxList-boxItem-Info-Details{
     line-height: 25px;
     font-weight: 600;
 }
-.myBoxes-boxItem-Info-Date{
+.boxList-boxItem-Info-Date{
     position: absolute;
     bottom: 3px;
     right: 9px;
@@ -178,8 +130,9 @@
    
 }
 
-.myBoxes-boxItem-Info-Name span,
-.myBoxes-boxItem-Info-Details span,
-.myBoxes-boxItem-Info-Date span{
+.boxList-boxItem-Info-Name span,
+.boxList-boxItem-Info-Details span,
+.boxList-boxItem-Info-Date span{
     box-shadow: inset 0px 0px 0px 20px rgba(0, 0, 0, 0.06), 0px 0px 8px 3px rgba(0, 0, 0, 0.06);
 }
+/* #endregion My Boxes */
