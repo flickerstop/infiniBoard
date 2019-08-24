@@ -85,8 +85,8 @@
                     </div>
                     <div id="toolbar">
                         <div id="toolbar-background"></div>
-                        <div id="toolbar-icon-7" class="toolbar-icon" style="background-image:url('./images/mouse_white.png')" onclick="whiteboard.setTool(7)"></div>
-                        <div id="toolbar-icon-8" class="toolbar-icon" style="background-image:url('./images/move_white.png')" onclick="whiteboard.setTool(8)">M</div>
+                        <div id="toolbar-icon-7" class="toolbar-icon" style="background-image:url('./images/mouse_white.png')" onclick="whiteboard.setTool(7)">M</div>
+                        <!-- <div id="toolbar-icon-8" class="toolbar-icon" style="background-image:url('./images/move_white.png')" onclick="whiteboard.setTool(8)">M</div> -->
                         <div id="toolbar-icon-0" class="toolbar-icon" style="background-image:url('./images/pen_white.png')" onclick="whiteboard.setTool(0)">P</div>
                         <div id="toolbar-icon-2" class="toolbar-icon" style="background-image:url('./images/eraser_white.png')" onclick="whiteboard.setTool(2)">E</div>
                         <div id="toolbar-icon-1" class="toolbar-icon" style="background-image:url('./images/hand_white.png')" onclick="whiteboard.setTool(1)">H</div>
@@ -108,6 +108,13 @@
             <div id="popup" style="display: none;">
                 <div id="popup-blackout"></div>
                 <div id="popup-box"></div>
+            </div>
+
+            <div id="rightClickMenus">
+                <div id="rightClickMenu-svg" style="display: none">
+                    <div id="rightClickMenu-svg-stroke"></div>
+                    <div id="rightClickMenu-svg-color"></div>
+                </div>
             </div>
         </div>
     </body>

@@ -170,6 +170,9 @@ whiteboard = function(){
         // Setup the keyboard shortcuts
         setupKeyboardShortcuts();
 
+        // Setup the right click menu
+        initRightClickMenu();
+
         setTool(7); // Set the tool to the direct selection
 
         // Mouse event for scrolling in/out (zooming)
@@ -329,7 +332,7 @@ whiteboard = function(){
                 .attr("width",line.dots.w)
                 .attr("height",line.dots.h)
                 .attr("id",`image${line.id}`)
-                .on("click",()=>{
+                .on("mousedown",()=>{
                     if(isMouse()){
                         drawResize(line);
                     }
@@ -375,6 +378,10 @@ whiteboard = function(){
 
         if(isMiddleClick()){
             d3.event.preventDefault();
+        }
+
+        if(isRightClick()){
+            openRightClickMenu();
         }
 
         // Get the current mouse coordinates
@@ -590,7 +597,7 @@ whiteboard = function(){
                 autoSaveTimeout();
             }
         }
-        if(isMove() && selectedElement != null){
+        if(isMove() && selectedElement != null && imageResize == null){
             let line = getLine(selectedElement);
 
             line.transform.x = tempTransform.x;
@@ -618,7 +625,8 @@ whiteboard = function(){
 
             updateLine(image);
             autoSaveTimeout();
-            imageResize = null
+            imageResize = null;
+            selectedElement = null;
         }
 
         if(holdShift.isHeld){
@@ -732,7 +740,7 @@ whiteboard = function(){
                     .attr("fill", currentColor);
             }
         }
-        if(isMove() && selectedElement != null){
+        if(isMove() && selectedElement != null && imageResize == null){
             let obj = getLine(selectedElement);
 
             tempTransform.x = mouse.x-mouseDownPoint.x+obj.transform.x;
@@ -909,8 +917,9 @@ whiteboard = function(){
 
         if(line.type == 2){
             drawLine(svg.link,line);
-        }else if(line.type == 4){
+        }else if(line.type == 4){ // image
             drawLine(svg.image,line);
+            drawResize(line);
         }else{
             drawLine(svg.main,line);
         }
@@ -953,7 +962,7 @@ whiteboard = function(){
     function isLink(){return currentTool==5?true:false;}
     function isText(){return currentTool==6?true:false;}
     function isMouse(){return currentTool==7?true:false;}
-    function isMove(){return currentTool==8?true:false;}
+    function isMove(){return currentTool==7?true:false;} // Was changed to be the same as mouse
     function isImage(){return currentTool==9?true:false;}
 
     /**
@@ -1403,12 +1412,10 @@ whiteboard = function(){
     //==//==//==//==//==//==//
     // Image Resizer
     // #region
-
     function drawResize(img){
         d3.selectAll(".imageResizeCircle").remove();
         let svg = d3.select(`#object${img.id}`);
 
-        console.log(svg);
         // Top Left
         svg.append("circle")
             .attr("fill","var(--blue)")
@@ -1467,8 +1474,47 @@ whiteboard = function(){
             })
     }
     // #endregion
-    
+    //==//==//==//==//==//==//
+    // #region Right click menu
+    function initRightClickMenu(){
+        d3.select("#rightClickMenu-svg-stroke")
+            .append("div") // "Stroke Size" title
+            .attr("class","rightClickMenu-title")
+            .html("Stroke Size");
+        let strokeRow = d3.select("#rightClickMenu-svg-stroke")
+            .append("div") // Row
+            .attr("class","rightClickMenu-row")
+            .style("margin-left","29px")
 
+        strokeRow.append("div")
+            .html("-")
+            .attr("class","incrementButtonLeft");
+
+        strokeRow.append("input")
+            .attr("type","number")
+            .attr("class","incrementButtonInput");
+
+        strokeRow.append("div")
+            .html("+")
+            .attr("class","incrementButtonRight");
+
+    }
+
+    function openRightClickMenu(){
+        d3.select("#rightClickMenu-svg")
+            .style("display",null)
+            .style("top",mouse.gy)
+            .style("left",mouse.gx);
+    }
+
+    function closeRightClickMenu(){
+        d3.select("#rightClickMenu-svg")
+            .style("display","none")
+            .style("top",null)
+            .style("left",null);
+    }
+
+    // #endregion
     /**
      * Gets the size of the svg from d3
      */
@@ -1493,7 +1539,7 @@ whiteboard = function(){
         keyManager.newEvent(69,0,function(){setTool(2,true)}); // eraser
         keyManager.newEvent(76,0,function(){setTool(3,true)}); // line
         keyManager.newEvent(82,0,function(){setTool(4,true)}); // rect
-        keyManager.newEvent(77,0,function(){setTool(8,true)}); // move
+        keyManager.newEvent(77,0,function(){setTool(7,true)}); // move
         keyManager.newEvent(84,0,function(){setTool(6,true)}); // text
 
         keyManager.newEvent(16,3,function(){if(!holdShift.isHeld) holdShift.isHeld = true;});
