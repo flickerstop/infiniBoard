@@ -13,6 +13,8 @@
         <link rel="stylesheet" href="./css/frame.css">
         <link rel="stylesheet" href="./css/mainMenu.css">
         <link rel="stylesheet" href="./css/popup.css">
+
+        <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto&display=swap" rel="stylesheet">
         <!-- <script src="./js/data.js"></script> -->
 
         <script src="./js/extern/jscolor.js"></script>
@@ -30,7 +32,7 @@
         :root {
             --main: rgb(37,37,37); 
             --highlight: rgb(103, 103, 103);
-            --darklight: rgb(20,20,20); 
+            --darklight: rgb(29, 29, 29); 
             --text: #ecf0f1;
             --green: #27ae60;
             --red: #e74c3c;
@@ -40,7 +42,6 @@
         }
     </style>
     <body>
-
         <div id="frame">
             <div id="frame-title">Infiniboard</div>
             <div id="frame-dragArea"></div>
@@ -49,59 +50,66 @@
             </div>
         </div>
         <div id="mainPanel">
-            <div id="mainMenu">
-                <div id="mainMenu-title">Infiniboard</div>
-                <div id="mainMenu-lastBoard" class="mainMenu-option">Last Board</div>
-                <div id="mainMenu-newBoard" class="mainMenu-option" onclick="mainMenu.createNewBox()">New Board</div>
-                <div id="mainMenu-loadBoard" class="mainMenu-option" onclick="comm.sendMessage('getBoxes')">Load Board</div>
-                <!-- <div class="mainMenu-option" >
-                        <input type="file"
-                        id="avatar" name="avatar"
-                        accept="image/png, image/jpeg"
-                        onchange="handleFiles(this.files)">
-                </div> -->
-            </div>
-
-            <div id="loadBox" style="display: none">
-                <table>
-                    <thead>
-                        <th style="width: 15%">Name</th>
-                        <th style="width: 15%">Last Saved</th>
-                        <th style="width: 15%">Number of Infiniboards</th>
-                        <th style="width: 15%">Number of Lines</th>
-                        <th style="width: 30%">Preview</th>
-                    </thead>
-                    <tbody id="loadBox-table"></tbody>
-                </table>
-            </div>
-
-            <div id="whiteboard" style="display: none">   
-                <div id="drawingBoard">
-
-                </div>
-                <div id="toolbar">
-                    <div id="toolbar-background"></div>
-                    <div id="toolbar-icon-7" class="toolbar-icon" style="background-image:url('./images/mouse_white.png')" onclick="whiteboard.setTool(7)"></div>
-                    <div id="toolbar-icon-8" class="toolbar-icon" style="background-image:url('./images/move_white.png')" onclick="whiteboard.setTool(8)">M</div>
-                    <div id="toolbar-icon-0" class="toolbar-icon" style="background-image:url('./images/pen_white.png')" onclick="whiteboard.setTool(0)">P</div>
-                    <div id="toolbar-icon-2" class="toolbar-icon" style="background-image:url('./images/eraser_white.png')" onclick="whiteboard.setTool(2)">E</div>
-                    <div id="toolbar-icon-1" class="toolbar-icon" style="background-image:url('./images/hand_white.png')" onclick="whiteboard.setTool(1)">H</div>
-                    <div id="toolbar-icon-3" class="toolbar-icon" style="background-image:url('./images/line_white.png')" onclick="whiteboard.setTool(3)">L</div>
-                    <div id="toolbar-icon-4" class="toolbar-icon" style="background-image:url('./images/rect_white.png')" onclick="whiteboard.setTool(4)">R</div>
-                    <div id="toolbar-icon-5" class="toolbar-icon" style="background-image:url('./images/link_white.png')" onclick="whiteboard.setTool(5)">?</div>
-                    <div id="toolbar-icon-6" class="toolbar-icon" style="background-image:url('./images/text_white.png')" onclick="whiteboard.setTool(6)">T</div>
-                    <div id="toolbar-icon-9" class="toolbar-icon" style="background-image:url('./images/image_white.png')" onclick="whiteboard.setTool(9)">I</div>
-                </div>
-                <div id="colorBar">
-                    <button id="colorBar-newcolor" class="jscolor {onFineChange:'whiteboard.changecolor()' ,width:243, height:150,value:'66ccff',borderColor:'var(--highlight)', backgroundColor:'var(--main)'}"></button>
-                </div>
-
-                <div id="navBar">
-                    <div id="navBar-side"></div>
-                    <div id="navBar-content"></div>
+            <div id="menuBar">
+                <div style="padding-top: 20px;">
+                    <div class="menuBar-navItem button menuBar-navItem-selected" onclick="mainMenu.changeState('home');">
+                        <div class="button-icon" style="background-image:url('./images/home_icon.png')"></div>
+                        Home
+                    </div>
+                    <div class="menuBar-navItem button" onclick="mainMenu.changeState('myBoxes');">
+                        <div class="button-icon" style="background-image:url('./images/box_icon.png')" ></div>
+                        My Boxes
+                    </div>
+                    <div class="menuBar-navItem button">
+                        <div class="button-icon" style="background-image:url('./images/gear_icon.png')"></div>
+                        Settings
+                    </div>
                 </div>
             </div>
-
+            <div id="mainSection">
+                <div id="myBoxes" class="stateSection">
+                    <h2>My Boxes</h2>
+                    <div id="newBoxButton" class="button" onclick="popup.newBoardBox(mainMenu.createNewBox)">
+                        <div class="button-icon" style="background-image:url('./images/add_white.png')"></div>
+                        New Box
+                    </div>
+                    <div id="boxList"></div>
+                </div>
+                <div id="home" class="stateSection">
+                    <h2>Home</h2>
+                </div>
+            </div>
+            <div id="whiteboard" class="stateSection">
+                    <div id="whiteboard-textInput">
+                        <textarea id="whiteboard-textInput-input"></textarea>
+                        <div id="whiteboard-textInput-submit">Finish</div>
+                    </div>
+                    
+                    <div id="drawingBoard">
+    
+                    </div>
+                    <div id="toolbar">
+                        <div id="toolbar-background"></div>
+                        <div id="toolbar-icon-7" class="toolbar-icon" style="background-image:url('./images/mouse_white.png')" onclick="whiteboard.setTool(7)"></div>
+                        <div id="toolbar-icon-8" class="toolbar-icon" style="background-image:url('./images/move_white.png')" onclick="whiteboard.setTool(8)">M</div>
+                        <div id="toolbar-icon-0" class="toolbar-icon" style="background-image:url('./images/pen_white.png')" onclick="whiteboard.setTool(0)">P</div>
+                        <div id="toolbar-icon-2" class="toolbar-icon" style="background-image:url('./images/eraser_white.png')" onclick="whiteboard.setTool(2)">E</div>
+                        <div id="toolbar-icon-1" class="toolbar-icon" style="background-image:url('./images/hand_white.png')" onclick="whiteboard.setTool(1)">H</div>
+                        <div id="toolbar-icon-3" class="toolbar-icon" style="background-image:url('./images/line_white.png')" onclick="whiteboard.setTool(3)">L</div>
+                        <div id="toolbar-icon-4" class="toolbar-icon" style="background-image:url('./images/rect_white.png')" onclick="whiteboard.setTool(4)">R</div>
+                        <div id="toolbar-icon-5" class="toolbar-icon" style="background-image:url('./images/link_white.png')" onclick="whiteboard.setTool(5)">?</div>
+                        <div id="toolbar-icon-6" class="toolbar-icon" style="background-image:url('./images/text_white.png')" onclick="whiteboard.setTool(6)">T</div>
+                        <div id="toolbar-icon-9" class="toolbar-icon" style="background-image:url('./images/image_white.png')" onclick="whiteboard.setTool(9)">I</div>
+                    </div>
+                    <div id="colorBar">
+                        <button id="colorBar-newcolor" class="jscolor {onFineChange:'whiteboard.changecolor()' ,width:243, height:150,value:'66ccff',borderColor:'var(--highlight)', backgroundColor:'var(--main)'}"></button>
+                    </div>
+    
+                    <div id="navBar">
+                        <div id="navBar-side"></div>
+                        <div id="navBar-content"></div>
+                    </div>
+            </div>
             <div id="popup" style="display: none;">
                 <div id="popup-blackout"></div>
                 <div id="popup-box"></div>
@@ -120,7 +128,13 @@
 
     window.onload = function () { 
         buildWindowsButtons();
+        mainMenu.changeState('home');
         //changeTheme();
+
+        d3.selectAll(".menuBar-navItem").on("click", function() {
+            d3.selectAll(".menuBar-navItem").classed("menuBar-navItem-selected",false);
+            d3.select(this).classed("menuBar-navItem-selected",true);
+        });
     }
 
     function changeTheme(){

@@ -1,55 +1,138 @@
-#mainMenu{
-    width: 50%;
-    margin-left: 25%;
-    height: 500px;
-    margin-top: calc(40% - 250px); /*FIXME This screws up when the window width is large*/
+/* #region General */
+#mainSection{
+    position: absolute;
+    box-sizing: border-box;
+    left: 200px;
+    height: 100%;
+    width: calc(100% - 200px);
+    padding: 35px 0px 0px 50px;
+    overflow-y: auto; 
 }
 
-#mainMenu-title{
-    width: 100%;
-    text-align: center;
-    font-size: 50px;
-    margin-bottom: 25px;
+#mainSection h2{
+    padding-bottom: 30px;
 }
 
-.mainMenu-option{
+/* #endregion General */
+
+/* #region MenuBar */
+#menuBar{
+    position: absolute;
+    top:0px;
+    left:0px;
     width: 200px;
-    height: 50px;
-    text-align: center;
-    line-height: 50px;
-    border: 1px solid var(--text);
-    margin-top: 25px;
-    margin-left: auto;
-    margin-right: auto;
+    height: 100%;
+    background-color: var(--darklight);
 }
 
-.mainMenu-option:hover{
-    background-color: var(--blue);
-    cursor: pointer;
+.menuBar-navItem{
+    border-radius: 3px !important;
+    font-size: 17px;
+}
+.menuBar-navItem-selected{
+    background-color: #242424 !important;
+    opacity: 1 !important;
 }
 
-#loadBox{
-    width: 80%;
-    min-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
-}
-
-#loadBox-table tr{
-    max-height: 40px;
+.menuBar-navItem-icon{
     height: 40px;
-    margin-top: 25px;
-    text-align: center;
+    width: 40px;
+    float: left;
+    background-size: 40px;
+    margin: 0px 10px 0px 0px;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+/* #endregion MenuBar */
+
+/* #region My Boxes */
+#myBoxes{
+    width: 100%;
+    height: 100%;
 }
 
-#loadBox-table tr:hover{
-    background-color: var(--highlight);
+#boxList{
+    width: 100%;
 }
 
-.loadBox-preview{
-    margin-left: auto;
-    margin-right: auto;
+#newBoxButton{
+    position: absolute;
+    top: 20px;
+    right: 40px;
+}
+
+.boxList-boxItem{
+    position: relative;
+    height: 200px;
+    width: 300px;
+    float: left;
+    margin: 0px 20px 20px 0px;
+    border-radius: 7px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 7px 7px 10px 0px rgba(0, 0, 0, 0.3);
+    transition: 0.14s;
+}
+.boxList-boxItem:hover{
+    transform: scale(1.07);
+}
+.boxList-boxItem:hover .boxList-boxItem-svg-dimmer {
+    opacity: 0.35;
+}
+.boxList-boxItem:hover .boxList-boxItem-svg-preview {
+    filter: blur(0.0px);
+}
+.boxList-boxItem:hover .boxList-boxItem-Info {
+    opacity: 1;
+}
+
+.boxList-boxItem-svg-dimmer{
+    /* position: absolute; */
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    opacity: 0.5;
+    transition: inherit;
+}
+.boxList-boxItem-svg-preview{
+    position: absolute;
+    top:0px;
     height: 200px;
     width: 100%;
+    transition: inherit;
+    filter: blur(3px);
 }
+.boxList-boxItem-Info{
+    position: absolute;
+    top:0px;
+    width: inherit;
+    height: calc(100% - 45px);
+    text-align: center;
+    margin-top: 45px;
+    opacity: 0.6;
+    transition: inherit;
+}
+.boxList-boxItem-Info-Name{
+    font-size: 22px;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.boxList-boxItem-Info-Details{
+    line-height: 25px;
+    font-weight: 600;
+}
+.boxList-boxItem-Info-Date{
+    position: absolute;
+    bottom: 3px;
+    right: 9px;
+    font-size: 14px;
+   
+}
+
+.boxList-boxItem-Info-Name span,
+.boxList-boxItem-Info-Details span,
+.boxList-boxItem-Info-Date span{
+    box-shadow: inset 0px 0px 0px 20px rgba(0, 0, 0, 0.06), 0px 0px 8px 3px rgba(0, 0, 0, 0.06);
+}
+/* #endregion My Boxes */

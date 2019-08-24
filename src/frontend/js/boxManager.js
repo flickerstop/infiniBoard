@@ -27,35 +27,34 @@ boxManager = function(){
     /**
      * Button function for when selecting "new boardbox"
      */
-    function createBox(callback){
-        popup.newBoardBox((boardBoxName,boardName,bgColor)=>{
-            console.log({
-                boxName: boardBoxName,
-                boardName: boardName,
-                bgColor: bgColor
-            });
-
-            // create the box for all the boards
-            currentBox = {
-                saveName: boardBoxName,
-                lastUsed: Date.now(),
-                boardCount: 0,
-                boards: []
-            };
-
-            // Create the first board to put in the box
-            let id = newBoard(boardName,bgColor);
-
-            callback(id);
+    function createBox(boardBoxName,boardName,bgColor){
+        console.log({
+            boxName: boardBoxName,
+            boardName: boardName,
+            bgColor: bgColor
         });
+
+        // create the box for all the boards
+        currentBox = {
+            saveName: boardBoxName,
+            lastUsed: Date.now(),
+            boardCount: 0,
+            boards: []
+        };
+
+        // Create the first board to put in the box
+        newBoard(boardName,bgColor);
+
+        // Add the new box to the shelf
+        shelf.push(currentBox);
     }
 
     /**
      * Sets the current box to the passed box
      * @param {Object} newBox New box to set
      */
-    function setBox(newBox){
-        currentBox = newBox;
+    function setBox(boxName){
+        currentBox = shelf.find(box => box.saveName == boxName);
     }
 
     /**
