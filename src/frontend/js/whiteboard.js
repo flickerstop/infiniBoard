@@ -127,6 +127,7 @@ whiteboard = function(){
         // Main is lines/rects/text
         // Links will always be ontop of lines so you can always click then
         // Temp is always ontop of everything else to see what you're drawing
+        svg.background = svg.parent.append("g");
         svg.image = svg.parent.append("g");
         svg.main = svg.parent.append("g");
         svg.link = svg.parent.append("g");
@@ -197,6 +198,8 @@ whiteboard = function(){
             viewbox.x -= x2-x;
             viewbox.y -= y2-y;
             updateViewbox();
+
+            console.log(viewbox.scale);
         });
     }
 
@@ -471,6 +474,9 @@ whiteboard = function(){
                 autoSaveTimeout();
             });
         }
+        else if(isHand() || isMiddleClick()){
+            clearBackground();
+        }
     }
 
     function mouseUp(){
@@ -519,6 +525,7 @@ whiteboard = function(){
         }
         if(isHand() || isMiddleClick()){
             mouseDownPoint = null;
+            generateBackground(3);
         }
         if(isEraser()){
 
@@ -622,7 +629,7 @@ whiteboard = function(){
                 }
             }
         }
-        if(mouseDownPoint != null){  
+        if(mouseDownPoint != null){ // Is hand tool 
             if(isHand() || mouseDownPoint.button == 1){
                 viewbox.x = viewbox.x - (mouse.gx-mouse.lgx)*viewbox.scale;
                 viewbox.y = viewbox.y - (mouse.gy-mouse.lgy)*viewbox.scale;
@@ -1168,9 +1175,80 @@ whiteboard = function(){
     }
     // #endregion
     //==//==//==//==//==//==//
-    // Image Tool
+    // Background
     // #region
+    function clearBackground(){
+        svg.background.html("");
+    }
 
+    function generateBackground(type){
+        svg.background.html("");
+
+        // Prevents massive lag from filling in a huge viewbox
+        if(viewbox.scale > 2.1){
+            return;
+        }
+
+        let backgroundBox = {
+            x1: viewbox.x,
+            y1: viewbox.y,
+            x2: viewbox.x+viewbox.w,
+            y2: viewbox.y+viewbox.h
+        }
+
+        let lineSpacing = 25;
+        let backgroundDetailColour = "#ecf0f1";
+
+        if(type == 1){ // lines
+            for(let y = Math.floor(backgroundBox.y1-10); y < backgroundBox.y2;y++){
+                if(y%lineSpacing==0){
+                    svg.background.append("line")
+                        .attr("x1",backgroundBox.x1)
+                        .attr("x2",backgroundBox.x2)
+                        .attr("y1",y)
+                        .attr("y2",y)
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", 0.5)
+                        .attr("fill", "none");
+                }
+            }
+        }else if(type == 2){ // dots
+            for(let y = Math.floor(backgroundBox.y1-10); y < backgroundBox.y2+10;y++){
+                if(y%lineSpacing==0){
+                    for(let x = Math.floor(backgroundBox.x1-10); x < backgroundBox.x2+10;x++){
+                        if(x%lineSpacing==0){
+                            svg.background.append("circle")
+                                .attr("fill",backgroundDetailColour)
+                                .attr("r",1)
+                                .attr("cx",x)
+                                .attr("cy",y);
+                        }
+                    }
+                }
+            }
+        }else if(type == 3){ // DnD grid
+            for(let y = Math.floor(backgroundBox.y1-10); y < backgroundBox.y2+10;y++){
+                if(y%lineSpacing==0){
+                    for(let x = Math.floor(backgroundBox.x1-10); x < backgroundBox.x2+10;x++){
+                        if(x%(lineSpacing*5)==0 && y%(lineSpacing*5)==0){
+                            svg.background.append("circle")
+                                .attr("fill",backgroundDetailColour)
+                                .attr("r",2)
+                                .attr("cx",x)
+                                .attr("cy",y);
+                        
+                        }else if(x%lineSpacing==0){
+                            svg.background.append("circle")
+                                .attr("fill",backgroundDetailColour)
+                                .attr("r",1)
+                                .attr("cx",x)
+                                .attr("cy",y);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
 
     // #endregion
@@ -1212,6 +1290,7 @@ whiteboard = function(){
         setTool:setTool,
         save:save,
         getPens:getPens,
-        changecolor:changecolor
+        changecolor:changecolor,
+        generateBackground:generateBackground // for testing
     }
 }();

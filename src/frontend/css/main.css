@@ -1,3 +1,5 @@
+/* #region Global Classes*/
+
 *{
     color: var(--text);
     margin: 0px;
@@ -28,6 +30,10 @@ html{
 	background-color: var(--main);
 }
 
+/* #endregion */
+
+
+
 #mainPanel{
     width: 100%;
     height: calc(100% - 20px);
@@ -35,7 +41,10 @@ html{
     top: 20px;
 }
 
-#drawingBoard{
+
+/*#region White Board*/
+
+#drawingBoard{ /* Div that holds everything related to the whiteboard*/
     position: absolute;
     left: 51px;
     top: 41px;
@@ -44,7 +53,7 @@ html{
     z-index: 1;
 }
 
-#drawingBoard-svg{
+#drawingBoard-svg{ /* Whiteboard svg */
     z-index: 2;
 }
 
@@ -54,7 +63,7 @@ html{
     fill: var(--blue);
 }
 
-/* TOOLBAR */
+/* #region TOOLBAR */
 
 #toolbar{
     position: absolute;
@@ -93,6 +102,8 @@ html{
     cursor: pointer;
     opacity: 1;
 }
+
+/* #endregion */
 
 #colorBar{
     position: absolute;
@@ -218,3 +229,6 @@ html{
     height: 100%;
     background-color: aqua;
 }
+
+
+/* #endregion */
