@@ -119,9 +119,7 @@ whiteboard = function(){
             .attr("width", "100%")
             .attr("height", "100%");
 
-        // Update the viewbox html with the viewbox object
-        updateViewbox();
-
+        
         
         // Set the groups where to draw the objects
         // Main is lines/rects/text
@@ -154,9 +152,15 @@ whiteboard = function(){
         // Set the background colour
         svg.parent.style("background-color",thisBoard.bgcolor);
 
+        // Update the viewbox html with the viewbox object
+        updateViewbox();
+
         // Init the colour/nav bar
         initColorBar();
         initNavBar();
+
+        // Draw the background if needs it
+        generateBackground();
 
         // Setup the keyboard shortcuts
         setupKeyboardShortcuts();
@@ -199,7 +203,7 @@ whiteboard = function(){
             viewbox.y -= y2-y;
             updateViewbox();
 
-            console.log(viewbox.scale);
+            generateBackground();
         });
     }
 
@@ -355,6 +359,14 @@ whiteboard = function(){
     // #region 
 
     function mouseDown(){
+        function isLeftClick(){return d3.event.button==0}
+        function isRightClick(){return d3.event.button==2}
+        function isMiddleClick(){return d3.event.button==1}
+
+        if(isMiddleClick()){
+            d3.event.preventDefault();
+        }
+
         // Get the current mouse coordinates
         let coordinates= d3.mouse(d3.select("#drawingBoard-svg").node());
         mouseDownPoint = {
@@ -364,10 +376,6 @@ whiteboard = function(){
             vy: viewbox.y,
             button: d3.event.button
         };
-
-        function isLeftClick(){return d3.event.button==0}
-        function isRightClick(){return d3.event.button==2}
-        function isMiddleClick(){return d3.event.button==1}
 
         if(isPen() && isLeftClick()){
             isDrawing = true;
@@ -525,7 +533,7 @@ whiteboard = function(){
         }
         if(isHand() || isMiddleClick()){
             mouseDownPoint = null;
-            generateBackground(3);
+            generateBackground();
         }
         if(isEraser()){
 
@@ -1181,11 +1189,11 @@ whiteboard = function(){
         svg.background.html("");
     }
 
-    function generateBackground(type){
+    function generateBackground(type = thisBoard.bgType){
         svg.background.html("");
 
         // Prevents massive lag from filling in a huge viewbox
-        if(viewbox.scale > 2.1){
+        if(viewbox.scale > 2.1 || thisBoard.bgType == 0){
             return;
         }
 
