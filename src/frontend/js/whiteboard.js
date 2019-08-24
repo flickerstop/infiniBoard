@@ -38,14 +38,26 @@ whiteboard = function(){
     let tempTransform = {x:null,y:null};
     let mouse = {x:0,y:0};
 
+    let imageResize = null;
+
     /**
      * Function that runs to initialize the whiteboard and load the current board
      */
     function init(id){
+
+        // Clear the svg properly
+        d3.select("#drawingBoard-svg-background").selectAll("*").remove();
+        d3.select("#drawingBoard-svg-images").selectAll("*").remove();
+        d3.select("#drawingBoard-svg-main").selectAll("*").remove();
+        d3.select("#drawingBoard-svg-links").selectAll("*").remove();
+        d3.select("#drawingBoard-svg").selectAll("*").remove();
+
         // Clear all elements we're about to use (for reloading)
-        d3.select("#drawingBoard").html(null).on("dragenter",()=>{
-            inputBox.style("display",null);
-        })
+        d3.select("#drawingBoard")
+            .html(null)
+            .on("dragenter",()=>{
+                inputBox.style("display",null);
+            })
 
         let inputBox = d3.select("#drawingBoard").append("input")
             .attr("multiple",true)
@@ -118,10 +130,10 @@ whiteboard = function(){
         // Main is lines/rects/text
         // Links will always be ontop of lines so you can always click then
         // Temp is always ontop of everything else to see what you're drawing
-        svg.background = svg.parent.append("g");
-        svg.image = svg.parent.append("g");
-        svg.main = svg.parent.append("g");
-        svg.link = svg.parent.append("g");
+        svg.background = svg.parent.append("g").attr("id","drawingBoard-svg-background");
+        svg.image = svg.parent.append("g").attr("id","drawingBoard-svg-images");
+        svg.main = svg.parent.append("g").attr("id","drawingBoard-svg-main");
+        svg.link = svg.parent.append("g").attr("id","drawingBoard-svg-links");
         svg.temp = svg.parent.append("g").attr("id","temp-line");
 
         svg.parent.on("mousedown",mouseDown);
@@ -315,7 +327,13 @@ whiteboard = function(){
                 .attr("x",line.dots.x)
                 .attr("y",line.dots.y)
                 .attr("width",line.dots.w)
-                .attr("height",line.dots.h);
+                .attr("height",line.dots.h)
+                .attr("id",`image${line.id}`)
+                .on("click",()=>{
+                    if(isMouse()){
+                        drawResize(line);
+                    }
+                })
         }
 
         // If the tool is the move tool, set the selected element to this one
@@ -543,48 +561,65 @@ whiteboard = function(){
 
         }
         if(isLine() || isRect()){
-            buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouse.y}]
+            if(mouseDownPoint != null){
+                buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouse.y}]
 
-            // Draw the line in the buffer
+                // Draw the line in the buffer
 
-            if(isLine()){
-                // Check if the height and width is 0
-                if((buffer[0].x - buffer[1].x) != 0 && (buffer[0].y - buffer[1].y) != 0){
-                    let line = newLine(buffer,0,currentColor,currentStroke);
-                    drawLine(svg.main,line);
+                if(isLine()){
+                    // Check if the height and width is 0
+                    if((buffer[0].x - buffer[1].x) != 0 && (buffer[0].y - buffer[1].y) != 0){
+                        let line = newLine(buffer,0,currentColor,currentStroke);
+                        drawLine(svg.main,line);
+                    }
+                }else if(isRect()){
+                    // Check if the height or width is 0
+                    if((buffer[0].x - buffer[1].x) != 0 || (buffer[0].y - buffer[1].y) != 0){
+                        let line = newLine(buffer,1,currentColor,currentStroke);
+                        drawLine(svg.main,line);
+                    }
                 }
-            }else if(isRect()){
-                // Check if the height or width is 0
-                if((buffer[0].x - buffer[1].x) != 0 || (buffer[0].y - buffer[1].y) != 0){
-                    let line = newLine(buffer,1,currentColor,currentStroke);
-                    drawLine(svg.main,line);
-                }
+                
+
+                // clear the buffer
+                buffer = [];
+                // clear the temp line
+                d3.select("#temp-line").html(null);
+
+                // Save in x seconds
+                autoSaveTimeout();
             }
-            
-
-            // clear the buffer
-            buffer = [];
-            // clear the temp line
-            d3.select("#temp-line").html(null);
-
-            // Save in x seconds
-            autoSaveTimeout();
         }
         if(isMove() && selectedElement != null){
             let line = getLine(selectedElement);
 
             line.transform.x = tempTransform.x;
             line.transform.y = tempTransform.y;
-
+            
+            updateLine(getLine(selectedElement))
+            autoSaveTimeout();
             selectedElement = null;
         }
         if(textDrawArea != null && textDrawArea.isMouseDownForMoving){
             textDrawArea.isMouseDownForMoving = false;
         }
 
-        isDrawing = false;
-        
+        isDrawing = false;        
         mouseDownPoint = null;
+
+        if(imageResize != null){ // If they were adjusting an image size
+            let image = getLine(imageResize.id);
+
+            // Apply the temp dimensions 
+            image.dots.x = imageResize.tx;
+            image.dots.y = imageResize.ty;
+            image.dots.w = imageResize.tw;
+            image.dots.h = imageResize.th;
+
+            updateLine(image);
+            autoSaveTimeout();
+            imageResize = null
+        }
 
         if(holdShift.isHeld){
             if(holdShift.x != null && holdShift.y != null){
@@ -711,6 +746,81 @@ whiteboard = function(){
             textDrawArea.x = mouse.x-textDrawArea.offsetX;
             textDrawArea.y = mouse.y-textDrawArea.offsetY;
             updateTextArea();
+        }
+        if(isMouse()){
+            if(imageResize != null){
+                //FIXME Clicking quickly on one of the balls fucks it up
+                if(imageResize.point == "tl"){
+                    // If dragging from top left, make the mouse x,y the new image x,y
+                    // Then calculate the new width+height by finding the difference between the new x,y and the old
+                    // Apply adjustments for the transform that may or may not have been added
+                    let newHeight = imageResize.h + ((imageResize.y + imageResize.img.transform.y) - mouse.y);
+                    let newWidth = imageResize.w + ((imageResize.x + imageResize.img.transform.x) - mouse.x);
+
+                    imageResize.tx = mouse.x - imageResize.img.transform.x;
+                    imageResize.ty = mouse.y - imageResize.img.transform.y;
+                    imageResize.tw = newWidth;
+                    imageResize.th = newHeight;
+                }else if(imageResize.point == "tr"){
+                    // If dragging from the top right, y changes but x doesn't
+                    let newHeight = imageResize.h + ((imageResize.y + imageResize.img.transform.y) - mouse.y);
+                    let newWidth = (mouse.x-imageResize.x) - imageResize.img.transform.x;
+
+                    imageResize.tx = imageResize.x;
+                    imageResize.ty = mouse.y - imageResize.img.transform.y;
+                    imageResize.tw = newWidth;
+                    imageResize.th = newHeight;
+                }else if(imageResize.point == "bl"){
+                    let newHeight = (mouse.y-imageResize.y) - imageResize.img.transform.y;
+                    let newWidth = imageResize.w + ((imageResize.x + imageResize.img.transform.x) - mouse.x);
+
+                    imageResize.tx = mouse.x - imageResize.img.transform.x;
+                    imageResize.ty = imageResize.y;
+                    imageResize.tw = newWidth;
+                    imageResize.th = newHeight;
+                }else if(imageResize.point == "br"){
+                    // If dragging from the top right, y changes but x doesn't
+                    let newHeight = (mouse.y-imageResize.y)- imageResize.img.transform.y;
+                    let newWidth = (mouse.x-imageResize.x)- imageResize.img.transform.x;
+
+                    imageResize.tx = imageResize.x;
+                    imageResize.ty = imageResize.y;
+                    imageResize.tw = newWidth;
+                    imageResize.th = newHeight;
+                }
+
+                // Check if the new height/width is less than 10
+                if(imageResize.tw < 25){
+                    imageResize.tw = 25;
+                }
+                if(imageResize.th < 25){
+                    imageResize.th = 25;
+                }
+
+                // Update the image
+                d3.select("#image"+imageResize.id)
+                    .attr("x",imageResize.tx)
+                    .attr("y",imageResize.ty)
+                    .attr("width",imageResize.tw)
+                    .attr("height",imageResize.th);
+
+                // Update the resizer balls
+                d3.select("#imageResizeCircle-tl")
+                    .attr("cx",imageResize.tx)
+                    .attr("cy",imageResize.ty);
+
+                d3.select("#imageResizeCircle-tr")
+                    .attr("cx",imageResize.tx+imageResize.tw)
+                    .attr("cy",imageResize.ty);
+
+                d3.select("#imageResizeCircle-bl")
+                    .attr("cx",imageResize.tx)
+                    .attr("cy",imageResize.ty+imageResize.th);
+
+                d3.select("#imageResizeCircle-br")
+                    .attr("cx",imageResize.tx+imageResize.tw)
+                    .attr("cy",imageResize.ty+imageResize.th);
+            }
         }
     }
 
@@ -1290,7 +1400,73 @@ whiteboard = function(){
 
 
     // #endregion
+    //==//==//==//==//==//==//
+    // Image Resizer
+    // #region
 
+    function drawResize(img){
+        d3.selectAll(".imageResizeCircle").remove();
+        let svg = d3.select(`#object${img.id}`);
+
+        console.log(svg);
+        // Top Left
+        svg.append("circle")
+            .attr("fill","var(--blue)")
+            .attr("r",5)
+            .attr("cx",img.dots.x)
+            .attr("cy",img.dots.y)
+            .attr("id","imageResizeCircle-tl")
+            .attr("class","imageResizeCircle")
+            .on("mousedown",()=>{
+                imageResize = {x:img.dots.x,y:img.dots.y,w:img.dots.w,h:img.dots.h};
+                imageResize.point = "tl";
+                imageResize.id = img.id;
+                imageResize.img = img;
+            })
+        // Top Right
+        svg.append("circle")
+            .attr("fill","var(--blue)")
+            .attr("r",5)
+            .attr("cx",img.dots.x+img.dots.w)
+            .attr("cy",img.dots.y)
+            .attr("id","imageResizeCircle-tr")
+            .attr("class","imageResizeCircle")
+            .on("mousedown",()=>{
+                imageResize = {x:img.dots.x,y:img.dots.y,w:img.dots.w,h:img.dots.h};
+                imageResize.point = "tr";
+                imageResize.id = img.id;
+                imageResize.img = img;
+            })
+        // Bottom Left
+        svg.append("circle")
+            .attr("fill","var(--blue)")
+            .attr("r",5)
+            .attr("cx",img.dots.x)
+            .attr("cy",img.dots.y+img.dots.h)
+            .attr("id","imageResizeCircle-bl")
+            .attr("class","imageResizeCircle")
+            .on("mousedown",()=>{
+                imageResize = {x:img.dots.x,y:img.dots.y,w:img.dots.w,h:img.dots.h};
+                imageResize.point = "bl";
+                imageResize.id = img.id;
+                imageResize.img = img;
+            })
+        // Bottom Right
+        svg.append("circle")
+            .attr("fill","var(--blue)")
+            .attr("r",5)
+            .attr("cx",img.dots.x+img.dots.w)
+            .attr("cy",img.dots.y+img.dots.h)
+            .attr("id","imageResizeCircle-br")
+            .attr("class","imageResizeCircle")
+            .on("mousedown",()=>{
+                imageResize = {x:img.dots.x,y:img.dots.y,w:img.dots.w,h:img.dots.h};
+                imageResize.point = "br";
+                imageResize.id = img.id;
+                imageResize.img = img;
+            })
+    }
+    // #endregion
     
 
     /**

@@ -87,8 +87,7 @@ mainMenu = function(){
                 .attr("d", drawLine(line.dots))
                 .attr("stroke", line.color)
                 .attr("stroke-width", line.stroke)
-                .attr("fill", "none")
-                .attr("id",`object${line.id}`);
+                .attr("fill", "none");
 
         }else if(line.type == 1){
             let data = {
@@ -106,8 +105,7 @@ mainMenu = function(){
                 .attr("y",rectY)
                 .attr("height",height)
                 .attr("width",width)
-                .attr("fill", line.color)
-                .attr("id",`object${line.id}`);
+                .attr("fill", line.color);
         }else if(line.type == 2){
             let drawLine = d3.line().curve(d3.curveCardinal);
             drawLine.x((d)=>{
@@ -122,11 +120,9 @@ mainMenu = function(){
                 .attr("stroke-width", line.stroke)
                 .attr("fill", line.color)
                 .attr("fill-opacity",0.3)
-                .attr("id",`object${line.id}`)
-                .attr("class","whiteboard-link");
         }else if(line.type == 3){
             let fontSize = 12 + (line.stroke*2);
-            let textGroup = svg.append("g").attr("id",`object${line.id}`);
+            let textGroup = svg.append("g");
             let lines = 0;
             for(let textLine of line.dots.text.split("\n")){
                 textGroup.append("text")
