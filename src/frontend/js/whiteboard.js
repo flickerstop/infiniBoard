@@ -16,15 +16,11 @@ whiteboard = function(){
     let thisBoard = null; // The current infiniboard that's being drawn on
 
     let currentTool = 0; // Current tool being used
-    // 0 -> Pen
-    // 1 -> Hand
-    // 2 -> Eraser
-
     let currentStroke = 2; // Current selected stroke
     let currentColor = "white"; // Current selected color
 
-    let mouseDownPoint = null; // Point where the mouse was pressed down
 
+    let mouseDownPoint = null; // Point where the mouse was pressed down
     let viewbox = null; // Current viewbox
 
     let autoSave = { // object for the 10 second autosave
@@ -34,15 +30,12 @@ whiteboard = function(){
         saveTimeout: null
     }
 
+    let holdShift = {isHeld:false,x:null,y:null};
 
     let colorBar = null;
-
     let textDrawArea = null;
-
     let selectedElement = null;
-
     let tempTransform = {x:null,y:null};
-
     let mouse = {x:0,y:0};
 
     /**
@@ -311,6 +304,7 @@ whiteboard = function(){
                     .style("font-size",`${fontSize}px`)
                     .attr("y",line.dots.y+(lines*fontSize))
                     .style("fill",line.color)
+                    .style("font-family","Tahoma")
                     .html(textLine);
                 lines++;
             }
@@ -337,8 +331,6 @@ whiteboard = function(){
             if(isEraser() && isDrawing){
                 // Delete the line from the array
                 deleteLine(line.id);
-                // Delete the line from the svg
-                d3.select(`#object${line.id}`).remove();
                 // set the save timeout
                 autoSaveTimeout();
             }
@@ -380,13 +372,16 @@ whiteboard = function(){
         if(isPen() && isLeftClick()){
             isDrawing = true;
 
+            let isNewPen = true;
             // check if this line is a new color
             for(let pen of thisBoard.pens){
                 if(pen == currentColor){
-                    return;
+                    isNewPen = false;
                 }
             }
-            colorBar.addPen(currentColor);
+            if(isNewPen){
+                colorBar.addPen(currentColor);
+            }
         }
         else if((isEraser() || isLine() || isRect() || isLink()) && isLeftClick()){
             isDrawing = true;
@@ -399,7 +394,8 @@ whiteboard = function(){
                     y:mouseDownPoint.y,
                     w: 215,
                     h: 115,
-                    isMouseDownForMoving: false
+                    isMouseDownForMoving: false,
+                    isDraggable:true
                 };
 
                 // Set the font size
@@ -430,6 +426,7 @@ whiteboard = function(){
                             This solves the issue of when dragging starting from inside the text box and the mouse
                             moves outside the box, it triggers the move event
                         */
+                       console.log(textDrawArea.isDraggable);
                         if(textDrawArea.isDraggable){
                             // Set the flag that says the mouse is held down to move the text area
                             textDrawArea.isMouseDownForMoving = true;
@@ -485,6 +482,13 @@ whiteboard = function(){
         else if(isHand() || isMiddleClick()){
             clearBackground();
         }
+
+        if(holdShift.isHeld){
+            if(holdShift.x == null && holdShift.y == null){
+                holdShift.x = mouseDownPoint.x;
+                holdShift.y = mouseDownPoint.y;
+            }
+        }
     }
 
     function mouseUp(){
@@ -509,7 +513,7 @@ whiteboard = function(){
                         if(resID == -1){
                             let newBoardID = boxManager.newBoard(boardName,bgcolor);
                             
-                            let line = newLine(lineBuffer,2,currentColor,currentStroke,id,newBoardID);
+                            let line = newLine(lineBuffer,2,currentColor,currentStroke,newBoardID);
                             drawLine(svg.link,line);
                             save();
                             //init(newBoardID);
@@ -581,6 +585,13 @@ whiteboard = function(){
         isDrawing = false;
         
         mouseDownPoint = null;
+
+        if(holdShift.isHeld){
+            if(holdShift.x != null && holdShift.y != null){
+                holdShift.x = null;
+                holdShift.y = null;
+            }
+        }
     }
 
     function mouseMove(){
@@ -600,48 +611,59 @@ whiteboard = function(){
             lgy: mouse.gy
         }
 
-        if(isPen() || isLink()){
+        if(mouseDownPoint != null){ // If the mouse has been pressed down
+            if(isHand() || mouseDownPoint.button == 1){
+                viewbox.x = viewbox.x - (mouse.gx-mouse.lgx)*viewbox.scale;
+                viewbox.y = viewbox.y - (mouse.gy-mouse.lgy)*viewbox.scale;
+                updateViewbox();
+            }
+
+            if(holdShift.isHeld){
+                if(holdShift.x == null && holdShift.y == null){
+                    holdShift.x = mouse.x;
+                    holdShift.y = mouse.y;
+                }
+            }
+        }if(isPen() || isLink()){
             let currentTime = Date.now();
             
             // if the user is drawing, add the x,y to the buffer
             if(isDrawing){
                 // if it has been x milliseconds since the last coordinate saved
                 if(currentTime>=lastPointTime+10){
-                    
-                    lastPointTime = currentTime;
-                    //add the temp line
+                    if(holdShift.isHeld){
+                        // if the x distance from the lastX is greater than the y, draw a line only on the x axis
+                        if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
+                            lastPointTime = currentTime;
+                            svg.temp.append("circle")
+                                .attr("fill",currentColor)
+                                .attr("r",currentStroke/2)
+                                .attr("cx",mouse.x)
+                                .attr("cy",holdShift.y);
 
-                    // let lastPoint = null;
+                            buffer.push({x:mouse.x,y:holdShift.y});
 
-                    // if(buffer.length == 0){
-                    //     lastPoint = mouseDownPoint;
-                    // }else{
-                    //     lastPoint = buffer[buffer.length-1];
-                    // }
-
-                    svg.temp.append("circle")
-                        .attr("fill",currentColor)
-                        .attr("r",currentStroke/2)
-                        .attr("cx",mouse.x)
-                        .attr("cy",mouse.y);
-                    
-                    // d3.select("#temp-line").append("line")
-                    //     .attr("x1",x)
-                    //     .attr("y1",y)
-                    //     .attr("x2",lastPoint.x)
-                    //     .attr("y2",lastPoint.y)
-                    //     .attr("stroke", currentColor)
-                    //     .attr("stroke-width", currentStroke);
-
-                    buffer.push({x:mouse.x,y:mouse.y});
+                        }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
+                            lastPointTime = currentTime;
+                            svg.temp.append("circle")
+                                .attr("fill",currentColor)
+                                .attr("r",currentStroke/2)
+                                .attr("cx",holdShift.x)
+                                .attr("cy",mouse.y);
+                            
+                            buffer.push({x:holdShift.x,y:mouse.y});
+                        }
+                    }else{
+                        lastPointTime = currentTime;
+                        svg.temp.append("circle")
+                            .attr("fill",currentColor)
+                            .attr("r",currentStroke/2)
+                            .attr("cx",mouse.x)
+                            .attr("cy",mouse.y);
+                        
+                        buffer.push({x:mouse.x,y:mouse.y});
+                    }
                 }
-            }
-        }
-        if(mouseDownPoint != null){ // Is hand tool 
-            if(isHand() || mouseDownPoint.button == 1){
-                viewbox.x = viewbox.x - (mouse.gx-mouse.lgx)*viewbox.scale;
-                viewbox.y = viewbox.y - (mouse.gy-mouse.lgy)*viewbox.scale;
-                updateViewbox();
             }
         }
         if(isLine()){
@@ -758,7 +780,14 @@ whiteboard = function(){
 
 
     function deleteLine(id){
-        return thisBoard.lines.splice((thisBoard.lines.findIndex(x=>x.id == id)),1);
+        let location = thisBoard.lines.findIndex(x=>x.id == id);
+
+        if(location == -1){ // 2 eraser events fired resulting in no id
+            return;
+        }
+        let deleted = thisBoard.lines.splice(location,1)[0];
+
+        d3.selectAll(`#object${deleted.id}`).remove();
     }
 
     function getLine(id){
@@ -1192,6 +1221,7 @@ whiteboard = function(){
     function generateBackground(type = thisBoard.bgType){
         svg.background.html("");
 
+        //TODO maybe instead of redrawing the board on a pan, just transform the board?
         // Prevents massive lag from filling in a huge viewbox
         if(viewbox.scale > 2.1 || thisBoard.bgType == 0){
             return;
@@ -1282,13 +1312,17 @@ whiteboard = function(){
 
     function setupKeyboardShortcuts(){
         // https://keycode.info/
-        keyManager.newEvent(80,0,function(){return setTool(0,true)}); // pen
-        keyManager.newEvent(72,0,function(){return setTool(1,true)}); // Hand
-        keyManager.newEvent(69,0,function(){return setTool(2,true)}); // eraser
-        keyManager.newEvent(76,0,function(){return setTool(3,true)}); // line
-        keyManager.newEvent(82,0,function(){return setTool(4,true)}); // rect
-        keyManager.newEvent(77,0,function(){return setTool(8,true)}); // move
-        keyManager.newEvent(84,0,function(){return setTool(6,true)}); // text
+        keyManager.newEvent(80,0,function(){setTool(0,true)}); // pen
+        keyManager.newEvent(72,0,function(){setTool(1,true)}); // Hand
+        keyManager.newEvent(69,0,function(){setTool(2,true)}); // eraser
+        keyManager.newEvent(76,0,function(){setTool(3,true)}); // line
+        keyManager.newEvent(82,0,function(){setTool(4,true)}); // rect
+        keyManager.newEvent(77,0,function(){setTool(8,true)}); // move
+        keyManager.newEvent(84,0,function(){setTool(6,true)}); // text
+
+        keyManager.newEvent(16,3,function(){if(!holdShift.isHeld) holdShift.isHeld = true;});
+        keyManager.newUpEvent(16,function(){holdShift = {isHeld:false,x:null,y:null}});
+
     }
 
 

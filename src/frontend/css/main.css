@@ -8,32 +8,17 @@
     user-select: none;
 }
 
+
+/* NOTE what is this for? 
 text{
     font-family: 'Roboto', sans-serif;
-}
+} */
 
 html{
     background-color: var(--main);
     overflow: hidden;
 }
 
-.scrollBarStyle::-webkit-scrollbar-track
-{
-	border: 1px solid var(--darklight);
-	background-color: var(--naub);
-}
-
-.scrollBarStyle::-webkit-scrollbar
-{
-	width: 10px;
-	background-color: var(--main);
-}
-
-.scrollBarStyle::-webkit-scrollbar-thumb
-{
-    border: 1px solid var(--highlight);
-	background-color: var(--main);
-}
 
 /* #endregion */
 
@@ -270,6 +255,25 @@ html{
     width: 100%;
     height: 100%;
     background-color: aqua;
+}
+
+#whiteboard-textInputArea{
+    margin-left: 10px;
+    margin-top: 10px;
+    background: transparent;
+    border: 0px solid transparent;
+    border: 1px dashed var(--blue);
+    white-space: nowrap;
+    overflow: hidden;
+    font-family: Tahoma;
+}
+
+#whiteboard-textInputArea-moveBorder{
+    cursor: move;
+}
+
+#whiteboard-textInputArea:focus{
+    outline: none;
 }
 
 
