@@ -1,5 +1,14 @@
 whiteboard = function(){
 
+    /**
+     * Mouse enter vs mouse over
+     * http://jsfiddle.net/ZCWvJ/7/
+     * 
+     * mouse leave vs mouse out
+     * https://www.w3schools.com/jquery/tryit.asp?filename=tryjquery_event_mouseleave_mouseout
+     */
+
+
     //NOTE to do undo/redo:
     /**
      * Have an array that just holds multiple copies of the "lines" array.
@@ -39,6 +48,8 @@ whiteboard = function(){
     let mouse = {x:0,y:0};
 
     let imageResize = null;
+
+    let overTextArea = null; // Used to see if the mouse is over a text area to allow for editing 
 
     /**
      * Function that runs to initialize the whiteboard and load the current board
@@ -308,7 +319,15 @@ whiteboard = function(){
             let fontSize = 12 + (line.stroke*2);
 
             // Group to draw the text
-            let textGroup = svg.append("g");
+            let textGroup = svg.append("g")
+                .on("mouseenter",()=>{
+                    overTextArea = line;
+                    //TODO set cursor to the I
+                })
+                .on("mouseleave",()=>{
+                    overTextArea = null;
+                    //TODO set cursor back to default
+                });
 
             let lines = 0;
             // For each line of text
@@ -382,6 +401,8 @@ whiteboard = function(){
 
         if(isRightClick()){
             openRightClickMenu();
+        }else{
+            closeRightClickMenu();
         }
 
         // Get the current mouse coordinates
@@ -412,76 +433,167 @@ whiteboard = function(){
             isDrawing = true;
         }
         else if(isText() && isLeftClick()){
-            if(!isTyping()){
-                // Setup the data for the text input area
-                textDrawArea = {
-                    x:mouseDownPoint.x,
-                    y:mouseDownPoint.y,
-                    w: 215,
-                    h: 115,
-                    isMouseDownForMoving: false,
-                    isDraggable:true
-                };
+            if(!isTyping()){ // If the user isn't currently typing
 
-                // Set the font size
-                let fontSize = 12 + (currentStroke*2);
+                if(overTextArea == null){ // If the user isn't currently hovering over a text area
+                    // Setup the data for the text input area
+                    textDrawArea = {
+                        x:mouseDownPoint.x,
+                        y:mouseDownPoint.y,
+                        w: 215,
+                        h: 115,
+                        isMouseDownForMoving: false,
+                        isDraggable:true
+                    };
 
-                // Build the foreign Object that holds the text area in the svg
-                svg.temp.append("foreignObject")
-                    .attr("id","whiteboard-textInputArea-container")
-                    .attr("x",textDrawArea.x)
-                    .attr("y",textDrawArea.y)
-                    .attr("width","100000px") // Technically the text area can't be bigger than 1000x1000
-                    .attr("height","100000px")// But that shouldn't ever happen
-                // Build the div that borders the text area and allows for dragging
-                .append("xhtml:div")
-                    .attr("id","whiteboard-textInputArea-moveBorder")
-                    .style("width",textDrawArea.w+20)
-                    .style("height",textDrawArea.h+20)
-                    .on("mouseenter",()=>{
-                        // Set the flag that says the mouse is over the text input area
-                        textDrawArea.isMouseOver = true;
-                    }).on("mouseleave",()=>{
-                        // Clear the flag
-                        textDrawArea.isMouseOver = false;
-                    })
-                    .on("mousedown",()=>{
-                        // Only allow the "isMouseDownForMoving" flag to only be set if the mouse isn't over the text area
-                        /*
-                            This solves the issue of when dragging starting from inside the text box and the mouse
-                            moves outside the box, it triggers the move event
-                        */
-                       console.log(textDrawArea.isDraggable);
-                        if(textDrawArea.isDraggable){
-                            // Set the flag that says the mouse is held down to move the text area
-                            textDrawArea.isMouseDownForMoving = true;
-                            // Set the offset that makes it so the text area's origin isn't exactly at the mouse
-                            textDrawArea.offsetX = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[0];
-                            textDrawArea.offsetY = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[1];
-                        }
-                    }).on("mouseup",()=>{
-                        // Remove the flag
-                        textDrawArea.isMouseDownForMoving = false;
-                    })
-                // Build the textarea
-                .append("xhtml:textarea")
-                    .attr("id","whiteboard-textInputArea")
-                    .style("font-size",`${fontSize}px`)
-                    .style("line-height",`${fontSize}px`)
-                    .style("color",currentColor)
-                    .style("width",textDrawArea.w)
-                    .style("height",textDrawArea.h)
-                    .on("input",updateTextArea)
-                    .on("mouseenter",()=>{
-                        // Flag for saying the mouse is over the text area container AND over the textarea
-                        textDrawArea.isDraggable = false;
-                    }).on("mouseleave",()=>{
-                        // Remove the flag
-                        textDrawArea.isDraggable = true;
-                    })
+                    // Set the font size
+                    let fontSize = 12 + (currentStroke*2);
 
-                // After 10 milliseconds, select focus on the textarea
-                setTimeout(()=>{document.getElementById("whiteboard-textInputArea").focus()},10);
+                    // Build the foreign Object that holds the text area in the svg
+                    svg.temp.append("foreignObject")
+                        .attr("id","whiteboard-textInputArea-container")
+                        .attr("x",textDrawArea.x)
+                        .attr("y",textDrawArea.y)
+                        .attr("width","100000px") // Technically the text area can't be bigger than 1000x1000
+                        .attr("height","100000px")// But that shouldn't ever happen
+                    // Build the div that borders the text area and allows for dragging
+                    .append("xhtml:div")
+                        .attr("id","whiteboard-textInputArea-moveBorder")
+                        .style("width",textDrawArea.w+20)
+                        .style("height",textDrawArea.h+20)
+                        .on("mouseenter",()=>{
+                            // Set the flag that says the mouse is over the text input area
+                            textDrawArea.isMouseOver = true;
+                        }).on("mouseleave",()=>{
+                            // Clear the flag
+                            textDrawArea.isMouseOver = false;
+                        })
+                        .on("mousedown",()=>{
+                            // Only allow the "isMouseDownForMoving" flag to only be set if the mouse isn't over the text area
+                            /*
+                                This solves the issue of when dragging starting from inside the text box and the mouse
+                                moves outside the box, it triggers the move event
+                            */
+                            if(textDrawArea.isDraggable){
+                                // Set the flag that says the mouse is held down to move the text area
+                                textDrawArea.isMouseDownForMoving = true;
+                                // Set the offset that makes it so the text area's origin isn't exactly at the mouse
+                                textDrawArea.offsetX = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[0];
+                                textDrawArea.offsetY = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[1];
+                            }
+                        }).on("mouseup",()=>{
+                            // Remove the flag
+                            textDrawArea.isMouseDownForMoving = false;
+                        })
+                    // Build the textarea
+                    .append("xhtml:textarea")
+                        .attr("id","whiteboard-textInputArea")
+                        .style("font-size",`${fontSize}px`)
+                        .style("line-height",`${fontSize}px`)
+                        .style("color",currentColor)
+                        .style("width",textDrawArea.w)
+                        .style("height",textDrawArea.h)
+                        .on("input",()=>{
+                            updateTextArea();
+                            closeRightClickMenu();
+                        })
+                        .on("mouseenter",()=>{
+                            // Flag for saying the mouse is over the text area container AND over the textarea
+                            textDrawArea.isDraggable = false;
+                        }).on("mouseleave",()=>{
+                            // Remove the flag
+                            textDrawArea.isDraggable = true;
+                        })
+
+                    // After 10 milliseconds, select focus on the textarea
+                    setTimeout(()=>{document.getElementById("whiteboard-textInputArea").focus()},10);
+                }
+                else{ // If the user is currently hovering over a text area
+                    let fontSize = 12 + (overTextArea.stroke*2);
+
+                    // Setup the data for the text input area
+                    textDrawArea = {
+                        x: overTextArea.dots.x-13 + overTextArea.transform.x,
+                        y: overTextArea.dots.y-13-fontSize+(2+Math.floor(overTextArea.stroke/5))+overTextArea.transform.y,
+                        w: 215,
+                        h: 115,
+                        isMouseDownForMoving: false,
+                        isDraggable:true
+                    };
+
+                    // Build the foreign Object that holds the text area in the svg
+                    svg.temp.append("foreignObject")
+                        .attr("id","whiteboard-textInputArea-container")
+                        .attr("x",textDrawArea.x)
+                        .attr("y",textDrawArea.y)
+                        .attr("width","100000px") // Technically the text area can't be bigger than 1000x1000
+                        .attr("height","100000px")// But that shouldn't ever happen
+                    // Build the div that borders the text area and allows for dragging
+                    .append("xhtml:div")
+                        .attr("id","whiteboard-textInputArea-moveBorder")
+                        .style("width",textDrawArea.w+20)
+                        .style("height",textDrawArea.h+20)
+                        .on("mouseenter",()=>{
+                            // Set the flag that says the mouse is over the text input area
+                            textDrawArea.isMouseOver = true;
+                        }).on("mouseleave",()=>{
+                            // Clear the flag
+                            textDrawArea.isMouseOver = false;
+                        })
+                        .on("mousedown",()=>{
+                            // Only allow the "isMouseDownForMoving" flag to only be set if the mouse isn't over the text area
+                            /*
+                                This solves the issue of when dragging starting from inside the text box and the mouse
+                                moves outside the box, it triggers the move event
+                            */
+                            if(textDrawArea.isDraggable){
+                                // Set the flag that says the mouse is held down to move the text area
+                                textDrawArea.isMouseDownForMoving = true;
+                                // Set the offset that makes it so the text area's origin isn't exactly at the mouse
+                                textDrawArea.offsetX = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[0];
+                                textDrawArea.offsetY = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[1];
+                            }
+                        }).on("mouseup",()=>{
+                            // Remove the flag
+                            textDrawArea.isMouseDownForMoving = false;
+                        })
+                    // Build the textarea
+                    .append("xhtml:textarea")
+                        .attr("id","whiteboard-textInputArea")
+                        .style("font-size",`${fontSize}px`)
+                        .style("line-height",`${fontSize}px`)
+                        .style("color",overTextArea.color)
+                        .style("width",textDrawArea.w)
+                        .style("height",textDrawArea.h)
+                        .property("value",overTextArea.dots.text)
+                        .on("input",()=>{
+                            updateTextArea();
+                            closeRightClickMenu();
+                        })
+                        .on("mouseenter",()=>{
+                            // Flag for saying the mouse is over the text area container AND over the textarea
+                            textDrawArea.isDraggable = false;
+                        }).on("mouseleave",()=>{
+                            // Remove the flag
+                            textDrawArea.isDraggable = true;
+                        });
+
+                        
+                    // Set the stroke and colour to match
+                    currentColor = overTextArea.color;
+                    currentStroke = overTextArea.stroke;
+                    d3.select("#colorBar-stroke-line").attr("stroke-width", currentStroke);
+                    d3.select("#rightClickMenu-stroke-input").attr("value",currentStroke);
+                    colorBar.changecolor(currentColor);
+                    colorBar.strokeSizeLine.attr("stroke", currentColor);
+                    initRightClickMenu();
+
+                    deleteLine(overTextArea.id);
+
+                    // After 10 milliseconds, select focus on the textarea
+                    setTimeout(()=>{document.getElementById("whiteboard-textInputArea").focus()},10);
+                }
+                
             }else{ // If they are currently using a textarea
                 // And they click anyone not over the text area
                 if(!textDrawArea.isMouseOver){
@@ -935,6 +1047,7 @@ whiteboard = function(){
      * @param {Number} toolID number for the tool
      */
     function setTool(toolID,isKeyboardShortcut){
+        closeRightClickMenu();
         // If they're typing and a keyboard shortcut is clicked
         if(isTyping() && isKeyboardShortcut){
             // Ignore it
@@ -1025,6 +1138,7 @@ whiteboard = function(){
             .attr("stroke", "var(--text)");
 
         colorBar.changecolor = function(newcolor){
+            closeRightClickMenu();
             currentColor = newcolor;
             currentPenTip.attr("fill",newcolor);
             currentPenShaft.attr("fill",newcolor);
@@ -1130,6 +1244,7 @@ whiteboard = function(){
             .attr("id","colorBar-strokeDecreaseButton");
 
         strokeDecreaseGroup.on("click",()=>{
+            closeRightClickMenu();
             if(currentStroke-1 >=1){
                 currentStroke--;
                 colorBar.strokeSizeLine.attr("stroke-width", currentStroke)
@@ -1177,6 +1292,7 @@ whiteboard = function(){
                 {x:x+100,y:20}
             ]))
             .attr("stroke", currentColor)
+            .attr("id","colorBar-stroke-line")
             .attr("stroke-width", currentStroke)
             .attr("fill", "none");
 
@@ -1186,6 +1302,7 @@ whiteboard = function(){
         .attr("id","colorBar-strokeIncreaseButton");
 
         strokeIncreaseGroup.on("click",()=>{
+            closeRightClickMenu();
             currentStroke++;
             colorBar.strokeSizeLine.attr("stroke-width", currentStroke)
             if(isTyping()){
@@ -1475,29 +1592,75 @@ whiteboard = function(){
     }
     // #endregion
     //==//==//==//==//==//==//
-    // #region Right click menu
+    // Right click menu
+    // #region 
     function initRightClickMenu(){
-        d3.select("#rightClickMenu-svg-stroke")
-            .append("div") // "Stroke Size" title
-            .attr("class","rightClickMenu-title")
-            .html("Stroke Size");
-        let strokeRow = d3.select("#rightClickMenu-svg-stroke")
+        let strokeTitleRow = d3.select("#rightClickMenu-svg")
+            .html("")
             .append("div") // Row
             .attr("class","rightClickMenu-row")
-            .style("margin-left","29px")
 
-        strokeRow.append("div")
-            .html("-")
-            .attr("class","incrementButtonLeft");
+        strokeTitleRow.append("div") // "Stroke Size" title
+            .attr("class","rightClickMenu-title")
+            .html("Stroke Size");
 
-        strokeRow.append("input")
+        strokeTitleRow.append("input")
+            .attr("id","rightClickMenu-stroke-input")
+            .attr("class","rightClickMenu-input")
             .attr("type","number")
-            .attr("class","incrementButtonInput");
+            .attr("value",currentStroke)
+            .on("change",()=>{
+                let value = util.getValueId("rightClickMenu-stroke-input");
+                currentStroke = value;
+                d3.select("#colorBar-stroke-line").attr("stroke-width", currentStroke);
+                d3.select("#rightClickMenu-stroke-input").attr("value",currentStroke);
+                d3.select("#rightClickMenu-stroke-slider").property("value",currentStroke);
+                if(isTyping()){
+                    updateTextArea();
+                }
+            });
 
-        strokeRow.append("div")
-            .html("+")
-            .attr("class","incrementButtonRight");
+        let strokeRow = d3.select("#rightClickMenu-svg")
+            .append("div") // Row
+            .attr("class","rightClickMenu-row");
 
+        let inputSlider = strokeRow.append("input")
+            .attr("type","range")
+            .attr("min","1")
+            .attr("max","50")
+            .attr("value",currentStroke)
+            .attr("step","1")
+            .attr("class","rightClickMenu-slider")
+            .attr("id","rightClickMenu-stroke-slider")
+            .on("input",()=>{
+                let value = util.getValueId("rightClickMenu-stroke-slider");
+                currentStroke = value;
+                d3.select("#colorBar-stroke-line").attr("stroke-width", currentStroke);
+                d3.select("#rightClickMenu-stroke-input").attr("value",currentStroke);
+                if(isTyping()){
+                    updateTextArea();
+                }
+            });
+
+        // Colours
+        let colours = d3.select("#rightClickMenu-svg")
+            .append("div")
+            .attr("id","rightClickMenu-svg-colours")
+
+        for(let pen of thisBoard.pens){
+            colours.append("div")
+                .attr("class","rightClickMenu-svg-colourBox")
+                .style("background-color",pen)
+                .on("click",()=>{
+                    currentColor = pen;
+                    colorBar.changecolor(pen);
+                    colorBar.strokeSizeLine.attr("stroke", pen);
+                    if(isTyping()){
+                        updateTextArea();
+                    }
+                })
+
+        }
     }
 
     function openRightClickMenu(){
