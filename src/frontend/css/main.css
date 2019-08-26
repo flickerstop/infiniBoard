@@ -204,10 +204,10 @@ html{
 #navBar{
     position: absolute;
     z-index: 5;
-    right: -200px;
+    right: -230px;
     top: 40px;
     background-color: var(--main);
-    width: 220px;
+    width: 250px;
     height: calc(100% - 40px);
 }
 
@@ -222,13 +222,43 @@ html{
     filter: var(--image-filter);
 }
 
-#navBar-content{
+#navBar-Titles{
     position: absolute;
     left: 20px;
     top: 0px;
+    width: 29px;
+    height: 100%;
+}
+
+#navBar-titles-filler{
+    width: 29px;
+    border-right: 1px solid var(--highlight);
+}
+
+.navBar-titles-text{
+    transform: rotate(270deg) translate(-50px, 0px);
+}
+
+.navBar-titles-containers{
+    height: 100px;
+    width: 30px;
+    border-left: 1px solid var(--highlight);
+    border-top: 1px solid var(--highlight);
+    border-bottom: 1px solid var(--highlight);
+}
+
+.navBar-titles-containers:hover{
+    cursor: pointer;
+    background-color: var(--highlight);
+}
+
+#navBar-content{
+    position: absolute;
+    left: 50px;
+    top: 0px;
     background-color: var(--darklight);
     height: 100%;
-    width: calc(100% - 20px);
+    width: calc(100% - 30px);
 }
 
 #navBar-side:hover{
@@ -250,6 +280,42 @@ html{
 .navBar-content-board.current{
     background-color: var(--blue);
 }
+
+/*#region navbar history content*/
+.navBar-content-history-container{
+    width: 100%;
+}
+
+.navBar-content-history-title-undone{
+    width: calc(100% - 50px);
+    height: 15px;
+    font-size: 10px;
+    line-height: 15px;
+    padding-left: 10px;
+    margin-left: 10px;
+    color: var(--highlight);
+    border: 1px solid var(--highlight);
+    margin-bottom: 2px;
+    border-radius: 2px;
+}
+
+.navBar-content-history-title{
+    width: calc(100% - 50px);
+    height: 15px;
+    font-size: 10px;
+    line-height: 15px;
+    padding-left: 10px;
+    margin-left: 10px;
+    color: var(--text);
+    margin-bottom: 2px;
+    border-radius: 2px;
+}
+.navBar-content-history-title:hover{
+    cursor: pointer;
+    background-color: var(--text);
+}
+
+/*#endregion*/
 
 /*#endregion*/
 

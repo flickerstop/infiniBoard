@@ -79,7 +79,8 @@ boxManager = function(){
             bgcolor: bgcolor,
             idCounter:0,
             lines: [],
-            pens:defaultPens()
+            pens:defaultPens(),
+            history: []
         });
 
         return id;

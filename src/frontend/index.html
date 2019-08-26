@@ -85,6 +85,7 @@
                     </div>
                     <div id="toolbar">
                         <div id="toolbar-background"></div>
+                        <div style="height:40px"></div>
                         <div id="toolbar-icon-7" class="toolbar-icon" style="background-image:url('./images/mouse_white.png')" onclick="whiteboard.setTool(7)">M</div>
                         <!-- <div id="toolbar-icon-8" class="toolbar-icon" style="background-image:url('./images/move_white.png')" onclick="whiteboard.setTool(8)">M</div> -->
                         <div id="toolbar-icon-0" class="toolbar-icon" style="background-image:url('./images/pen_white.png')" onclick="whiteboard.setTool(0)">P</div>
@@ -102,7 +103,19 @@
     
                     <div id="navBar">
                         <div id="navBar-side"></div>
-                        <div id="navBar-content"></div>
+                        <div id="navBar-Titles">
+                            <div id="navBar-titles-boards" class="navBar-titles-containers">
+                                <div class="navBar-titles-text">Boards</div>
+                            </div>
+                            <div id="navBar-titles-history" class="navBar-titles-containers">
+                                <div class="navBar-titles-text">History</div>
+                            </div>
+                            <div id="navBar-titles-filler" style="height: calc(100% - 200px)"></div>
+                        </div>
+                        <div id="navBar-content">
+                            <div id="navBar-content-history" style="display: none"></div>
+                            <div id="navBar-content-boards"></div>
+                        </div>
                     </div>
             </div>
             <div id="popup" style="display: none;">

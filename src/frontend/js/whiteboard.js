@@ -50,6 +50,7 @@ whiteboard = function(){
     let imageResize = null;
 
     let overTextArea = null; // Used to see if the mouse is over a text area to allow for editing 
+    let previousTextArea = null; // Used to store the text area in it's pre-edited state
 
     /**
      * Function that runs to initialize the whiteboard and load the current board
@@ -360,7 +361,7 @@ whiteboard = function(){
 
         // If the tool is the move tool, set the selected element to this one
         svg.on("mousedown",()=>{
-            if(isMove()){
+            if(isMove() && d3.event.button==0){ // if is move & left click
                 selectedElement = line.id;
             }
         });
@@ -588,6 +589,9 @@ whiteboard = function(){
                     colorBar.strokeSizeLine.attr("stroke", currentColor);
                     initRightClickMenu();
 
+                    // Save the previous text area
+                    previousTextArea = overTextArea;
+
                     deleteLine(overTextArea.id);
 
                     // After 10 milliseconds, select focus on the textarea
@@ -709,14 +713,23 @@ whiteboard = function(){
                 autoSaveTimeout();
             }
         }
-        if(isMove() && selectedElement != null && imageResize == null){
-            let line = getLine(selectedElement);
-
-            line.transform.x = tempTransform.x;
-            line.transform.y = tempTransform.y;
+        if(isMove() && selectedElement != null && imageResize == null){ // If the object was just moved
+            if(tempTransform.x != null || tempTransform.y != null){ // Make sure something was moved
             
-            updateLine(getLine(selectedElement))
-            autoSaveTimeout();
+                let line = getLine(selectedElement);
+
+                let oldLine = JSON.parse(JSON.stringify(line));
+
+                
+                line.transform.x = tempTransform.x;
+                line.transform.y = tempTransform.y;
+
+                addToHistory("move",JSON.parse(JSON.stringify(line)),oldLine);
+
+                updateLine(line);
+                autoSaveTimeout();
+            }
+            tempTransform = {x:null,y:null};
             selectedElement = null;
         }
         if(textDrawArea != null && textDrawArea.isMouseDownForMoving){
@@ -729,16 +742,21 @@ whiteboard = function(){
         if(imageResize != null){ // If they were adjusting an image size
             let image = getLine(imageResize.id);
 
+            let oldLine = JSON.parse(JSON.stringify(image));
+
             // Apply the temp dimensions 
             image.dots.x = imageResize.tx;
             image.dots.y = imageResize.ty;
             image.dots.w = imageResize.tw;
             image.dots.h = imageResize.th;
 
-            updateLine(image);
-            autoSaveTimeout();
             imageResize = null;
             selectedElement = null;
+
+            addToHistory("resize",JSON.parse(JSON.stringify(image)),oldLine);
+            updateLine(image);
+            autoSaveTimeout();
+            
         }
 
         if(holdShift.isHeld){
@@ -1005,16 +1023,28 @@ whiteboard = function(){
             }
         };
         thisBoard.lines.push(obj);
+
+        if(previousTextArea == null){ // If we're editing a text area, don't add this to history
+            addToHistory("add",obj);
+        }
+        
+
         return obj;
     }
 
 
-    function deleteLine(id){
+    function deleteLine(id,isUndo = false){
         let location = thisBoard.lines.findIndex(x=>x.id == id);
 
         if(location == -1){ // 2 eraser events fired resulting in no id
+            console.log("no find")
             return;
         }
+        // Add the object to the history
+        if(previousTextArea == null && isUndo == false){ // If we're editing a text area, don't add this to history
+            addToHistory("delete",null,getLine(id));
+        }
+
         let deleted = thisBoard.lines.splice(location,1)[0];
 
         d3.selectAll(`#object${deleted.id}`).remove();
@@ -1354,15 +1384,28 @@ whiteboard = function(){
     // #region 
 
     function initNavBar(){
-        d3.select("#navBar-content").html(null);
+        d3.select("#navBar-content-boards").html(null);
+        d3.select("#navBar-content-history").html(null);
         d3.select("#navBar-side").on("click",()=>{
             openNavBar();
         });
 
-        let panel = d3.select("#navBar-content");
+        d3.select("#navBar-titles-history").on("click",()=>{
+            d3.select("#navBar-content-boards").style("display","none");
+            d3.select("#navBar-content-history").style("display",null);
+        });
+
+        
+        d3.select("#navBar-titles-boards").on("click",()=>{
+            d3.select("#navBar-content-boards").style("display",null);
+            d3.select("#navBar-content-history").style("display","none");
+        });
+
+        // Draw the boards panel
+        let boardsPanel = d3.select("#navBar-content-boards");
         let boards = boxManager.getBox().boards;
         for(let board of boards){
-            let selector = panel.append("div").html(board.name).attr("class","navBar-content-board");
+            let selector = boardsPanel.append("div").html(board.name).attr("class","navBar-content-board");
             if(board.name == thisBoard.name){
                 selector.attr("class","navBar-content-board current");
             }
@@ -1370,6 +1413,49 @@ whiteboard = function(){
                 init(board.id)
             });
         }
+
+        // Draw the history panel
+        let historyPanel = d3.select("#navBar-content-history");
+
+        for(let event of thisBoard.history){
+            let objType = event.new != null?event.new.type:event.old.type;
+            let objTypeString = "";
+            let bgColor = "";
+            let objTitle = "";
+            switch(objType){
+                case 0: objTypeString = "Pen Line";break;
+                case 1: objTypeString = "Rectangle";break;
+                case 2: objTypeString = "Link";break;
+                case 3: objTypeString = "Text";break;
+                case 4: objTypeString = "Image";break;
+                default: objTypeString = "default";break;
+            }
+            switch(event.type){
+                case "move":bgColor="#9b59b6";objTitle="Moved";break;
+                case "add":bgColor="#2ecc71";objTitle="Added";break;
+                case "delete":bgColor="#e74c3c";objTitle="Deleted";break;
+                case "edit":bgColor="#f1c40f";objTitle="Edited";break;
+                case "resize":bgColor="#9b59b6";objTitle="Resized";break;
+                default: bgColor="#ffffff";objTitle="????";break;
+            }
+            let container = historyPanel.append("div")
+                .attr("class","navBar-content-history-container")
+
+            if(event.undone == true){
+                container.append("div")
+                    .attr("class","navBar-content-history-title-undone")
+                    .html(`${objTitle} ${objTypeString}`);
+            }else{
+                container.append("div")
+                    .attr("class","navBar-content-history-title")
+                    .style("border",`1px solid ${bgColor}`)
+                    .style("color",bgColor)
+                    .html(`${objTitle} ${objTypeString}`);
+            }
+            
+
+        }
+
     }
 
     function openNavBar(){
@@ -1381,7 +1467,7 @@ whiteboard = function(){
     }
 
     function closeNavBar(){
-        d3.select("#navBar").transition().duration(100).style("right","-200px");
+        d3.select("#navBar").transition().duration(100).style("right","-230px");
         d3.select("#navBar-side").style("background-image",`url("./images/chevron_left.png")`);
         d3.select("#navBar-side").on("click",()=>{
             openNavBar();
@@ -1435,7 +1521,15 @@ whiteboard = function(){
 
         let line = newLine(data,3,currentColor,currentStroke);
 
+        // Draw the new text area
         drawLine(svg.main,line);
+
+        // If they were just editing a text area
+        if(previousTextArea != null){
+            addToHistory("edit",line,previousTextArea);
+            previousTextArea = null;
+            overTextArea = null;
+        }
 
         // clear the buffer
         buffer = [];
@@ -1678,6 +1772,147 @@ whiteboard = function(){
     }
 
     // #endregion
+    //==//==//==//==//==//==//
+    // History
+    // #region
+
+    /**
+     * Types:
+     * "add" - New object was added to the board
+     * "delete" - Object was removed from the board
+     * "move" - Object was moved on the board
+     * "edit" - Text was changed
+     * "resize" - Image was resized
+     * 
+     * @param {String} type Type of action that was done
+     * @param {Object} newObject Data for the new version of the object
+     * @param {Object} oldObject Data 
+     */
+    function addToHistory(type,newObject,oldObject = null){
+        console.log(type);
+        let newHistory = {
+            type: type,
+            time: Date.now(),
+            new: newObject,
+            old: oldObject,
+            undone: false
+        }
+
+        if(type == "move"){
+            console.log(newHistory.old.transform);
+            console.log(newHistory.new.transform);
+        }
+
+        thisBoard.history.unshift(newHistory);
+        initNavBar();
+    }
+
+
+    /**
+     * Undoes the last action that has not been already undone
+     */
+    function undo(){
+        console.log("undo")
+        let lastEvent = null;
+        // find the newest event with the undone = false
+        for(let event of thisBoard.history){
+            if(event.undone == false){
+                lastEvent = event;
+                break;
+            }
+        }
+        // if no event was found, return
+        if(lastEvent == null){
+            return;
+        }
+
+        // All these events are doing opposite they did
+        if(lastEvent.type == "add"){ // Undoing an add is deleting
+            // Delete the line
+            console.log(lastEvent);
+            deleteLine(lastEvent.new.id,true);
+
+        }else if(lastEvent.type == "delete"){ // Opposite of delete is adding back
+            // Add the line back
+            thisBoard.lines.push(lastEvent.old);
+            updateLine(lastEvent.old);
+
+        }else if(lastEvent.type == "move"){ // Move back to the old position
+            let obj = getLine(lastEvent.new.id);
+            obj.transform = lastEvent.old.transform;
+            updateLine(obj);
+
+        }else if(lastEvent.type == "edit"){ // Change the text back to the old text
+            let obj = getLine(lastEvent.new.id);
+            obj.dots = lastEvent.old.dots;
+            obj.color = lastEvent.old.color;
+            obj.stroke = lastEvent.old.stroke;
+            updateLine(obj);
+
+        }else if(lastEvent.type == "resize"){ // Set the size/transform to the old one
+            let obj = getLine(lastEvent.old.id);
+            obj.dots = lastEvent.old.dots;
+            updateLine(obj);
+        }
+
+        lastEvent.undone = true;
+        initNavBar();
+    }
+
+    function redo(){
+        console.log("redo");
+        let lastEvent = null;
+        // find the oldest event with undone=false
+        for(let event of thisBoard.history.reverse()){
+            if(event.undone == true){
+                lastEvent = event;
+                break;
+            }
+        }
+        // Flip the array back
+        thisBoard.history.reverse();
+        // if no event was found, return
+        if(lastEvent == null){
+            return;
+        }
+
+        // All these events are doing what they originally did
+        if(lastEvent.type == "add"){ 
+            thisBoard.lines.push(lastEvent.new);
+            updateLine(lastEvent.new);
+
+        }else if(lastEvent.type == "delete"){
+            deleteLine(lastEvent.old.id,true);
+
+        }else if(lastEvent.type == "move"){
+            console.log(lastEvent);
+            let obj = getLine(lastEvent.new.id);
+            obj.transform = lastEvent.new.transform;
+            updateLine(obj);
+
+        }else if(lastEvent.type == "edit"){ // Change the text back to the old text
+            let obj = getLine(lastEvent.new.id);
+            obj.dots = lastEvent.new.dots;
+            obj.color = lastEvent.new.color;
+            obj.stroke = lastEvent.new.stroke;
+            updateLine(obj);
+
+        }else if(lastEvent.type == "resize"){
+            console.log(lastEvent);
+            let obj = getLine(lastEvent.old.id);
+            obj.dots = lastEvent.new.dots;
+            updateLine(obj);
+            
+        }
+
+        lastEvent.undone = false;
+        initNavBar();
+    }
+
+    // #endregion
+
+
+
     /**
      * Gets the size of the svg from d3
      */
@@ -1704,6 +1939,9 @@ whiteboard = function(){
         keyManager.newEvent(82,0,function(){setTool(4,true)}); // rect
         keyManager.newEvent(77,0,function(){setTool(7,true)}); // move
         keyManager.newEvent(84,0,function(){setTool(6,true)}); // text
+
+        keyManager.newEvent(89,1,redo); // Redo
+        keyManager.newEvent(90,1,undo); // Undo
 
         keyManager.newEvent(16,3,function(){if(!holdShift.isHeld) holdShift.isHeld = true;});
         keyManager.newUpEvent(16,function(){holdShift = {isHeld:false,x:null,y:null}});
