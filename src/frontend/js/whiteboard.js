@@ -43,7 +43,7 @@ whiteboard = function(){
 
     let colorBar = null;
     let textDrawArea = null;
-    let selectedElement = null;
+    let selectedElement = null; // element that is currently being moved
     let tempTransform = {x:null,y:null};
     let mouse = {x:0,y:0};
 
@@ -374,6 +374,8 @@ whiteboard = function(){
                 deleteLine(line.id);
                 // set the save timeout
                 autoSaveTimeout();
+                selectedElement = null;
+                overTextArea = null;
             }
         });
 
@@ -1036,6 +1038,7 @@ whiteboard = function(){
     function deleteLine(id,isUndo = false){
         let location = thisBoard.lines.findIndex(x=>x.id == id);
 
+        console.log(id);
         if(location == -1){ // 2 eraser events fired resulting in no id
             console.log("no find")
             return;
@@ -1047,7 +1050,9 @@ whiteboard = function(){
 
         let deleted = thisBoard.lines.splice(location,1)[0];
 
-        d3.selectAll(`#object${deleted.id}`).remove();
+        
+
+        d3.selectAll(`#object${deleted.id}`).on("click",null).remove();
     }
 
     function getLine(id){
@@ -1535,7 +1540,9 @@ whiteboard = function(){
         buffer = [];
         textDrawArea = null;
         // clear the temp line
-        d3.select("#temp-line").html(null);
+        console.log("temp area cleared");
+        d3.select("#whiteboard-textInputArea").on("input",null);
+        svg.temp.selectAll("*").remove();
 
         // Save in x seconds
         autoSaveTimeout();
@@ -1829,7 +1836,6 @@ whiteboard = function(){
         // All these events are doing opposite they did
         if(lastEvent.type == "add"){ // Undoing an add is deleting
             // Delete the line
-            console.log(lastEvent);
             deleteLine(lastEvent.new.id,true);
 
         }else if(lastEvent.type == "delete"){ // Opposite of delete is adding back
