@@ -354,7 +354,7 @@ whiteboard = function(){
                 .attr("id",`image${line.id}`)
                 .on("mousedown",()=>{
                     if(isMouse()){
-                        drawResize(line);
+                        setTimeout(()=>{drawResize(line)},10);
                     }
                 })
         }
@@ -624,6 +624,10 @@ whiteboard = function(){
         }
         else if(isHand() || isMiddleClick()){
             clearBackground();
+        }else if(isMouse()){
+            if(imageResize == null){
+                closeMenus();
+            }
         }
 
         if(holdShift.isHeld){
@@ -743,22 +747,28 @@ whiteboard = function(){
 
         if(imageResize != null){ // If they were adjusting an image size
             let image = getLine(imageResize.id);
-
             let oldLine = JSON.parse(JSON.stringify(image));
 
-            // Apply the temp dimensions 
-            image.dots.x = imageResize.tx;
-            image.dots.y = imageResize.ty;
-            image.dots.w = imageResize.tw;
-            image.dots.h = imageResize.th;
+            if(imageResize.tx == undefined||imageResize.ty == undefined||imageResize.tw == undefined ||imageResize.th == undefined){
 
-            imageResize = null;
-            selectedElement = null;
+                imageResize = null;
+                selectedElement = null;
+            }else{
+                // Apply the temp dimensions 
+                image.dots.x = imageResize.tx;
+                image.dots.y = imageResize.ty;
+                image.dots.w = imageResize.tw;
+                image.dots.h = imageResize.th;
 
-            addToHistory("resize",JSON.parse(JSON.stringify(image)),oldLine);
-            updateLine(image);
-            autoSaveTimeout();
-            
+                imageResize = null;
+                selectedElement = null;
+
+                addToHistory("resize",JSON.parse(JSON.stringify(image)),oldLine);
+
+                updateLine(image);
+                autoSaveTimeout();
+            }
+
         }
 
         if(holdShift.isHeld){
@@ -1038,9 +1048,7 @@ whiteboard = function(){
     function deleteLine(id,isUndo = false){
         let location = thisBoard.lines.findIndex(x=>x.id == id);
 
-        console.log(id);
         if(location == -1){ // 2 eraser events fired resulting in no id
-            console.log("no find")
             return;
         }
         // Add the object to the history
@@ -1082,18 +1090,13 @@ whiteboard = function(){
      * @param {Number} toolID number for the tool
      */
     function setTool(toolID,isKeyboardShortcut){
-        closeRightClickMenu();
         // If they're typing and a keyboard shortcut is clicked
         if(isTyping() && isKeyboardShortcut){
             // Ignore it
             return;
         }
 
-        // If they are typing and want to change tools
-        if(isTyping()){
-            // let them but submit the text box
-            submitTextArea();
-        }
+        closeMenus();
 
         d3.select("#toolbar-icon-"+currentTool).attr("class","toolbar-icon");
         currentTool = toolID;
@@ -1540,7 +1543,6 @@ whiteboard = function(){
         buffer = [];
         textDrawArea = null;
         // clear the temp line
-        console.log("temp area cleared");
         d3.select("#whiteboard-textInputArea").on("input",null);
         svg.temp.selectAll("*").remove();
 
@@ -1691,6 +1693,13 @@ whiteboard = function(){
                 imageResize.img = img;
             })
     }
+
+    function removeResize(){
+        d3.select("#imageResizeCircle-tl").remove();
+        d3.select("#imageResizeCircle-tr").remove();
+        d3.select("#imageResizeCircle-bl").remove();
+        d3.select("#imageResizeCircle-br").remove();
+    }
     // #endregion
     //==//==//==//==//==//==//
     // Right click menu
@@ -1805,11 +1814,6 @@ whiteboard = function(){
             undone: false
         }
 
-        if(type == "move"){
-            console.log(newHistory.old.transform);
-            console.log(newHistory.new.transform);
-        }
-
         thisBoard.history.unshift(newHistory);
         initNavBar();
     }
@@ -1891,7 +1895,6 @@ whiteboard = function(){
             deleteLine(lastEvent.old.id,true);
 
         }else if(lastEvent.type == "move"){
-            console.log(lastEvent);
             let obj = getLine(lastEvent.new.id);
             obj.transform = lastEvent.new.transform;
             updateLine(obj);
@@ -1904,7 +1907,6 @@ whiteboard = function(){
             updateLine(obj);
 
         }else if(lastEvent.type == "resize"){
-            console.log(lastEvent);
             let obj = getLine(lastEvent.old.id);
             obj.dots = lastEvent.new.dots;
             updateLine(obj);
@@ -1918,6 +1920,14 @@ whiteboard = function(){
     // #endregion
 
 
+
+    function closeMenus(){
+        removeResize();
+        closeRightClickMenu();
+        if(isTyping()){
+            submitTextArea();
+        }
+    }
 
     /**
      * Gets the size of the svg from d3
