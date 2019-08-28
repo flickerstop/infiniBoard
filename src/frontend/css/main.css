@@ -305,6 +305,7 @@ html{
     border-radius: 2px;
 }
 
+
 .navBar-content-history-title{
     width: calc(100% - 50px);
     height: 15px;
@@ -316,6 +317,7 @@ html{
     margin-bottom: 2px;
     border-radius: 2px;
 }
+.navBar-content-history-title-undone:hover,
 .navBar-content-history-title:hover{
     cursor: pointer;
     background-color: var(--text);

@@ -1425,6 +1425,9 @@ whiteboard = function(){
         // Draw the history panel
         let historyPanel = d3.select("#navBar-content-history");
 
+        let undoCount = 1;
+        let redoCount = thisBoard.history.filter(x=>x.undone == true && x.overwritten != true).length;
+
         for(let event of thisBoard.history){
             // if this event has been overwritten, skip it
             if(event.overwritten == true){
@@ -1458,15 +1461,34 @@ whiteboard = function(){
                 container.append("div")
                     .attr("class","navBar-content-history-title-undone")
                     .html(`${objTitle} ${objTypeString}`);
+
+                container.on("click",function(x){return function(){return redoX(x)}}(redoCount))
+                redoCount--;
             }else{
                 container.append("div")
                     .attr("class","navBar-content-history-title")
                     .style("border",`1px solid ${bgColor}`)
                     .style("color",bgColor)
                     .html(`${objTitle} ${objTypeString}`);
+
+                container.on("click",function(x){return function(){return undoX(x)}}(undoCount))
+                undoCount++;
             }
             
 
+        }
+
+        function undoX(amount){
+            for(let i = 0; i<amount;i++){
+                undo();
+            }
+        }
+
+        function redoX(amount){
+            console.log(amount);
+            for(let i = 0; i<amount;i++){
+                redo();
+            }
         }
 
     }
