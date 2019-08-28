@@ -1426,6 +1426,11 @@ whiteboard = function(){
         let historyPanel = d3.select("#navBar-content-history");
 
         for(let event of thisBoard.history){
+            // if this event has been overwritten, skip it
+            if(event.overwritten == true){
+                continue;
+            }
+
             let objType = event.new != null?event.new.type:event.old.type;
             let objTypeString = "";
             let bgColor = "";
@@ -1806,13 +1811,28 @@ whiteboard = function(){
      */
     function addToHistory(type,newObject,oldObject = null){
         console.log(type);
+        // Create the event
         let newHistory = {
             type: type,
             time: Date.now(),
             new: newObject,
             old: oldObject,
-            undone: false
+            undone: false,
+            overwritten: false
         }
+        // check if the last event was undone
+        if(thisBoard.history[0] != undefined && thisBoard.history[0].undone == true){
+            // check for any old events that were undone but not overwritten
+            for(let event of thisBoard.history){
+                // if this event was not undone, skip the rest
+                if(event.undone == false){
+                    break;
+                }else{ // if it was undone, flag as overwritten
+                    event.overwritten = true;
+                }
+            }
+        }
+
 
         thisBoard.history.unshift(newHistory);
         initNavBar();
@@ -1827,7 +1847,7 @@ whiteboard = function(){
         let lastEvent = null;
         // find the newest event with the undone = false
         for(let event of thisBoard.history){
-            if(event.undone == false){
+            if(event.undone == false && event.overwritten != true){
                 lastEvent = event;
                 break;
             }
@@ -1874,7 +1894,7 @@ whiteboard = function(){
         let lastEvent = null;
         // find the oldest event with undone=false
         for(let event of thisBoard.history.reverse()){
-            if(event.undone == true){
+            if(event.undone == true && event.overwritten != true){
                 lastEvent = event;
                 break;
             }
