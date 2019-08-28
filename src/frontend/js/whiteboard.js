@@ -1920,6 +1920,22 @@ whiteboard = function(){
     // #endregion
 
 
+    /**
+     * Clears the whiteboard and returns home
+     */
+    function closeWhiteboard(){
+        // Clear the svg properly
+        d3.select("#drawingBoard-svg-background").selectAll("*").remove();
+        d3.select("#drawingBoard-svg-images").selectAll("*").remove();
+        d3.select("#drawingBoard-svg-main").selectAll("*").remove();
+        d3.select("#drawingBoard-svg-links").selectAll("*").remove();
+        d3.select("#drawingBoard-svg").selectAll("*").remove();
+
+        // Clear all elements we're about to use (for reloading)
+        d3.select("#drawingBoard").html(null);
+
+        mainMenu.changeState('home');
+    }
 
     function closeMenus(){
         removeResize();
@@ -1972,6 +1988,6 @@ whiteboard = function(){
         save:save,
         getPens:getPens,
         changecolor:changecolor,
-        generateBackground:generateBackground // for testing
+        closeWhiteboard:closeWhiteboard
     }
 }();

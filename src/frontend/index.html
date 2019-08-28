@@ -53,7 +53,7 @@
             <div id="menuBar">
                 <div style="padding-top: 20px;">
                     <div class="menuBar-navItem button menuBar-navItem-selected" onclick="mainMenu.changeState('home');">
-                        <div class="button-icon" style="background-image:url('./images/home_icon.png')"></div>
+                        <div class="button-icon" style="background-image:url('./images/home_white.png')"></div>
                         Home
                     </div>
                     <div class="menuBar-navItem button" onclick="mainMenu.changeState('myBoxes');">
@@ -96,6 +96,8 @@
                         <div id="toolbar-icon-5" class="toolbar-icon" style="background-image:url('./images/link_white.png')" onclick="whiteboard.setTool(5)">?</div>
                         <div id="toolbar-icon-6" class="toolbar-icon" style="background-image:url('./images/text_white.png')" onclick="whiteboard.setTool(6)">T</div>
                         <div id="toolbar-icon-9" class="toolbar-icon" style="background-image:url('./images/image_white.png')" onclick="whiteboard.setTool(9)">I</div>
+                    
+                        <div id="toolbar-home" class="toolbar-icon" style="background-image:url('./images/home_white.png')" onclick="whiteboard.closeWhiteboard()"></div>
                     </div>
                     <div id="colorBar">
                         <button id="colorBar-newcolor" class="jscolor {onFineChange:'whiteboard.changecolor()' ,width:243, height:150,value:'66ccff',borderColor:'var(--highlight)', backgroundColor:'var(--main)'}"></button>

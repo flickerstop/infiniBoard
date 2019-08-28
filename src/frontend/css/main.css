@@ -148,6 +148,12 @@ html{
     opacity: 1;
 }
 
+#toolbar-home{
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+
 /* #endregion */
 
 /* #region svg colour bar*/

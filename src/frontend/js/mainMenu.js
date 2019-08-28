@@ -12,6 +12,7 @@ mainMenu = function(){
         
         switch (stateID) {
             case "home":
+                d3.select("#menuBar").style("display",null);
                 break;
             case "myBoxes":
                 comm.sendSync("getBoxes","please").then((boxes)=>{
@@ -35,7 +36,7 @@ mainMenu = function(){
     }
 
     /**
-     * Meny Bar Option to show list of users boxes
+     * Menu Bar Option to show list of users boxes
      */
     function loadMyBoxes(){
         let boxesArea = d3.select("#boxList").html("");
