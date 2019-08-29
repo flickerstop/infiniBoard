@@ -328,11 +328,15 @@ whiteboard = function(){
             // Group to draw the text
             let textGroup = drawOnSvg.append("g")
                 .on("mouseenter",()=>{
-                    overTextArea = line;
+                    if(isCurrentLayer(line.id)){
+                        overTextArea = line;
+                    }
                     //TODO set cursor to the I
                 })
                 .on("mouseleave",()=>{
-                    overTextArea = null;
+                    if(isCurrentLayer(line.id)){
+                        overTextArea = null;
+                    }
                     //TODO set cursor back to default
                 });
 
@@ -359,7 +363,7 @@ whiteboard = function(){
                 .attr("height",line.dots.h)
                 .attr("id",`image${line.id}`)
                 .on("mousedown",()=>{
-                    if(isMouse()){
+                    if(isMouse() == isCurrentLayer(line.id)){
                         setTimeout(()=>{drawResize(line)},10);
                     }
                 })
@@ -367,7 +371,7 @@ whiteboard = function(){
 
         // If the tool is the move tool, set the selected element to this one
         drawOnSvg.on("mousedown",()=>{
-            if(isMove() && d3.event.button==0){ // if is move & left click
+            if(isMove() && d3.event.button==0 && isCurrentLayer(line.id)){ // if is move & left click & object is on the current layer
                 selectedElement = line.id;
             }
         });
@@ -375,7 +379,7 @@ whiteboard = function(){
         // if the mouse moves over this line
         drawOnSvg.on("mousemove",()=>{
             // if the tools is set to erasers and is drawing (mouse down)
-            if(isEraser() && isDrawing){
+            if(isEraser() && isDrawing && isCurrentLayer(line.id)){
                 // Delete the line from the array
                 deleteLine(line.id);
                 // set the save timeout
@@ -2057,7 +2061,13 @@ whiteboard = function(){
     }
 
     // #endregion
-
+    //==//==//==//==//==//==//
+    // Layers
+    // #region
+    function isCurrentLayer(objID){
+        return currentLayer.objects.find(x=>x.id == objID) != undefined?true:false;
+    }
+    // #endregion
 
     /**
      * Clears the whiteboard and returns home
