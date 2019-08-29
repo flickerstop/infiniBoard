@@ -27,6 +27,7 @@ whiteboard = function(){
     let currentTool = 0; // Current tool being used
     let currentStroke = 2; // Current selected stroke
     let currentColor = "white"; // Current selected color
+    let currentLayer = 0; // Current Selected Layer
 
 
     let mouseDownPoint = null; // Point where the mouse was pressed down
@@ -58,10 +59,6 @@ whiteboard = function(){
     function init(id){
 
         // Clear the svg properly
-        d3.select("#drawingBoard-svg-background").selectAll("*").remove();
-        d3.select("#drawingBoard-svg-images").selectAll("*").remove();
-        d3.select("#drawingBoard-svg-main").selectAll("*").remove();
-        d3.select("#drawingBoard-svg-links").selectAll("*").remove();
         d3.select("#drawingBoard-svg").selectAll("*").remove();
 
         // Clear all elements we're about to use (for reloading)
@@ -82,7 +79,6 @@ whiteboard = function(){
                 dropManager.handleDrop().then((files)=>{
                     util.clearValueId("drawingBoard-input");
 
-                    //NOTE working here
                     for(let file of files){
                         let data = {
                             x: mouse.x,
@@ -91,7 +87,7 @@ whiteboard = function(){
                             h: file.height
                         }
                         let line = newLine(data,4,null,null,file.path);
-                        drawLine(svg.image,line);
+                        drawLine(line);
 
                         autoSaveTimeout();
                     }
@@ -139,32 +135,36 @@ whiteboard = function(){
         
         
         // Set the groups where to draw the objects
-        // Main is lines/rects/text
-        // Links will always be ontop of lines so you can always click then
-        // Temp is always ontop of everything else to see what you're drawing
         svg.background = svg.parent.append("g").attr("id","drawingBoard-svg-background");
-        svg.image = svg.parent.append("g").attr("id","drawingBoard-svg-images");
-        svg.main = svg.parent.append("g").attr("id","drawingBoard-svg-main");
-        svg.link = svg.parent.append("g").attr("id","drawingBoard-svg-links");
         svg.temp = svg.parent.append("g").attr("id","temp-line");
+        svg.layers = [];
 
         svg.parent.on("mousedown",mouseDown);
         svg.parent.on("mouseup",mouseUp)
         svg.parent.on("mousemove", mouseMove);
 
         
-
-        // draw all the lines in the current whiteboard
-        for(line of thisBoard.lines){
-            if(line.type == 2){
-                drawLine(svg.link,line);
-            }else if(line.type == 4){
-                drawLine(svg.image,line);
-            }else{
-                drawLine(svg.main,line);
+        // Look through all the layers
+        for(let layer of thisBoard.layers){
+            let svgLayer = svg.parent.append("g").attr("id","svg-layer-"+layer.id);
+            // draw all the objects in the current whiteboard
+            for(let object of layer.objects){
+                drawLine(object,svgLayer);
             }
-            
+
+            // Check if the layer is hidden
+            if(!layer.isVisible){
+                svgLayer.style("display","none");
+            }
+
+            svg.layers.push({
+                svg:svgLayer,
+                id:layer.id
+            });
         }
+
+        currentLayer = thisBoard.layers[0];
+        
         
         // Set the background colour
         svg.parent.style("background-color",thisBoard.bgcolor);
@@ -175,6 +175,8 @@ whiteboard = function(){
         // Init the colour/nav bar
         initColorBar();
         initNavBar();
+        // Auto select the layer
+        d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container selected");
 
         // Draw the background if needs it
         generateBackground();
@@ -233,13 +235,17 @@ whiteboard = function(){
      * @param {Object} svg d3 object for the svg
      * @param {object} line The object that holds all the data about the line
      */
-    function drawLine(svg,line){
+    function drawLine(line,drawOnSvg = null){
         // https://www.d3indepth.com/shapes/#line-generator
         // https://github.com/d3/d3-shape/blob/v1.3.4/README.md#line
         // https://www.dashingd3js.com/svg-paths-and-d3js
 
+        if(drawOnSvg == null){
+            drawOnSvg = svg.layers.find(x=>x.id == currentLayer.id).svg;
+        }
+
         // Append a new group for the draw object
-        svg = svg.append("g").attr("id",`object${line.id}`);
+        drawOnSvg = drawOnSvg.append("g").attr("id",`object${line.id}`);
 
         if(line.type == 0){ // Normal Line
             // Create the line
@@ -254,7 +260,7 @@ whiteboard = function(){
             });
 
             // Append the line
-            svg.append("path")
+            drawOnSvg.append("path")
                 .attr("d", drawLine(line.dots))
                 .attr("stroke", line.color)
                 .attr("stroke-width", line.stroke)
@@ -278,7 +284,7 @@ whiteboard = function(){
             let rectY = data.y1>=data.y2?data.y2:data.y1;
 
             // draw the rectangle
-            svg.append("rect")
+            drawOnSvg.append("rect")
                 .attr("x",rectX)
                 .attr("y",rectY)
                 .attr("height",height)
@@ -299,7 +305,7 @@ whiteboard = function(){
             });
 
             // Append the line
-            let svgLine = svg.append("path")
+            let svgLine = drawOnSvg.append("path")
                 .attr("d", drawLine(line.dots))
                 .attr("stroke", line.color)
                 .attr("stroke-width", line.stroke)
@@ -320,7 +326,7 @@ whiteboard = function(){
             let fontSize = 12 + (line.stroke*2);
 
             // Group to draw the text
-            let textGroup = svg.append("g")
+            let textGroup = drawOnSvg.append("g")
                 .on("mouseenter",()=>{
                     overTextArea = line;
                     //TODO set cursor to the I
@@ -345,7 +351,7 @@ whiteboard = function(){
             }
 
         }else if(line.type == 4){ // Image
-            svg.append("image")
+            drawOnSvg.append("image")
                 .attr("xlink:href", `file://${line.linkID}`)
                 .attr("x",line.dots.x)
                 .attr("y",line.dots.y)
@@ -360,14 +366,14 @@ whiteboard = function(){
         }
 
         // If the tool is the move tool, set the selected element to this one
-        svg.on("mousedown",()=>{
+        drawOnSvg.on("mousedown",()=>{
             if(isMove() && d3.event.button==0){ // if is move & left click
                 selectedElement = line.id;
             }
         });
 
         // if the mouse moves over this line
-        svg.on("mousemove",()=>{
+        drawOnSvg.on("mousemove",()=>{
             // if the tools is set to erasers and is drawing (mouse down)
             if(isEraser() && isDrawing){
                 // Delete the line from the array
@@ -382,10 +388,10 @@ whiteboard = function(){
         // If this element is currently being moved
         if(isMove() && line.id == selectedElement){
             // Use the temp transform
-            svg.attr("transform",`translate(${tempTransform.x} ${tempTransform.y})`);
+            drawOnSvg.attr("transform",`translate(${tempTransform.x} ${tempTransform.y})`);
         }else{
             // Use the transform for this object
-            svg.attr("transform",`translate(${line.transform.x} ${line.transform.y})`);
+            drawOnSvg.attr("transform",`translate(${line.transform.x} ${line.transform.y})`);
         }
     }
 
@@ -617,7 +623,7 @@ whiteboard = function(){
                     h: image.height
                 }
                 let line = newLine(data,4,null,null,image.path);
-                drawLine(svg.image,line);
+                drawLine(line);
 
                 autoSaveTimeout();
             });
@@ -648,7 +654,7 @@ whiteboard = function(){
 
                 if(isPen()){
                     let line = newLine(buffer,0,currentColor,currentStroke);
-                    drawLine(svg.main,line);
+                    drawLine(line);
                     
                 }else if(isLink()){
                     // Make sure the line goes back to the start
@@ -661,12 +667,12 @@ whiteboard = function(){
                             let newBoardID = boxManager.newBoard(boardName,bgcolor);
                             
                             let line = newLine(lineBuffer,2,currentColor,currentStroke,newBoardID);
-                            drawLine(svg.link,line);
+                            drawLine(line);
                             save();
                             //init(newBoardID);
                         }else{
                             let line = newLine(lineBuffer,2,currentColor,currentStroke,resID);
-                            drawLine(svg.link,line);
+                            drawLine(line);
                             
                             save();
                         }
@@ -699,13 +705,13 @@ whiteboard = function(){
                     // Check if the height and width is 0
                     if((buffer[0].x - buffer[1].x) != 0 && (buffer[0].y - buffer[1].y) != 0){
                         let line = newLine(buffer,0,currentColor,currentStroke);
-                        drawLine(svg.main,line);
+                        drawLine(line);
                     }
                 }else if(isRect()){
                     // Check if the height or width is 0
                     if((buffer[0].x - buffer[1].x) != 0 || (buffer[0].y - buffer[1].y) != 0){
                         let line = newLine(buffer,1,currentColor,currentStroke);
-                        drawLine(svg.main,line);
+                        drawLine(line);
                     }
                 }
                 
@@ -1034,19 +1040,20 @@ whiteboard = function(){
                 y:0
             }
         };
-        thisBoard.lines.push(obj);
+        // Add the object to the current layer
+        currentLayer.objects.push(obj);
 
         if(previousTextArea == null){ // If we're editing a text area, don't add this to history
             addToHistory("add",obj);
         }
         
-
+        initNavBar();
         return obj;
     }
 
 
     function deleteLine(id,isUndo = false){
-        let location = thisBoard.lines.findIndex(x=>x.id == id);
+        let location = currentLayer.objects.findIndex(x=>x.id == id);
 
         if(location == -1){ // 2 eraser events fired resulting in no id
             return;
@@ -1056,7 +1063,7 @@ whiteboard = function(){
             addToHistory("delete",null,getLine(id));
         }
 
-        let deleted = thisBoard.lines.splice(location,1)[0];
+        let deleted = currentLayer.objects.splice(location,1)[0];
 
         
 
@@ -1064,19 +1071,26 @@ whiteboard = function(){
     }
 
     function getLine(id){
-        return thisBoard.lines.find(x=>x.id == id);
+
+        for(let layer of thisBoard.layers){
+            for(let object of layer.objects){
+                if(object.id == id){
+                    return object;
+                }
+            }
+        }
+
+        return null;
     }
 
     function updateLine(line){
         d3.select(`#object${line.id}`).remove();
 
-        if(line.type == 2){
-            drawLine(svg.link,line);
-        }else if(line.type == 4){ // image
-            drawLine(svg.image,line);
+        if(line.type == 4){ // image
+            drawLine(line);
             drawResize(line);
         }else{
-            drawLine(svg.main,line);
+            drawLine(line);
         }
     }
 
@@ -1392,23 +1406,47 @@ whiteboard = function(){
     // #region 
 
     function initNavBar(){
+
+        
         d3.select("#navBar-content-boards").html(null);
         d3.select("#navBar-content-history").html(null);
         d3.select("#navBar-side").on("click",()=>{
             openNavBar();
         });
 
+        //#region draw tabs on left side
         d3.select("#navBar-titles-history").on("click",()=>{
             d3.select("#navBar-content-boards").style("display","none");
             d3.select("#navBar-content-history").style("display",null);
+            d3.select("#navBar-content-layers").style("display","none");
+
+            d3.select("#navBar-titles-boards").attr("class","navBar-titles-containers");
+            d3.select("#navBar-titles-history").attr("class","navBar-titles-containers selected");
+            d3.select("#navBar-titles-layers").attr("class","navBar-titles-containers");
         });
 
         
         d3.select("#navBar-titles-boards").on("click",()=>{
             d3.select("#navBar-content-boards").style("display",null);
             d3.select("#navBar-content-history").style("display","none");
+            d3.select("#navBar-content-layers").style("display","none");
+
+            d3.select("#navBar-titles-boards").attr("class","navBar-titles-containers selected");
+            d3.select("#navBar-titles-history").attr("class","navBar-titles-containers");
+            d3.select("#navBar-titles-layers").attr("class","navBar-titles-containers");
         });
 
+        d3.select("#navBar-titles-layers").on("click",()=>{
+            d3.select("#navBar-content-boards").style("display","none");
+            d3.select("#navBar-content-history").style("display","none");
+            d3.select("#navBar-content-layers").style("display",null);
+
+            d3.select("#navBar-titles-boards").attr("class","navBar-titles-containers");
+            d3.select("#navBar-titles-history").attr("class","navBar-titles-containers");
+            d3.select("#navBar-titles-layers").attr("class","navBar-titles-containers selected");
+        });
+        //#endregion
+        
         // Draw the boards panel
         let boardsPanel = d3.select("#navBar-content-boards");
         let boards = boxManager.getBox().boards;
@@ -1477,6 +1515,64 @@ whiteboard = function(){
             
 
         }
+
+        // Draw the layers
+        let layerPanel = d3.select("#navBar-content-layers").html("");
+        layerPanel.append("div").html("Add new layer")
+            .on("click",()=>{
+                let id = boxManager.newLayer(thisBoard.id);
+                svg.layers.push({
+                    svg: svg.parent.append("g").attr("id","svg-layer-"+id),
+                    id: id
+                });
+                initNavBar();
+            })
+
+        for(let layer of thisBoard.layers){
+            let layerContainer = layerPanel.append("div")
+                .attr("class","navBar-layers-container")
+                .attr("id","navBar-layers-container-"+layer.id);
+                
+
+            let visibleArea = layerContainer.append("div")
+                .attr("class","navBar-layers-visible")
+                .attr("id","navBar-layers-visible-"+layer.id)
+                .style("background-image","url('./images/check_white.png')")
+                .on("click",()=>{
+                    // If the checkmark is clicked, turn off this layer
+                    layer.isVisible = !layer.isVisible;
+                    // Hide it in the svg
+                    if(layer.isVisible){
+                        d3.select(`#svg-layer-${layer.id}`).style("display",null);
+                        d3.select("#navBar-layers-visible-"+layer.id).style("background-image","url('./images/check_white.png')")
+                    }else{
+                        d3.select(`#svg-layer-${layer.id}`).style("display","none");
+                        d3.select("#navBar-layers-visible-"+layer.id).style("background-image","url('./images/x_white.png')")
+                    }
+                    
+                });
+
+            let textArea = layerContainer.append("div")
+                .on("click",()=>{
+                    d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container");
+                    console.log(`Change layer: ${layer.name}`);
+                    currentLayer = layer;
+                    d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container selected");
+                });
+
+            textArea.append("div").attr("class","navBar-layers-name").html(layer.name);
+            textArea.append("div").attr("class","navBar-layers-info").html(`${layer.objects.length} Objects`);
+
+            if(layer.isVisible){
+                d3.select(`#svg-layer-${layer.id}`).style("display",null);
+                visibleArea.style("background-image","url('./images/check_white.png')")
+            }else{
+                d3.select(`#svg-layer-${layer.id}`).style("display","none");
+                visibleArea.style("background-image","url('./images/x_white.png')")
+            }
+            d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container selected");
+        }
+
 
         function undoX(amount){
             for(let i = 0; i<amount;i++){
@@ -1557,7 +1653,7 @@ whiteboard = function(){
         let line = newLine(data,3,currentColor,currentStroke);
 
         // Draw the new text area
-        drawLine(svg.main,line);
+        drawLine(line);
 
         // If they were just editing a text area
         if(previousTextArea != null){
@@ -1840,7 +1936,8 @@ whiteboard = function(){
             new: newObject,
             old: oldObject,
             undone: false,
-            overwritten: false
+            overwritten: false,
+            layer: currentLayer.id
         }
         // check if the last event was undone
         if(thisBoard.history[0] != undefined && thisBoard.history[0].undone == true){
@@ -1886,7 +1983,7 @@ whiteboard = function(){
 
         }else if(lastEvent.type == "delete"){ // Opposite of delete is adding back
             // Add the line back
-            thisBoard.lines.push(lastEvent.old);
+            thisBoard.layers.find(x=>x.id == lastEvent.layer).objects.push(lastEvent.old);
             updateLine(lastEvent.old);
 
         }else if(lastEvent.type == "move"){ // Move back to the old position
@@ -1930,7 +2027,7 @@ whiteboard = function(){
 
         // All these events are doing what they originally did
         if(lastEvent.type == "add"){ 
-            thisBoard.lines.push(lastEvent.new);
+            thisBoard.layers.find(x=>x.id == lastEvent.layer).objects.push(lastEvent.new);
             updateLine(lastEvent.new);
 
         }else if(lastEvent.type == "delete"){

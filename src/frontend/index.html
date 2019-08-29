@@ -30,9 +30,13 @@
     </head>
     <style id="themeStyle">
         :root {
-            --main: rgb(37,37,37); 
+            
             --highlight: rgb(103, 103, 103);
-            --darklight: rgb(29, 29, 29); 
+
+            --titlebar: rgb(29, 29, 29); 
+            --sidebar: rgb(37, 37, 37); 
+            --main: rgb(49, 49, 49); 
+
             --text: #ecf0f1;
             --green: #27ae60;
             --red: #e74c3c;
@@ -106,16 +110,20 @@
                     <div id="navBar">
                         <div id="navBar-side"></div>
                         <div id="navBar-Titles">
-                            <div id="navBar-titles-boards" class="navBar-titles-containers">
+                            <div id="navBar-titles-boards" class="navBar-titles-containers selected">
                                 <div class="navBar-titles-text">Boards</div>
                             </div>
                             <div id="navBar-titles-history" class="navBar-titles-containers">
                                 <div class="navBar-titles-text">History</div>
                             </div>
-                            <div id="navBar-titles-filler" style="height: calc(100% - 200px)"></div>
+                            <div id="navBar-titles-layers" class="navBar-titles-containers">
+                                <div class="navBar-titles-text">Layers</div>
+                            </div>
+                            <div id="navBar-titles-filler" style="height: calc(100% - 300px)"></div>
                         </div>
                         <div id="navBar-content">
                             <div id="navBar-content-history" style="display: none"></div>
+                            <div id="navBar-content-layers" style="display: none"></div>
                             <div id="navBar-content-boards"></div>
                         </div>
                     </div>

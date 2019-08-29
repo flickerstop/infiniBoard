@@ -78,13 +78,30 @@ boxManager = function(){
             bgType: 0, // make this do something like 0 -> solid color, 1 -> grid etc
             bgcolor: bgcolor,
             idCounter:0,
-            lines: [],
+            layerCounter: 0,
             pens:defaultPens(),
-            history: []
+            history: [],
+            layers: []
+        });
+
+        newLayer(id);
+
+        return id;
+    }
+
+
+    function newLayer(boardId){
+        let id = currentBox.boards.find(x=>x.id == boardId).layerCounter++;
+        currentBox.boards.find(x=>x.id == boardId).layers.push({
+            name: currentBox.boards.find(x=>x.id == boardId).layerCounter+1,
+            objects: [],
+            isVisible: true,
+            id: id
         });
 
         return id;
     }
+
 
     /**
      * Passes back the board with the id given
@@ -136,7 +153,8 @@ boxManager = function(){
         setShelf:setShelf,
         getShelf:getShelf,
         checkBoxNameUsed:checkBoxNameUsed,
-        checkBoardNameUsed:checkBoardNameUsed
+        checkBoardNameUsed:checkBoardNameUsed,
+        newLayer:newLayer
     }
 }();
 /////////////////////////////////////////////////////

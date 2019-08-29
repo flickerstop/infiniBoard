@@ -48,9 +48,10 @@ mainMenu = function(){
 
             // Draw svg Preview
             let svg = boxItem.append("svg").attr("viewBox",`0,0,1000,1000`).attr("class","boxList-boxItem-svg-preview");
-            for(let line of box.boards[0].lines){
-                drawLine(svg,line);
-            }
+            //FIXME layers broke everything, panic!!!
+            // for(let line of box.boards[0].lines){
+            //     drawLine(svg,line);
+            // }
             
             // Add a dimmer for the svg
             boxItem.append("div").attr("class","boxList-boxItem-svg-dimmer");
@@ -60,7 +61,7 @@ mainMenu = function(){
             // Show Box info (Name, Details, Date)
             boxInfo.append("div").attr("class","boxList-boxItem-Info-Name").append("span")
                 .html(box.saveName);
-            box.boards.forEach(board => numberOfLines += board.lines.length)
+            //FIXME NOOOO box.boards.forEach(board => numberOfLines += board.lines.length)
             boxInfo.append("div").attr("class","boxList-boxItem-Info-Details").append("span")
                 .html(numberOfLines + ` Line${numberOfLines > 1 ? "s" : ""}` + "<br />"
                     + box.boardCount + ` Board${box.boardCount > 1 ? "s" : ""}`);

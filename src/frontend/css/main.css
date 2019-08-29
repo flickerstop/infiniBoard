@@ -63,7 +63,7 @@ html{
     line-height: 40px;
     border-radius: 8px;
     opacity: 0.85;
-    background-color: var(--darklight);
+    background-color: var(--main);
     cursor: pointer;
     transition: 0.08s;
 }
@@ -91,7 +91,7 @@ html{
 
 #drawingBoard{
     position: absolute;
-    left: 51px;
+    left: 50px;
     top: 41px;
     width: calc(100% - 51px);
     height: calc(100% - 41px);
@@ -117,7 +117,7 @@ html{
     top: 0px;
     height: calc(100% - 5px);
     width: 50px;
-    background-color: var(--main-bg-color);
+    background-color: var(--titlebar);
     padding-top: 5px;
 }
 
@@ -253,6 +253,14 @@ html{
     border-bottom: 1px solid var(--highlight);
 }
 
+.navBar-titles-containers.selected{
+    background-color: var(--highlight);
+}
+
+.navBar-titles-containers.selected:hover{
+    cursor: default;
+}
+
 .navBar-titles-containers:hover{
     cursor: pointer;
     background-color: var(--highlight);
@@ -262,7 +270,7 @@ html{
     position: absolute;
     left: 50px;
     top: 0px;
-    background-color: var(--darklight);
+    background-color: var(--sidebar);
     height: 100%;
     width: calc(100% - 30px);
 }
@@ -317,11 +325,62 @@ html{
     margin-bottom: 2px;
     border-radius: 2px;
 }
+
+
+
 .navBar-content-history-title-undone:hover,
 .navBar-content-history-title:hover{
     cursor: pointer;
     background-color: var(--text);
 }
+
+/*#endregion*/
+
+/*#region navBar layers content*/
+.navBar-layers-container{
+    width: calc(100% - 10px);
+    height: 40px;
+    padding-top: 5px;
+    padding: 0px 5px;
+    border-bottom: 1px solid var(--highlight);
+}
+
+.navBar-layers-container.selected{
+    background-color: var(--highlight);
+}
+
+.navBar-layers-visible{
+    float: left;
+    width: 20px;
+    height: 40px;
+    background-size: 15px 15px;
+    background-repeat: no-repeat;
+    background-position: center center;
+    opacity: 0.7;
+}
+
+.navBar-layers-visible:hover{
+    opacity: 1;
+    cursor: pointer;
+}
+
+.navBar-layers-name{
+    height: 20px;
+    width: calc(100% - 25px);
+    margin-left: 25px;
+    line-height: 20px;
+}
+
+.navBar-layers-info{
+    height: 20px;
+    width: calc(100% - 25px);
+    margin-left: 25px;
+    line-height: 20px;
+    opacity: 0.5;
+    font-size: 10px;
+}
+
+
 
 /*#endregion*/
 
@@ -370,7 +429,7 @@ html{
     position: absolute;
     width: 210px;
     /* height: 300px; */
-    background-color: var(--darklight);
+    background-color: var(--main);
     pointer-events: auto;
     border: 1px solid black;
     border-radius: 4px;
@@ -397,7 +456,7 @@ html{
     width: calc(50% - 60px);
     margin-left: 45px;
     margin-right: 15px;
-    background-color: var(--darklight);
+    background-color: var(--main);
     outline: none;
     border: none;
     border: 1px solid var(--highlight);
