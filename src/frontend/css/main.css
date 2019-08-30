@@ -207,182 +207,223 @@ html{
 /*#endregion*/
 
 /* #region svg nav bar*/
-#navBar{
-    position: absolute;
-    z-index: 5;
-    right: -230px;
-    top: 40px;
-    background-color: var(--main);
-    width: 250px;
-    height: calc(100% - 40px);
-}
+    #navBar{
+        position: absolute;
+        z-index: 5;
+        right: -230px;
+        top: 40px;
+        background-color: var(--main);
+        width: 250px;
+        height: calc(100% - 40px);
+    }
 
-#navBar-side{
-    width: 20px;
-    height: 100%;
-    background-size: 20px 20px;
-    background-repeat: no-repeat;
-    background-position: center center;
-    opacity: 0.3;
-    background-image: url("../images/chevron_left.png");
-    filter: var(--image-filter);
-}
+    #navBar-side{
+        width: 20px;
+        height: 100%;
+        background-size: 20px 20px;
+        background-repeat: no-repeat;
+        background-position: center center;
+        opacity: 0.3;
+        background-image: url("../images/chevron_left.png");
+        filter: var(--image-filter);
+    }
 
-#navBar-Titles{
-    position: absolute;
-    left: 20px;
-    top: 0px;
-    width: 29px;
-    height: 100%;
-}
+    #navBar-Titles{
+        position: absolute;
+        left: 20px;
+        top: 0px;
+        width: 29px;
+        height: 100%;
+    }
 
-#navBar-titles-filler{
-    width: 29px;
-    border-right: 1px solid var(--highlight);
-}
+    #navBar-titles-filler{
+        width: 29px;
+        border-right: 1px solid var(--highlight);
+    }
 
-.navBar-titles-text{
-    transform: rotate(270deg) translate(-50px, 0px);
-}
+    .navBar-titles-text{
+        transform: rotate(270deg) translate(-50px, 0px);
+    }
 
-.navBar-titles-containers{
-    height: 100px;
-    width: 30px;
-    border-left: 1px solid var(--highlight);
-    border-top: 1px solid var(--highlight);
-    border-bottom: 1px solid var(--highlight);
-}
+    .navBar-titles-containers{
+        height: 100px;
+        width: 30px;
+        border-left: 1px solid var(--highlight);
+        border-top: 1px solid var(--highlight);
+        border-bottom: 1px solid var(--highlight);
+    }
 
-.navBar-titles-containers.selected{
-    background-color: var(--highlight);
-}
+    .navBar-titles-containers.selected{
+        background-color: var(--highlight);
+    }
 
-.navBar-titles-containers.selected:hover{
-    cursor: default;
-}
+    .navBar-titles-containers.selected:hover{
+        cursor: default;
+    }
 
-.navBar-titles-containers:hover{
-    cursor: pointer;
-    background-color: var(--highlight);
-}
+    .navBar-titles-containers:hover{
+        cursor: pointer;
+        background-color: var(--highlight);
+    }
 
-#navBar-content{
-    position: absolute;
-    left: 50px;
-    top: 0px;
-    background-color: var(--sidebar);
-    height: 100%;
-    width: calc(100% - 30px);
-}
+    #navBar-content{
+        position: absolute;
+        left: 50px;
+        top: 0px;
+        background-color: var(--sidebar);
+        height: 100%;
+        width: calc(100% - 30px);
+    }
 
-#navBar-side:hover{
-    opacity: 1.0;
-    cursor: pointer;
-}
+    #navBar-side:hover{
+        opacity: 1.0;
+        cursor: pointer;
+    }
 
-.navBar-content-board{
-    text-align: center;
-    width: 100%;
-    height: 25px;
-}
+    .navBar-content-board{
+        text-align: center;
+        width: 100%;
+        height: 25px;
+    }
 
-.navBar-content-board:hover{
-    cursor: pointer;
-    background-color: var(--highlight);
-}
+    .navBar-content-board:hover{
+        cursor: pointer;
+        background-color: var(--highlight);
+    }
 
-.navBar-content-board.current{
-    background-color: var(--blue);
-}
+    .navBar-content-board.current{
+        background-color: var(--blue);
+    }
 
-/*#region navbar history content*/
-.navBar-content-history-container{
-    width: 100%;
-}
+    /*#region history*/
+    .navBar-content-history-container{
+        width: 100%;
+    }
 
-.navBar-content-history-title-undone{
-    width: calc(100% - 50px);
-    height: 15px;
-    font-size: 10px;
-    line-height: 15px;
-    padding-left: 10px;
-    margin-left: 10px;
-    color: var(--highlight);
-    border: 1px solid var(--highlight);
-    margin-bottom: 2px;
-    border-radius: 2px;
-}
-
-
-.navBar-content-history-title{
-    width: calc(100% - 50px);
-    height: 15px;
-    font-size: 10px;
-    line-height: 15px;
-    padding-left: 10px;
-    margin-left: 10px;
-    color: var(--text);
-    margin-bottom: 2px;
-    border-radius: 2px;
-}
+    .navBar-content-history-title-undone{
+        width: calc(100% - 50px);
+        height: 15px;
+        font-size: 10px;
+        line-height: 15px;
+        padding-left: 10px;
+        margin-left: 10px;
+        color: var(--highlight);
+        border: 1px solid var(--highlight);
+        margin-bottom: 2px;
+        border-radius: 2px;
+    }
 
 
-
-.navBar-content-history-title-undone:hover,
-.navBar-content-history-title:hover{
-    cursor: pointer;
-    background-color: var(--text);
-}
-
-/*#endregion*/
-
-/*#region navBar layers content*/
-.navBar-layers-container{
-    width: calc(100% - 10px);
-    height: 40px;
-    padding-top: 5px;
-    padding: 0px 5px;
-    border-bottom: 1px solid var(--highlight);
-}
-
-.navBar-layers-container.selected{
-    background-color: var(--highlight);
-}
-
-.navBar-layers-visible{
-    float: left;
-    width: 20px;
-    height: 40px;
-    background-size: 15px 15px;
-    background-repeat: no-repeat;
-    background-position: center center;
-    opacity: 0.7;
-}
-
-.navBar-layers-visible:hover{
-    opacity: 1;
-    cursor: pointer;
-}
-
-.navBar-layers-name{
-    height: 20px;
-    width: calc(100% - 25px);
-    margin-left: 25px;
-    line-height: 20px;
-}
-
-.navBar-layers-info{
-    height: 20px;
-    width: calc(100% - 25px);
-    margin-left: 25px;
-    line-height: 20px;
-    opacity: 0.5;
-    font-size: 10px;
-}
+    .navBar-content-history-title{
+        width: calc(100% - 50px);
+        height: 15px;
+        font-size: 10px;
+        line-height: 15px;
+        padding-left: 10px;
+        margin-left: 10px;
+        color: var(--text);
+        margin-bottom: 2px;
+        border-radius: 2px;
+    }
 
 
 
-/*#endregion*/
+    .navBar-content-history-title-undone:hover,
+    .navBar-content-history-title:hover{
+        cursor: pointer;
+        background-color: var(--text);
+    }
+
+    /*#endregion*/
+
+    /*#region layers*/
+    .navBar-layers-container{
+        width: calc(100% - 10px);
+        height: 40px;
+        padding-top: 5px;
+        padding: 0px 5px;
+        border-bottom: 1px solid var(--highlight);
+    }
+
+    .navBar-layers-container.selected{
+        background-color: var(--highlight);
+    }
+
+    .navBar-layers-visible{
+        float: left;
+        width: 20px;
+        height: 40px;
+        background-size: 15px 15px;
+        background-repeat: no-repeat;
+        background-position: center center;
+        opacity: 0.7;
+    }
+
+    .navBar-layers-visible:hover{
+        opacity: 1;
+        cursor: pointer;
+    }
+
+    .navBar-layers-name{
+        height: 20px;
+        width: calc(100% - 25px);
+        margin-left: 25px;
+        line-height: 20px;
+    }
+
+    .navBar-layers-rename{
+        height: 20px;
+        width: calc(100% - 50px);
+        border: 1px solid var(--text);
+        background-color: var(--sidebar);
+        margin-left: 5px;
+        line-height: 20px;
+    }
+
+    .navBar-layers-info{
+        height: 20px;
+        width: calc(100% - 25px);
+        margin-left: 25px;
+        line-height: 20px;
+        opacity: 0.5;
+        font-size: 10px;
+    }
+
+
+
+    /*#endregion*/
+
+    /*#region images*/
+    #navBar-content-images{
+        background-size: 100px 100px;
+        background-repeat: no-repeat;
+        background-position: center center;
+        width: 100%;
+        height: 100%;
+    }
+
+    .navBar-content-images-card{
+        width: 50px;
+        margin: 3px;
+        padding: 2px;
+        border: 1px solid var(--main);
+        float: left;
+    }
+
+    .navBar-content-images-card:hover{
+        cursor: pointer;
+        border: 1px solid var(--text);
+    }
+
+    .navBar-content-images-card-image{
+        width: 50px;
+        height: 50px;
+        background-size: 50px 50px;
+        background-repeat: no-repeat;
+        background-position: center center;
+    }
+
+    /*#endregion*/
 
 /*#endregion*/
 

@@ -8,15 +8,6 @@ whiteboard = function(){
      * https://www.w3schools.com/jquery/tryit.asp?filename=tryjquery_event_mouseleave_mouseout
      */
 
-
-    //NOTE to do undo/redo:
-    /**
-     * Have an array that just holds multiple copies of the "lines" array.
-     * Every time a new line is draw, push the new "lines" array to the undo buffer
-     * maybe only hold like 30 of the last actions to save space?
-     * Seems kinda hacky, but it will work!
-     */
-
     let svg = null; // hold d3 object of the svg
     let isDrawing = false; // Is the user currently drawing
     let buffer = []; // Buffer for the currently drawing ling
@@ -49,6 +40,7 @@ whiteboard = function(){
     let mouse = {x:0,y:0};
 
     let imageResize = null;
+    let attachedImage = null; // If the user selected an image from the nav bar
 
     let overTextArea = null; // Used to see if the mouse is over a text area to allow for editing 
     let previousTextArea = null; // Used to store the text area in it's pre-edited state
@@ -428,6 +420,15 @@ whiteboard = function(){
             button: d3.event.button
         };
 
+        if(attachedImage != null){ // If there is an image attached to the mouse
+            attachedImage.dots.x = mouseDownPoint.x-(attachedImage.dots.w/2);
+            attachedImage.dots.y = mouseDownPoint.y-(attachedImage.dots.h/2);
+            selectedElement = null;
+            updateLine(attachedImage);
+            attachedImage = null;
+            autoSaveTimeout();
+        }
+
         if(isPen() && isLeftClick()){
             isDrawing = true;
 
@@ -806,6 +807,13 @@ whiteboard = function(){
             lgy: mouse.gy
         }
 
+
+        if(attachedImage != null){ // If there is an image attached to the mouse
+            attachedImage.dots.x = mouse.x-(attachedImage.dots.w/2);
+            attachedImage.dots.y = mouse.y-(attachedImage.dots.h/2);
+            updateLine(attachedImage);
+        }
+
         if(mouseDownPoint != null){ // If the mouse has been pressed down
             if(isHand() || mouseDownPoint.button == 1){
                 viewbox.x = viewbox.x - (mouse.gx-mouse.lgx)*viewbox.scale;
@@ -819,7 +827,8 @@ whiteboard = function(){
                     holdShift.y = mouse.y;
                 }
             }
-        }if(isPen() || isLink()){
+        }
+        if(isPen() || isLink()){
             let currentTime = Date.now();
             
             // if the user is drawing, add the x,y to the buffer
@@ -1420,34 +1429,30 @@ whiteboard = function(){
 
         //#region draw tabs on left side
         d3.select("#navBar-titles-history").on("click",()=>{
-            d3.select("#navBar-content-boards").style("display","none");
+            resetTabs();
             d3.select("#navBar-content-history").style("display",null);
-            d3.select("#navBar-content-layers").style("display","none");
-
-            d3.select("#navBar-titles-boards").attr("class","navBar-titles-containers");
             d3.select("#navBar-titles-history").attr("class","navBar-titles-containers selected");
-            d3.select("#navBar-titles-layers").attr("class","navBar-titles-containers");
         });
 
         
         d3.select("#navBar-titles-boards").on("click",()=>{
+            resetTabs();
             d3.select("#navBar-content-boards").style("display",null);
-            d3.select("#navBar-content-history").style("display","none");
-            d3.select("#navBar-content-layers").style("display","none");
-
             d3.select("#navBar-titles-boards").attr("class","navBar-titles-containers selected");
-            d3.select("#navBar-titles-history").attr("class","navBar-titles-containers");
-            d3.select("#navBar-titles-layers").attr("class","navBar-titles-containers");
         });
 
         d3.select("#navBar-titles-layers").on("click",()=>{
-            d3.select("#navBar-content-boards").style("display","none");
-            d3.select("#navBar-content-history").style("display","none");
+            resetTabs();
             d3.select("#navBar-content-layers").style("display",null);
-
-            d3.select("#navBar-titles-boards").attr("class","navBar-titles-containers");
-            d3.select("#navBar-titles-history").attr("class","navBar-titles-containers");
             d3.select("#navBar-titles-layers").attr("class","navBar-titles-containers selected");
+        });
+
+        d3.select("#navBar-titles-images").on("click",()=>{
+            resetTabs();
+            d3.select("#navBar-content-images").style("display",null);
+            d3.select("#navBar-titles-images").attr("class","navBar-titles-containers selected");
+            d3.select("#navBar-content-images").style("background-image","url('./images/loading_white.gif')");
+            initNavBarImages()
         });
         //#endregion
         
@@ -1558,13 +1563,31 @@ whiteboard = function(){
 
             let textArea = layerContainer.append("div")
                 .on("click",()=>{
-                    d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container");
-                    console.log(`Change layer: ${layer.name}`);
-                    currentLayer = layer;
-                    d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container selected");
+                    // Check if the current layer isnt this layer
+                    if(currentLayer != layer){
+                        d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container");
+                        console.log(`Change layer: ${layer.name}`);
+                        currentLayer = layer;
+                        d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container selected");
+                    }else{
+                        // Draw a text area where the name goes to change the name
+                        util.setValueId("navBar-layers-rename-"+layer.id,layer.name);
+                        d3.select("#navBar-layers-name-"+layer.id).style("display","none");
+                        d3.select("#navBar-layers-rename-"+layer.id).style("display",null);
+                        document.getElementById("navBar-layers-rename-"+layer.id).focus();
+
+                        // When the user unfocuses from the text area
+                        d3.select("#navBar-layers-rename-"+layer.id).on("focusout",()=>{
+                            // save the new layer name
+                            layer.name = util.getValueId("navBar-layers-rename-"+layer.id);
+                            d3.select("#navBar-layers-name-"+layer.id).style("display",null).html(layer.name);
+                            d3.select("#navBar-layers-rename-"+layer.id).style("display","none").on("focusout",null);
+                        })
+                    }
                 });
 
-            textArea.append("div").attr("class","navBar-layers-name").html(layer.name);
+            textArea.append("div").attr("class","navBar-layers-name").attr("id","navBar-layers-name-"+layer.id).html(layer.name);
+            textArea.append("input").attr("class","navBar-layers-rename").attr("id","navBar-layers-rename-"+layer.id).attr("type","text").style("display","none");
             textArea.append("div").attr("class","navBar-layers-info").html(`${layer.objects.length} Objects`);
 
             if(layer.isVisible){
@@ -1577,18 +1600,40 @@ whiteboard = function(){
             d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container selected");
         }
 
-
+        /**
+         * Runs the undo function x amount of times
+         * @param {Number} amount Number of times to undo
+         */
         function undoX(amount){
             for(let i = 0; i<amount;i++){
                 undo();
             }
         }
 
+        /**
+         * Runs the redo function x amount of times
+         * @param {Number} amount Number of times to redo
+         */
         function redoX(amount){
             console.log(amount);
             for(let i = 0; i<amount;i++){
                 redo();
             }
+        }
+
+        /**
+         * Resets the navbar tabs
+         */
+        function resetTabs(){
+            d3.select("#navBar-content-boards").style("display","none");
+            d3.select("#navBar-content-history").style("display","none");
+            d3.select("#navBar-content-layers").style("display","none");
+            d3.select("#navBar-content-images").style("display","none");
+
+            d3.select("#navBar-titles-boards").attr("class","navBar-titles-containers");
+            d3.select("#navBar-titles-history").attr("class","navBar-titles-containers");
+            d3.select("#navBar-titles-layers").attr("class","navBar-titles-containers");
+            d3.select("#navBar-titles-images").attr("class","navBar-titles-containers");
         }
 
     }
@@ -2068,6 +2113,49 @@ whiteboard = function(){
         return currentLayer.objects.find(x=>x.id == objID) != undefined?true:false;
     }
     // #endregion
+    //==//==//==//==//==//==//
+    // Nav Bar Images
+    // #region
+    function initNavBarImages(){
+        // Load the images
+        comm.sendSync("getImages","please").then((images)=>{
+            let boardImages = images.find(x=>x.boxName == boxManager.getBox().saveName);
+            // Check to see if any images were returned
+            if(boardImages == undefined || boardImages.images.length == 0){
+                // If no images were found
+                console.log("no Images");
+                d3.select("#navBar-content-images").style("background-image",null);
+                d3.select("#navBar-content-images").append("div").html("No Images Found...");
+            }else{
+                // If images were found
+                let imageBoard = d3.select("#navBar-content-images").style("background-image",null).html("");
+
+                // Go through all images and draw them out
+                for(let image of boardImages.images){
+                    imageBoard.append("div")
+                        .attr("class","navBar-content-images-card")
+                        .append("div")
+                        .style("background-image","url('../../"+image.path+"')")
+                        .attr("class","navBar-content-images-card-image")
+                        .on("click",()=>{
+                            console.log("attached image");
+                            let data = {
+                                x: 0,
+                                y: 0,
+                                w: image.width,
+                                h: image.height
+                            }
+                            let line = newLine(data,4,null,null,image.absolutePath);
+                            drawLine(line);
+                            attachedImage = line;
+                        })
+                }
+            }
+
+        });
+    }
+    // #endregion
+
 
     /**
      * Clears the whiteboard and returns home

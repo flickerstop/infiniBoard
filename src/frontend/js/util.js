@@ -7,8 +7,13 @@ util = function(){
         return d3.select("#"+id).property("value","");
     }
 
+    function setValueId(id,value){
+        d3.select("#"+id).property("value",value);
+    }
+
     return{
         getValueId:getValueId,
-        clearValueId:clearValueId
+        clearValueId:clearValueId,
+        setValueId:setValueId
     }
 }();

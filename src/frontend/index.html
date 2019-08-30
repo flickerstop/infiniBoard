@@ -119,11 +119,15 @@
                             <div id="navBar-titles-layers" class="navBar-titles-containers">
                                 <div class="navBar-titles-text">Layers</div>
                             </div>
-                            <div id="navBar-titles-filler" style="height: calc(100% - 300px)"></div>
+                            <div id="navBar-titles-images" class="navBar-titles-containers">
+                                <div class="navBar-titles-text">Images</div>
+                            </div>
+                            <div id="navBar-titles-filler" style="height: calc(100% - 400px)"></div>
                         </div>
                         <div id="navBar-content">
                             <div id="navBar-content-history" style="display: none"></div>
                             <div id="navBar-content-layers" style="display: none"></div>
+                            <div id="navBar-content-images" style="display: none"></div>
                             <div id="navBar-content-boards"></div>
                         </div>
                     </div>
@@ -163,14 +167,19 @@
     function changeTheme(){
         d3.select("#themeStyle").html(`
         :root {
+            
+            --highlight: #ffffff;
+
+            --titlebar: rgb(29, 29, 29); 
+            --sidebar: #bdc3c7; 
             --main: #ecf0f1; 
-            --highlight: rgb(103, 103, 103);
-            --darklight: #bdc3c7; 
+
             --text: #000000;
             --green: #27ae60;
             --red: #e74c3c;
             --blue: #3498db;
-            --image-filter: invert(1);
+            --darkblue: #2980b9;
+            --image-filter: invert(1); /*brightness(0) invert(1) to make image black*/
         }`);
     }
 

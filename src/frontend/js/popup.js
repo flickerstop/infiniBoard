@@ -287,18 +287,22 @@ popup = function(){
             d3.select("#popup-navBar-item"+currentSelected).attr("class","popup-navBar-row");
             d3.select("#popup-navBar-item"+boxId).attr("class","popup-navBar-row selected");
             currentSelected = boxId;
-            if(boxId == -2){
+            if(boxId == -2){ // Tab to upload images
                 drawUploadImage();
-            }else if(boxId == -1){
+            }else if(boxId == -1){ // Tab for all images
                 for(let box of allImages){
                     for(let image of box.images){
+                        // Create the image box
                         let imageBox = imagePanel.append("div").attr("class","popup-imageCard");
                         imageBox.append("div").attr("class","popup-imageCard-image").style("background-image",`url('../../${image.path}')`);
+
+                        // If the name of the image is too long, shorten it
                         if(image.file.length >= 30){
                             imageBox.append("div").attr("class","popup-imageCard-text").html(`(...).${image.file.split(".")[1]}`);
                         }else{
                             imageBox.append("div").attr("class","popup-imageCard-text").html(image.file);
                         }  
+                        // When clicking the image, return the image path
                         imageBox.on("click",()=>{
                             closePopup();
                             callback({
@@ -319,7 +323,6 @@ popup = function(){
                 if(images == undefined){
                     
                 }else{
-                    console.log(images);
                     for(let image of images.images){
                         let imageBox = imagePanel.append("div").attr("class","popup-imageCard");
                         imageBox.append("div").attr("class","popup-imageCard-image").style("background-image",`url('../../${image.path}')`);
