@@ -1693,6 +1693,18 @@ whiteboard = function(){
     function submitTextArea(){
         let fontSize = 12 + (currentStroke*2);
         //When hitting enter
+
+        // If it is an empty text box
+        if(util.getValueId("whiteboard-textInputArea") == ""){
+            // clear the buffer
+            buffer = [];
+            textDrawArea = null;
+            // clear the temp line
+            d3.select("#whiteboard-textInputArea").on("input",null);
+            svg.temp.selectAll("*").remove();
+            return;
+        }
+
         let data = {
             text: util.getValueId("whiteboard-textInputArea"),
             x: textDrawArea.x+13,
