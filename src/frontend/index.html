@@ -17,16 +17,20 @@
         <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto&display=swap" rel="stylesheet">
         <!-- <script src="./js/data.js"></script> -->
 
+
+        <script>window.$ = window.jQuery = require('./js/extern/jquery.js');</script>
+        
         <script src="./js/extern/jscolor.js"></script>
         <script src="./js/extern/d3.js"></script>
         <script src="./js/whiteboard.js"></script>
         <script src="./js/mainMenu.js"></script>
         <script src="./js/comm.js"></script>
-        <script src="./js/popup.js"></script>
+        <script src="./js/popup/popup.js"></script>
         <script src="./js/util.js"></script>
         <script src="./js/boxManager.js"></script>
         <script src="./js/keyboardManager.js"></script>
         <script src="./js/dropManager.js"></script>
+
     </head>
     <style id="themeStyle">
         :root {
@@ -101,6 +105,8 @@
                         <div id="toolbar-icon-6" class="toolbar-icon" style="background-image:url('./images/text_white.png')" onclick="whiteboard.setTool(6)">T</div>
                         <div id="toolbar-icon-9" class="toolbar-icon" style="background-image:url('./images/image_white.png')" onclick="whiteboard.setTool(9)">I</div>
                     
+                        <div id="toolbar-dndIcons"></div>
+
                         <div id="toolbar-home" class="toolbar-icon" style="background-image:url('./images/home_white.png')" onclick="whiteboard.closeWhiteboard()"></div>
                     </div>
                     <div id="colorBar">

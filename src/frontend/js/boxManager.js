@@ -76,12 +76,14 @@ boxManager = function(){
             id: id,
             name: boardName,
             bgType: 0, // make this do something like 0 -> solid color, 1 -> grid etc
+            bgSpacing: 25,
             bgcolor: bgcolor,
             idCounter:0,
             layerCounter: 0,
             pens:defaultPens(),
             history: [],
-            layers: []
+            layers: [],
+            boardType: 0 // Type of board, 0 is default, 1 is dnd
         });
 
         newLayer(id);

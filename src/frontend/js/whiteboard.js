@@ -60,6 +60,7 @@ whiteboard = function(){
                 inputBox.style("display",null);
             })
 
+        // Create the drag an drop input area
         let inputBox = d3.select("#drawingBoard").append("input")
             .attr("multiple",true)
             .attr("type","file")
@@ -180,6 +181,16 @@ whiteboard = function(){
         initRightClickMenu();
 
         setTool(7); // Set the tool to the direct selection
+
+        // If the type of board is DnD
+        if(thisBoard.type == 1){
+            d3.select("#toolbar-dndIcons").append("div")
+                .attr("id","toolbar-icon-10")
+                .attr("class","toolbar-icon")
+                .style("background-image","url('./images/check_white.png')")
+                .attr("onclick","whiteboard.setTool(10)")
+                .html("b");
+        }
 
         // Mouse event for scrolling in/out (zooming)
         // this took fucking 5 hours to figure out...
@@ -1757,7 +1768,7 @@ whiteboard = function(){
             y2: viewbox.y+viewbox.h
         }
 
-        let lineSpacing = 25;
+        let lineSpacing = thisBoard.bgSpacing;
         let backgroundDetailColour = "#ecf0f1";
 
         if(type == 1){ // lines

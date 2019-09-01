@@ -4,92 +4,9 @@ popup = function(){
      * @param {function} callback Function to callback to when popup is submitted
      */
     function newBoardBox(callback){
-        keyManager.newEvent(13,0,submit);
-        // Add the ability to click the background to close the popup
-        d3.select("#popup-blackout").on("click",closePopup);
-
-        // Add the title
-        d3.select("#popup-box").style("width","400px").style("padding","25px").append("div").html("Create an Infiniboard Box").attr("class","popup-title");
-
-        // Add the row to name the box
-        let boxNameRow = d3.select("#popup-box").append("div").attr("class","popup-row");
-        boxNameRow.append("div").html("Box Name:").attr("class","popup-inputInfo");
-        boxNameRow.append("input").attr("id","popup-boardBoxName").attr("class","popup-input");
-
-        // Add the row to name the first board
-        let boardNameRow = d3.select("#popup-box").append("div").attr("class","popup-row");
-        boardNameRow.append("div").html("First Board Name:").attr("class","popup-inputInfo");
-        boardNameRow.append("input").attr("id","popup-boardName").attr("class","popup-input");
-
-        // Add the row to get the color for the first board
-        let colorRow = d3.select("#popup-box").append("div").attr("class","popup-row");
-        colorRow.append("div").html("First board bg color:").attr("class","popup-inputInfo");
-        colorRow.append("input").attr("id","popup-colorPicker").attr("class",`popup-input jscolor`).attr("value","202020");
-        
-
-        // Build the colour picker for background
-        var input = document.getElementById('popup-colorPicker');
-        var picker = new jscolor(input);
-
-        // Set the background/border colour for the colour picker
-        picker.backgroundColor = "var(--main)";
-        picker.borderColor = "var(--highlight)";
-
-        // Add the submit button
-        let submitButton = d3.select("#popup-box").append("div");
-        submitButton.html("Submit").attr("class","popup-submit button");
-
-        // Add the error message
-        d3.select("#popup-box").append("div").attr("id","popup-error");
-
-        // Setup the onClick for the submit button
-        submitButton.on("click",submit);
-
-        // Unhide the popup
-        d3.select("#popup").style("display",null);
-
-        /**
-         * Submit the given information if it passes checks
-         */
-        function submit(){
-            let boxName = util.getValueId("popup-boardBoxName");
-            let boardName = util.getValueId("popup-boardName");
-            let bgcolor = util.getValueId("popup-colorPicker");
-            // Make sure they wrote a name
-            if(boxName == ""){
-                d3.select("#popup-boardBoxName").style("background-color","#c0392b");
-                d3.select("#popup-error").html("Please Write a Name for this Infiniboard Box!");
-                return;
-            }
-            if(boardName == ""){
-                d3.select("#popup-boardName").style("background-color","#c0392b");
-                d3.select("#popup-error").html("Please Write a Name for the first Infiniboard!");
-                return;
-            }
-            // Check if the name is already used
-            if(boxManager.checkBoxNameUsed(boxName)){ 
-                d3.select("#popup-boardBoxName").style("background-color","#c0392b");
-                d3.select("#popup-error").html("This name is already in use!");
-                return;
-            }
-
-            // Clear the key event for the enter key
-            keyManager.clearEvent(13,0);
-            // Turn off the popup
-            d3.select("#popup").style("display","none");
-            // Clear the popup
-            d3.select("#popup-box").html(null);
-            callback(boxName,boardName,bgcolor);
-        }
-
-        /**
-         * Forget all the info given and close the popup
-         */
-        function closePopup(){
-            d3.select("#popup-box").html(null);
-            d3.select("#popup").style("display","none");
-            keyManager.clearEvent(13,0);
-        }
+        $("#popup-box").load("./js/popup/newBox.html",()=>{
+            initPopup(callback);
+        })
     }
 
     /**
@@ -411,6 +328,7 @@ popup = function(){
             });
 
         }
+
 
 
         /**
