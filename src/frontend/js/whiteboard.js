@@ -1749,15 +1749,15 @@ whiteboard = function(){
     // Background
     // #region
     function clearBackground(){
-        svg.background.html("");
+        svg.background.selectAll("*").remove();
     }
 
     function generateBackground(type = thisBoard.bgType){
-        svg.background.html("");
+        clearBackground();
 
         //TODO maybe instead of redrawing the board on a pan, just transform the board?
         // Prevents massive lag from filling in a huge viewbox
-        if(viewbox.scale > 2.1 || thisBoard.bgType == 0){
+        if(viewbox.scale > 2.1 || type == 0){
             return;
         }
 
@@ -1771,34 +1771,197 @@ whiteboard = function(){
         let lineSpacing = thisBoard.bgSpacing;
         let backgroundDetailColour = "#ecf0f1";
 
-        if(type == 1){ // lines
-            for(let y = Math.floor(backgroundBox.y1-10); y < backgroundBox.y2;y++){
-                if(y%lineSpacing==0){
-                    svg.background.append("line")
-                        .attr("x1",backgroundBox.x1)
-                        .attr("x2",backgroundBox.x2)
-                        .attr("y1",y)
-                        .attr("y2",y)
-                        .attr("stroke", backgroundDetailColour)
-                        .attr("stroke-width", 0.5)
-                        .attr("fill", "none");
+        // 1 - square dot grid
+        // 2 - triangle dot grid
+        // 3 - hexagon dot grid
+        // 4 - horizontal lines
+        // 5 - vertical lines
+        // 6 - square grid
+        // 7 - triangle grid
+        // 8 - hexagon grid
+        // 9 - music lines
+        // 10 - dnd grid
+
+        let startingY = Math.floor(Math.floor(backgroundBox.y1-10)/lineSpacing)*lineSpacing;
+        let startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineSpacing)*lineSpacing;
+
+        let endingY = backgroundBox.y2+10;
+        let endingX = backgroundBox.x2+10;
+
+        if(type == 1){ // square dots
+            for(let y = startingY; y < endingY;y+=lineSpacing){
+                for(let x = startingX; x < endingX;x+=lineSpacing){
+                    svg.background.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",1)
+                        .attr("cx",x)
+                        .attr("cy",y);
                 }
             }
-        }else if(type == 2){ // dots
-            for(let y = Math.floor(backgroundBox.y1-10); y < backgroundBox.y2+10;y++){
-                if(y%lineSpacing==0){
-                    for(let x = Math.floor(backgroundBox.x1-10); x < backgroundBox.x2+10;x++){
-                        if(x%lineSpacing==0){
-                            svg.background.append("circle")
-                                .attr("fill",backgroundDetailColour)
-                                .attr("r",1)
-                                .attr("cx",x)
-                                .attr("cy",y);
-                        }
-                    }
+        }else if(type == 2){ // triangle dots
+
+            // Calculate the height of the triangle
+            let lineHeight = (lineSpacing/2)*Math.sqrt(3);
+
+            // Find the new starting lines with the new line height
+            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/lineHeight)*lineHeight
+            startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineHeight)*lineHeight;
+
+            for(let y = startingY; y < endingY;y+=lineHeight){
+                // Draw the top of the triangle
+                for(let x = startingX; x < endingX;x+=lineSpacing){
+                    svg.background.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",1)
+                        .attr("cx",x)
+                        .attr("cy",y);
+                }
+
+                y+=lineHeight
+                // Draw the bottom of the triangle
+                for(let x = startingX; x < endingX;x+=lineSpacing){
+                    svg.background.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",1)
+                        .attr("cx",x+lineSpacing/2)
+                        .attr("cy",y);
                 }
             }
-        }else if(type == 3){ // DnD grid
+        }else if(type == 3){ // Hexagon dots
+
+            // Calculate the height of the triangle
+            let lineHeight = (lineSpacing/2)*Math.sqrt(3);
+
+            // Find the new starting lines with the new line height
+            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/lineHeight)*lineHeight
+            startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineHeight)*lineHeight;
+
+
+            for(let y = startingY; y < endingY; y+=lineHeight){
+                // Draw the top of the triangle
+                for(let x = startingX; x < endingX;x+=lineSpacing*3){
+                    svg.background.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",1)
+                        .attr("cx",x)
+                        .attr("cy",y);
+
+                    svg.background.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",1)
+                        .attr("cx",x+lineSpacing)
+                        .attr("cy",y);
+                }
+
+                y+=lineHeight
+                // Draw the bottom of the triangle
+                for(let x = startingX-lineSpacing/2-lineSpacing; x < endingX;x+=lineSpacing*3){
+                    svg.background.append("circle")
+                    .attr("fill",backgroundDetailColour)
+                        .attr("r",1)
+                        .attr("cx",x)
+                        .attr("cy",y);
+
+                    svg.background.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",1)
+                        .attr("cx",x+lineSpacing)
+                        .attr("cy",y);
+                }
+            }
+        }else if(type == 4){ // horizontal lines
+            for(let y = startingY; y < endingY;y+=lineSpacing){
+                svg.background.append("line")
+                    .attr("x1",backgroundBox.x1)
+                    .attr("x2",backgroundBox.x2)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", 0.5)
+                    .attr("fill", "none");
+            }
+        }else if(type == 5){ // vertical lines
+            for(let x = startingX; x < endingX;x+=lineSpacing){
+                svg.background.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x)
+                    .attr("y1",backgroundBox.y1)
+                    .attr("y2",backgroundBox.y2)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", 0.5)
+                    .attr("fill", "none");
+            }
+        }else if(type == 6){ // square line grid
+            for(let x = startingX; x < endingX;x+=lineSpacing){
+                svg.background.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x)
+                    .attr("y1",backgroundBox.y1)
+                    .attr("y2",backgroundBox.y2)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", 0.5)
+                    .attr("fill", "none");
+            }
+            for(let y = startingY; y < endingY;y+=lineSpacing){
+                svg.background.append("line")
+                    .attr("x1",backgroundBox.x1)
+                    .attr("x2",backgroundBox.x2)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", 0.5)
+                    .attr("fill", "none");
+            }
+        }else if(type == 7){ // triangle line grid
+
+            // Calculate the height of the triangle
+            let lineHeight = (lineSpacing/2)*Math.sqrt(3);
+
+            // Find the new starting lines with the new line height
+            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/lineHeight)*lineHeight
+            startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineHeight)*lineHeight;
+
+            let width = (backgroundBox.x2-backgroundBox.x1)+10;
+            let height = (startingY-endingY);
+
+            // Here it is... using trig outside of school
+            let opp = Math.tan(30 * Math.PI/180) * height;
+
+            
+
+
+            for(let y = startingY; y < endingY;y+=lineHeight){
+                svg.background.append("line")
+                    .attr("x1",backgroundBox.x1)
+                    .attr("x2",backgroundBox.x2)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", 0.5)
+                    .attr("fill", "none");
+            }
+
+            for(let x = startingX-width; x < endingX+width;x+=lineSpacing){
+                svg.background.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x-opp)
+                    .attr("y1",startingY)
+                    .attr("y2",endingY)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", 0.5)
+                    .attr("fill", "none");
+
+                svg.background.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x+opp)
+                    .attr("y1",startingY)
+                    .attr("y2",endingY)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", 0.5)
+                    .attr("fill", "none");
+            }
+
+        }else if(type == 10){ // DnD grid
             for(let y = Math.floor(backgroundBox.y1-10); y < backgroundBox.y2+10;y++){
                 if(y%lineSpacing==0){
                     for(let x = Math.floor(backgroundBox.x1-10); x < backgroundBox.x2+10;x++){
@@ -2248,6 +2411,7 @@ whiteboard = function(){
         save:save,
         getPens:getPens,
         changecolor:changecolor,
-        closeWhiteboard:closeWhiteboard
+        closeWhiteboard:closeWhiteboard,
+        generateBackground:generateBackground
     }
 }();
