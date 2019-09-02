@@ -1917,18 +1917,16 @@ whiteboard = function(){
             // Calculate the height of the triangle
             let lineHeight = (lineSpacing/2)*Math.sqrt(3);
 
-            // Find the new starting lines with the new line height
-            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/lineHeight)*lineHeight
-            startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineHeight)*lineHeight;
 
-            let width = (backgroundBox.x2-backgroundBox.x1)+10;
-            let height = (startingY-endingY);
+            // Find the new starting lines with the new line height
+            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/(lineHeight*2))*(lineHeight*2); // Why do you *2? No idea, it just fixes a bug
+            startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineSpacing)*lineSpacing;
+
+            let width = Math.floor((backgroundBox.x2-backgroundBox.x1)/lineSpacing)*lineSpacing;
+            let height = (endingY-startingY);
 
             // Here it is... using trig outside of school
-            let opp = Math.tan(30 * Math.PI/180) * height;
-
-            
-
+            let opp = Math.tan(30 * Math.PI/180) * height;         
 
             for(let y = startingY; y < endingY;y+=lineHeight){
                 svg.background.append("line")
@@ -1941,12 +1939,15 @@ whiteboard = function(){
                     .attr("fill", "none");
             }
 
+            // console.log(startingX-width);
+            // console.log(startingY);
             for(let x = startingX-width; x < endingX+width;x+=lineSpacing){
+
                 svg.background.append("line")
                     .attr("x1",x)
                     .attr("x2",x-opp)
                     .attr("y1",startingY)
-                    .attr("y2",endingY)
+                    .attr("y2",startingY+height)
                     .attr("stroke", backgroundDetailColour)
                     .attr("stroke-width", 0.5)
                     .attr("fill", "none");
@@ -1955,11 +1956,87 @@ whiteboard = function(){
                     .attr("x1",x)
                     .attr("x2",x+opp)
                     .attr("y1",startingY)
-                    .attr("y2",endingY)
+                    .attr("y2",startingY+height)
                     .attr("stroke", backgroundDetailColour)
                     .attr("stroke-width", 0.5)
                     .attr("fill", "none");
             }
+
+        }else if(type == 8){ // Hexagon grid
+
+            // Calculate the height of the triangle
+            let lineHeight = (lineSpacing/2)*Math.sqrt(3);
+            
+            // Find the new starting lines with the new line height
+            startingY = Math.floor(Math.floor(backgroundBox.y1)/(lineHeight*2))*(lineHeight*2); // Why do you *2? No idea, it just fixes a bug
+            startingX = Math.floor(Math.floor(backgroundBox.x1)/(lineSpacing*6))*(lineSpacing*6); // 6? same thing as 2
+
+            for(let y = startingY; y < endingY;y+=lineHeight){
+                svg.background.append("line")
+                    .attr("x1",startingX)
+                    .attr("x2",endingX)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", "red")
+                    .attr("stroke-width", 0.5)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`);
+
+                y+=lineHeight;
+
+                svg.background.append("line")
+                    .attr("x1",startingX)
+                    .attr("x2",endingX)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", "green")
+                    .attr("stroke-width", 0.5)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`)
+                    .attr("stroke-dashoffset",lineSpacing/2*3);
+
+            }
+
+            
+            startingY = Math.floor(Math.floor(backgroundBox.y1)/(lineHeight*2))*(lineHeight*2); // Why do you *2? No idea, it just fixes a bug
+            startingX = Math.floor(Math.floor(backgroundBox.x1)/(lineSpacing*3))*(lineSpacing*3);
+
+            let width = Math.floor((backgroundBox.x2-backgroundBox.x1)/lineSpacing)*lineSpacing;
+            let height = (endingY-startingY);
+
+            // Here it is... using trig outside of school
+            let opp = Math.tan(30 * Math.PI/180) * height; 
+
+
+            
+            
+            
+
+            let offset = 0;
+            for(let x = startingX-width; x < endingX+width;x+=lineSpacing){
+                svg.background.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x+opp)
+                    .attr("y1",startingY)
+                    .attr("y2",startingY+height)
+                    .attr("stroke", "blue")
+                    .attr("stroke-width", 0.5)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`)
+                    .attr("stroke-dashoffset",lineSpacing*offset)
+
+                offset += 2;
+
+                if(offset > 10){
+                    offset = 0;
+                }
+            }
+            offset = 1;
+
+            ///////////////////////////
+
+
+            ////////////////////
 
         }else if(type == 10){ // DnD grid
             for(let y = Math.floor(backgroundBox.y1-10); y < backgroundBox.y2+10;y++){
