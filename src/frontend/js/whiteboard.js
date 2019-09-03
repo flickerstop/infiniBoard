@@ -1964,12 +1964,19 @@ whiteboard = function(){
 
         }else if(type == 8){ // Hexagon grid
 
+            /**
+             * Reason for the *2 or *6 and things
+             * This makes the lines start being drawn on the 2nd or 6th or whatever multiple of that number
+             * So if there's like 2 different line types, it ensures that line 1 will always be on the same line
+             * Same for *6, 6 different types of lines, so always make sure they're on the same lines
+             * */
+
             // Calculate the height of the triangle
             let lineHeight = (lineSpacing/2)*Math.sqrt(3);
             
             // Find the new starting lines with the new line height
-            startingY = Math.floor(Math.floor(backgroundBox.y1)/(lineHeight*2))*(lineHeight*2); // Why do you *2? No idea, it just fixes a bug
-            startingX = Math.floor(Math.floor(backgroundBox.x1)/(lineSpacing*6))*(lineSpacing*6); // 6? same thing as 2
+            startingY = Math.floor(Math.floor(backgroundBox.y1)/(lineHeight*2))*(lineHeight*2);
+            startingX = Math.floor(Math.floor(backgroundBox.x1)/(lineSpacing*6))*(lineSpacing*6);
 
             for(let y = startingY; y < endingY;y+=lineHeight){
                 svg.background.append("line")
@@ -1977,7 +1984,7 @@ whiteboard = function(){
                     .attr("x2",endingX)
                     .attr("y1",y)
                     .attr("y2",y)
-                    .attr("stroke", "red")
+                    .attr("stroke", backgroundDetailColour)
                     .attr("stroke-width", 0.5)
                     .attr("fill", "none")
                     .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`);
@@ -1989,7 +1996,7 @@ whiteboard = function(){
                     .attr("x2",endingX)
                     .attr("y1",y)
                     .attr("y2",y)
-                    .attr("stroke", "green")
+                    .attr("stroke", backgroundDetailColour)
                     .attr("stroke-width", 0.5)
                     .attr("fill", "none")
                     .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`)
@@ -1998,28 +2005,22 @@ whiteboard = function(){
             }
 
             
-            startingY = Math.floor(Math.floor(backgroundBox.y1)/(lineHeight*2))*(lineHeight*2); // Why do you *2? No idea, it just fixes a bug
+            startingY = Math.floor(Math.floor(backgroundBox.y1)/(lineHeight*2))*(lineHeight*2);
             startingX = Math.floor(Math.floor(backgroundBox.x1)/(lineSpacing*3))*(lineSpacing*3);
 
-            let width = Math.floor((backgroundBox.x2-backgroundBox.x1)/lineSpacing)*lineSpacing;
             let height = (endingY-startingY);
 
             // Here it is... using trig outside of school
             let opp = Math.tan(30 * Math.PI/180) * height; 
 
-
-            
-            
-            
-
-            let offset = 0;
-            for(let x = startingX-width; x < endingX+width;x+=lineSpacing){
+            let offset = 3;
+            for(let x = startingX-(lineSpacing*60); x < endingX+(lineSpacing*60);x+=lineSpacing){
                 svg.background.append("line")
                     .attr("x1",x)
                     .attr("x2",x+opp)
                     .attr("y1",startingY)
                     .attr("y2",startingY+height)
-                    .attr("stroke", "blue")
+                    .attr("stroke", backgroundDetailColour)
                     .attr("stroke-width", 0.5)
                     .attr("fill", "none")
                     .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`)
@@ -2031,13 +2032,46 @@ whiteboard = function(){
                     offset = 0;
                 }
             }
-            offset = 1;
 
             ///////////////////////////
+            offset = 0;
+            for(let x = startingX-(lineSpacing*60); x < endingX+(lineSpacing*60);x+=lineSpacing){
+                svg.background.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x-opp)
+                    .attr("y1",startingY)
+                    .attr("y2",startingY+height)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", 0.5)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`)
+                    .attr("stroke-dashoffset",lineSpacing*offset)
 
+                offset += 1;
+
+                if(offset > 2){
+                    offset = 0;
+                }
+            }
 
             ////////////////////
 
+        }else if(type == 9){ // music lines
+            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/(lineSpacing*10))*(lineSpacing*10);
+            for(let y = startingY; y < endingY;y+=lineSpacing*10){
+                // Draw 5 lines
+                for(let set = 0; set < 5;set++){
+                    svg.background.append("line")
+                        .attr("x1",backgroundBox.x1)
+                        .attr("x2",backgroundBox.x2)
+                        .attr("y1",y+(set*lineSpacing))
+                        .attr("y2",y+(set*lineSpacing))
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", 0.5)
+                        .attr("fill", "none");
+                }
+                
+            }
         }else if(type == 10){ // DnD grid
             for(let y = Math.floor(backgroundBox.y1-10); y < backgroundBox.y2+10;y++){
                 if(y%lineSpacing==0){

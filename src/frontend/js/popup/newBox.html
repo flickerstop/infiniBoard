@@ -3,7 +3,7 @@
 <----------------------------------------------------------->
 <style>
     #popup-box{
-        height: 400px;
+        height: 450px;
         width: 700px;
     }
 
@@ -13,7 +13,6 @@
         line-height: 40px;
         text-align: center;
         font-size: 20px;
-        margin-bottom: 20px;
     }
 
     .popup-input-title{
@@ -31,6 +30,11 @@
         box-sizing: border-box;
 
         margin-bottom: 10px;
+    }
+
+    .popup-input.disabled{
+        opacity: 0.1;
+        pointer-events: none;
     }
 
     .popup-nextButton{
@@ -153,35 +157,73 @@
 
 
 <div id="popup-leftPanel3" class="popup-leftPanel" style="left: 700px">
-    <svg class="popup-svg">
+    <svg class="popup-svg" id="popup-backgroundPreview">
 
     </svg>
     <div class="popup-info">
-        Each Infiniboard can have a different background, this is just the background of the first one. Choosing a special background will help with organizing your board.
+        Each Infiniboard can have a different background, this is just the background of the first one. Choosing a special background will help with organizing your board. <br/><br/>The sizing in the preview is at the default zoom level on an Infiniboard.
     </div>
 </div>
 
 <div id="popup-pickYourBackground" style="left: 1100px" class="popup-rightPanel">
     <div id="popup-title-bar">
-        The first Background
+        The First Background
     </div>
-    <div class="popup-input-title" style="margin-top: 60px">
+
+    <!-----
+    > Type
+    <------>
+    <div class="popup-input-title" style="margin-top: 10px">
         Background type:
     </div>
-    <select class="popup-input">
-        <option>Solid Colour</option>
-        <option>Square Dot Grid</option>
-        <option>Triangle Dot Grid</option>
-        <option>Hexagon Dot Grid</option>
-        <option>Solid Horizontal Lines</option>
-        <option>Solid Vertical Lines</option>
-        <option>Square Grid</option>
-        <option>Triangle Grid</option>
-        <option>Hexagon Grid</option>
-        <option>Music Lines</option>
+    <select id="popup-selectBackground" class="popup-input" onchange="redrawPreview()">
+        <option value="0">Solid Colour</option>
+        <option value="1">Square Dot Grid</option>
+        <option value="2">Triangle Dot Grid</option>
+        <option value="3">Hexagon Dot Grid</option>
+        <option value="4">Solid Horizontal Lines</option>
+        <option value="5">Solid Vertical Lines</option>
+        <option value="6">Square Grid</option>
+        <option value="7">Triangle Grid</option>
+        <option value="8">Hexagon Grid</option>
+        <option value="9">Music Lines</option>
+        <option value="10">Blueprint Dots</option>
+        <option value="11">Blueprint Grid</option>
     </select>
 
-    <div class="popup-nextButton" onclick="switchToCreateBoard()">Next -></div>
+    <!-----
+    > Spacing
+    <------>
+    <div class="popup-input-title" style="margin-top: 10px">
+        Background Spacing:
+    </div>
+    <input style="border:none" class="popup-input" type="range" id="popup-backgroundSpacing" min="10" value="25" max="200" oninput="redrawPreview()">
+
+    <!-----
+    > Thickness
+    <------>
+    <div class="popup-input-title" style="margin-top: 10px">
+        Background Thickness:
+    </div>
+    <input style="border:none" class="popup-input" type="range" id="popup-backgroundThickness" min="1" value="1" max="10" oninput="redrawPreview()">
+    
+    <!-----
+    > Foreground Colour
+    <------>
+    <div class="popup-input-title" style="margin-top: 10px">
+        Foreground Colour:
+    </div>
+    <input id="popup-foregroundColor" class="popup-input" value="ffffff">
+
+    <!-----
+    > Background Colour
+    <------>
+    <div class="popup-input-title" style="margin-top: 10px">
+        Background Colour:
+    </div>
+    <input id="popup-backgroundColor" class="popup-input" value="202020">
+
+    <div class="popup-nextButton" onclick="">Next -></div>
 </div>
 
 <!-- #endregion -->
@@ -192,9 +234,422 @@
 
 <script>
 
+    function redrawPreview(){
+        let type = util.getValueId("popup-selectBackground");
+
+        let svg = d3.select("#popup-backgroundPreview");
+        svg.selectAll("*").remove();
+
+        let backgroundBox = {
+            x1: 0,
+            y1: 0,
+            x2: 350,
+            y2: 200
+        }
+
+        let lineSpacing = parseInt(util.getValueId("popup-backgroundSpacing"));
+        let backgroundDetailColour = `#${util.getValueId("popup-foregroundColor")}`;
+        let backgroundColour = `#${util.getValueId("popup-backgroundColor")}`;
+        let backgroundThickness = parseInt(util.getValueId("popup-backgroundThickness"));
+
+        svg.style("background-color",backgroundColour);
+
+        let startingY = Math.floor(Math.floor(backgroundBox.y1-10)/lineSpacing)*lineSpacing;
+        let startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineSpacing)*lineSpacing;
+
+        let endingY = backgroundBox.y2+10;
+        let endingX = backgroundBox.x2+10;
+
+        if(type == 0){
+            d3.select("#popup-backgroundSpacing").attr("class","popup-input disabled");
+            d3.select("#popup-foregroundColor").attr("class", "popup-input disabled");
+            d3.select("#popup-backgroundThickness").attr("class","popup-input disabled");
+        }else{
+            d3.select("#popup-backgroundSpacing").attr("class","popup-input");
+            d3.select("#popup-foregroundColor").attr("class","popup-input");
+            d3.select("#popup-backgroundThickness").attr("class","popup-input");
+        }
+
+        if(type == 1){ // square dots
+            for(let y = startingY; y < endingY;y+=lineSpacing){
+                for(let x = startingX; x < endingX;x+=lineSpacing){
+                    svg.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",backgroundThickness)
+                        .attr("cx",x)
+                        .attr("cy",y);
+                }
+            }
+        }
+        else if(type == 2){ // triangle dots
+
+            // Calculate the height of the triangle
+            let lineHeight = (lineSpacing/2)*Math.sqrt(3);
+
+            // Find the new starting lines with the new line height
+            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/lineHeight)*lineHeight
+            startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineHeight)*lineHeight;
+
+            for(let y = startingY; y < endingY;y+=lineHeight){
+                // Draw the top of the triangle
+                for(let x = startingX; x < endingX;x+=lineSpacing){
+                    svg.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",backgroundThickness)
+                        .attr("cx",x)
+                        .attr("cy",y);
+                }
+
+                y+=lineHeight
+                // Draw the bottom of the triangle
+                for(let x = startingX; x < endingX;x+=lineSpacing){
+                    svg.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",backgroundThickness)
+                        .attr("cx",x+lineSpacing/2)
+                        .attr("cy",y);
+                }
+            }
+        }
+        else if(type == 3){ // Hexagon dots
+
+            // Calculate the height of the triangle
+            let lineHeight = (lineSpacing/2)*Math.sqrt(3);
+
+            // Find the new starting lines with the new line height
+            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/lineHeight)*lineHeight
+            startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineHeight)*lineHeight;
+
+
+            for(let y = startingY; y < endingY; y+=lineHeight){
+                // Draw the top of the triangle
+                for(let x = startingX; x < endingX;x+=lineSpacing*3){
+                    svg.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",backgroundThickness)
+                        .attr("cx",x)
+                        .attr("cy",y);
+
+                    svg.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",backgroundThickness)
+                        .attr("cx",x+lineSpacing)
+                        .attr("cy",y);
+                }
+
+                y+=lineHeight
+                // Draw the bottom of the triangle
+                for(let x = startingX-lineSpacing/2-lineSpacing; x < endingX;x+=lineSpacing*3){
+                    svg.append("circle")
+                    .attr("fill",backgroundDetailColour)
+                        .attr("r",backgroundThickness)
+                        .attr("cx",x)
+                        .attr("cy",y);
+
+                    svg.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",backgroundThickness)
+                        .attr("cx",x+lineSpacing)
+                        .attr("cy",y);
+                }
+            }
+        }
+        else if(type == 4){ // horizontal lines
+            for(let y = startingY; y < endingY;y+=lineSpacing){
+                svg.append("line")
+                    .attr("x1",backgroundBox.x1)
+                    .attr("x2",backgroundBox.x2)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none");
+            }
+        }
+        else if(type == 5){ // vertical lines
+            for(let x = startingX; x < endingX;x+=lineSpacing){
+                svg.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x)
+                    .attr("y1",backgroundBox.y1)
+                    .attr("y2",backgroundBox.y2)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none");
+            }
+        }
+        else if(type == 6){ // square line grid
+            for(let x = startingX; x < endingX;x+=lineSpacing){
+                svg.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x)
+                    .attr("y1",backgroundBox.y1)
+                    .attr("y2",backgroundBox.y2)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none");
+            }
+            for(let y = startingY; y < endingY;y+=lineSpacing){
+                svg.append("line")
+                    .attr("x1",backgroundBox.x1)
+                    .attr("x2",backgroundBox.x2)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none");
+            }
+        }
+        else if(type == 7){ // triangle line grid
+
+            // Calculate the height of the triangle
+            let lineHeight = (lineSpacing/2)*Math.sqrt(3);
+
+
+            // Find the new starting lines with the new line height
+            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/(lineHeight*2))*(lineHeight*2); // Why do you *2? No idea, it just fixes a bug
+            startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineSpacing)*lineSpacing;
+
+            let width = Math.floor((backgroundBox.x2-backgroundBox.x1)/lineSpacing)*lineSpacing;
+            let height = (endingY-startingY);
+
+            // Here it is... using trig outside of school
+            let opp = Math.tan(30 * Math.PI/180) * height;         
+
+            for(let y = startingY; y < endingY;y+=lineHeight){
+                svg.append("line")
+                    .attr("x1",backgroundBox.x1)
+                    .attr("x2",backgroundBox.x2)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none");
+            }
+
+            // console.log(startingX-width);
+            // console.log(startingY);
+            for(let x = startingX-width; x < endingX+width;x+=lineSpacing){
+
+                svg.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x-opp)
+                    .attr("y1",startingY)
+                    .attr("y2",startingY+height)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none");
+
+                svg.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x+opp)
+                    .attr("y1",startingY)
+                    .attr("y2",startingY+height)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none");
+            }
+
+        }
+        else if(type == 8){ // Hexagon grid
+
+            /**
+             * Reason for the *2 or *6 and things
+             * This makes the lines start being drawn on the 2nd or 6th or whatever multiple of that number
+             * So if there's like 2 different line types, it ensures that line 1 will always be on the same line
+             * Same for *6, 6 different types of lines, so always make sure they're on the same lines
+             * */
+
+            // Calculate the height of the triangle
+            let lineHeight = (lineSpacing/2)*Math.sqrt(3);
+            
+            // Find the new starting lines with the new line height
+            startingY = Math.floor(Math.floor(backgroundBox.y1)/(lineHeight*2))*(lineHeight*2);
+            startingX = Math.floor(Math.floor(backgroundBox.x1)/(lineSpacing*6))*(lineSpacing*6);
+
+            for(let y = startingY; y < endingY;y+=lineHeight){
+                svg.append("line")
+                    .attr("x1",startingX)
+                    .attr("x2",endingX)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`);
+
+                y+=lineHeight;
+
+                svg.append("line")
+                    .attr("x1",startingX)
+                    .attr("x2",endingX)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`)
+                    .attr("stroke-dashoffset",lineSpacing/2*3);
+
+            }
+
+            
+            startingY = Math.floor(Math.floor(backgroundBox.y1)/(lineHeight*2))*(lineHeight*2);
+            startingX = Math.floor(Math.floor(backgroundBox.x1)/(lineSpacing*3))*(lineSpacing*3);
+
+            let height = (endingY-startingY);
+
+            // Here it is... using trig outside of school
+            let opp = Math.tan(30 * Math.PI/180) * height; 
+
+            let offset = 3;
+            for(let x = startingX-(lineSpacing*60); x < endingX+(lineSpacing*60);x+=lineSpacing){
+                svg.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x+opp)
+                    .attr("y1",startingY)
+                    .attr("y2",startingY+height)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`)
+                    .attr("stroke-dashoffset",lineSpacing*offset)
+
+                offset += 2;
+
+                if(offset > 10){
+                    offset = 0;
+                }
+            }
+
+            ///////////////////////////
+            offset = 0;
+            for(let x = startingX-(lineSpacing*60); x < endingX+(lineSpacing*60);x+=lineSpacing){
+                svg.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x-opp)
+                    .attr("y1",startingY)
+                    .attr("y2",startingY+height)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`)
+                    .attr("stroke-dashoffset",lineSpacing*offset)
+
+                offset += 1;
+
+                if(offset > 2){
+                    offset = 0;
+                }
+            }
+
+            ////////////////////
+
+        }
+        else if(type == 9){ // music lines
+            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/(lineSpacing*10))*(lineSpacing*10);
+            for(let y = startingY; y < endingY;y+=lineSpacing*10){
+                // Draw 5 lines
+                for(let set = 0; set < 5;set++){
+                    svg.append("line")
+                        .attr("x1",backgroundBox.x1)
+                        .attr("x2",backgroundBox.x2)
+                        .attr("y1",y+(set*lineSpacing))
+                        .attr("y2",y+(set*lineSpacing))
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", backgroundThickness)
+                        .attr("fill", "none");
+                }
+                
+            }
+        }
+        else if(type == 10){ // DnD grid
+            for(let y = Math.floor(backgroundBox.y1-10); y < backgroundBox.y2+10;y++){
+                if(y%lineSpacing==0){
+                    for(let x = Math.floor(backgroundBox.x1-10); x < backgroundBox.x2+10;x++){
+                        if(x%(lineSpacing*5)==0 && y%(lineSpacing*5)==0){
+                            svg.append("circle")
+                                .attr("fill",backgroundDetailColour)
+                                .attr("r",backgroundThickness*3)
+                                .attr("cx",x)
+                                .attr("cy",y);
+                        
+                        }else if(x%lineSpacing==0){
+                            svg.append("circle")
+                                .attr("fill",backgroundDetailColour)
+                                .attr("r",backgroundThickness)
+                                .attr("cx",x)
+                                .attr("cy",y);
+                        }
+                    }
+                }
+            }
+        }
+        else if(type == 11){ // square line grid
+            for(let x = startingX; x < endingX;x+=lineSpacing){
+                if(x%(lineSpacing*5)==0){
+                    svg.append("line")
+                        .attr("x1",x)
+                        .attr("x2",x)
+                        .attr("y1",backgroundBox.y1)
+                        .attr("y2",backgroundBox.y2)
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", backgroundThickness*3)
+                        .attr("fill", "none");
+                }else{
+                    svg.append("line")
+                        .attr("x1",x)
+                        .attr("x2",x)
+                        .attr("y1",backgroundBox.y1)
+                        .attr("y2",backgroundBox.y2)
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", backgroundThickness)
+                        .attr("fill", "none");
+                }
+            }
+            for(let y = startingY; y < endingY;y+=lineSpacing){
+                if(y%(lineSpacing*5)==0){
+                    svg.append("line")
+                        .attr("x1",backgroundBox.x1)
+                        .attr("x2",backgroundBox.x2)
+                        .attr("y1",y)
+                        .attr("y2",y)
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", backgroundThickness*3)
+                        .attr("fill", "none");
+                }else{
+                    svg.append("line")
+                        .attr("x1",backgroundBox.x1)
+                        .attr("x2",backgroundBox.x2)
+                        .attr("y1",y)
+                        .attr("y2",y)
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", backgroundThickness)
+                        .attr("fill", "none");
+                }
+            }
+        }
+    }
 
     function initPopup(callback){
         console.log(callback);
+        d3.select("#popup-blackout").on("click",closePopup);
+        
+        // Build the colour picker for background
+        var background = new jscolor(document.getElementById('popup-backgroundColor'));
+        // Set the background/border colour for the colour picker
+        background.backgroundColor = "var(--main)";
+        background.borderColor = "var(--highlight)";
+        background.onFineChange = 'redrawPreview()';
+
+        // Build the colour picker for foreground
+        var foreground = new jscolor(document.getElementById('popup-foregroundColor'));
+        // Set the background/border colour for the colour picker
+        foreground.backgroundColor = "var(--main)";
+        foreground.borderColor = "var(--highlight)";
+        foreground.onFineChange = 'redrawPreview()';
+
+        redrawPreview();
         d3.select("#popup").style("display",null);
     }
 
