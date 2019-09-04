@@ -672,32 +672,36 @@ whiteboard = function(){
                     let line = newLine(buffer,0,currentColor,currentStroke);
                     drawLine(line);
                     
+                    // clear the buffer
+                    buffer = [];
                 }else if(isLink()){
                     // Make sure the line goes back to the start
                     buffer.push({x:buffer[0].x,y:buffer[0].y});
 
                     // Create a new popup getting what board to link to
-                    popup.newBoard(buffer,(resID,boardName,bgcolor,lineBuffer)=>{
-                        // if a new board is to be made
-                        if(resID == -1){
-                            let newBoardID = boxManager.newBoard(boardName,bgcolor);
+                    popup.newBoard((isNewBoard,boardData)=>{
+                        if(isNewBoard){ // If a new board is to be created
+                            let newBoardID = boxManager.newBoard(boardData);
                             
-                            let line = newLine(lineBuffer,2,currentColor,currentStroke,newBoardID);
+                            let line = newLine(buffer,2,currentColor,currentStroke,newBoardID);
                             drawLine(line);
                             save();
-                            //init(newBoardID);
-                        }else{
-                            let line = newLine(lineBuffer,2,currentColor,currentStroke,resID);
-                            drawLine(line);
-                            
-                            save();
+                        }else{ // If no new board is created
+                            if(boardData != null){ // If they didn't close the popup
+                                let line = newLine(buffer,2,currentColor,currentStroke,boardData.id);
+                                drawLine(line);
+                                
+                                save();
+                            }else{ // If they closed the popup
+                                console.log("popup closed");
+                            }
                         }
+                        // clear the buffer
+                        buffer = [];
                     });
                 }
                 autoSaveTimeout();
             }
-            // clear the buffer
-            buffer = [];
             // clear the temp line
             d3.select("#temp-line").html(null);
 

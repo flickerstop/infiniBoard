@@ -1,0 +1,908 @@
+<!----------------------------------------------------------
+> CSS
+<----------------------------------------------------------->
+<style>
+    #popup-box{
+        height: 450px;
+        width: 700px;
+    }
+
+    #popup-title-bar{
+        width: 100%;
+        height: 40px;
+        line-height: 40px;
+        text-align: center;
+        font-size: 20px;
+    }
+
+    .popup-input-title{
+        font-size: 10px;
+        margin-left: 20px;
+    }
+
+    .popup-input{
+        margin-left: 20px;
+        margin-right: 20px;
+        height: 40px;
+        font-size: 20px;
+        width: calc(100% - 40px);
+        padding: 0px 5px;
+        box-sizing: border-box;
+
+        margin-bottom: 10px;
+    }
+
+    .popup-input.disabled{
+        opacity: 0.1;
+        pointer-events: none;
+    }
+
+    .popup-nextButton{
+        position: absolute;
+        bottom: 10px;
+        right: 100px;
+        border: 2px solid var(--blue);
+        color: var(--blue);
+        width: 100px;
+        height: 40px;
+        line-height: 40px;
+        border-radius: 10px;
+        text-align: center
+    }
+
+    .popup-nextButton.disabled{
+        opacity: 0.2;
+        pointer-events: none;
+    }
+
+    .popup-nextButton:hover{
+        cursor: pointer;
+        border: 2px solid var(--text);
+        color: var(--text);
+    }
+
+    .popup-info{
+        font-family: 'Roboto', sans-serif;
+        margin-left: 20px;
+        margin-right: 20px;
+        font-size: 15px;
+        width: calc(100% - 40px);
+    }
+    
+    .popup-error{
+        color: var(--red);
+        width: 100%;
+        text-align: center;
+    }
+
+    .popup-rightPanel{
+        position: absolute;
+        width: 300px;
+        height: 100%;
+        left: 400px;
+    }
+
+    .popup-leftPanel{
+        position: absolute;
+        top:0px;
+        left: 0px;
+        width: 399px;
+        height: 100%;
+        border-right: 1px solid var(--sidebar);
+        float: left;
+    }
+
+    .popup-picture{
+        height: 200px;
+        width: 200px;
+        margin: 20px auto;
+        background-size: 200px 200px;
+        background-repeat: no-repeat;
+        background-position: center center;
+    }
+
+    .popup-svg{
+        height: 200px;
+        width: 350px;
+        margin: 20px 25px;
+        border: 1px solid var(--sidebar);
+    }
+
+    .popup-choiceBox.selected{
+        opacity: 1.0;
+        pointer-events: none;
+    }
+
+    .popup-choiceBox{
+        margin: 20px 20px;
+        opacity: 0.2;
+        height: 40px;
+        border: 1px solid var(--text);
+    }
+
+    .popup-choiceBox:hover{
+        opacity: 1.0;
+        cursor: pointer;
+    }
+
+    .popup-choiceBox-icon{
+        width: 30px;
+        height: 30px;
+        margin: 5px;
+        float: left;
+        border: 1px solid var(--text);
+    }
+
+    .popup-choiceBox.selected .popup-choiceBox-icon{
+        background-size: 30px 30px;
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-image: url('./images/x_white.png')
+    }
+
+    .popup-choiceBox-text{
+        font-size: 15px;
+        line-height: 40px;
+    }
+
+    #popup-oldBoardsList{
+        height: 200px;
+        margin: 20px;
+        width: calc(100% - 40px);
+        border: 1px solid var(--sidebar);
+        overflow-y: auto;
+    }
+
+    .popup-oldBoardsList-board{
+        width: calc(100% - 10px);
+        padding: 5px;
+    }
+
+    .popup-oldBoardsList-board:hover{
+        cursor: pointer;
+        background-color: var(--highlight);
+    }
+
+    .popup-oldBoardsList-board.selected{
+        background-color: var(--blue);
+        pointer-events: none;
+    }
+
+    
+</style>
+
+<!----------------------------------------------------------
+> HTML
+<----------------------------------------------------------->
+<!-- #region -->
+
+<!-----
+> Panel 1
+<------>
+
+<div id="popup-leftPanel1" class="popup-leftPanel">
+    <div class="popup-picture" style="background-image: url('./images/link_boards.png')">
+
+    </div>
+    <div class="popup-info">
+        Here's the question: <br><br> Do you want to link to a new InfiniBoard or an already existing one?
+    </div>
+</div>
+
+<div id="popup-typeOfLink" class="popup-rightPanel">
+    <div id="popup-title-bar" style="margin-bottom: 120px">
+        What to Link to?
+    </div>
+    <div class="popup-choiceBox selected" onclick="newBoardPopup.linkType(0)" id="popup-type-new">
+        <div class="popup-choiceBox-icon selected"></div>
+        <div class="popup-choiceBox-text">A New InfiniBoard</div>
+    </div>
+
+    <div class="popup-choiceBox" onclick="newBoardPopup.linkType(1)" id="popup-type-old">
+        <div class="popup-choiceBox-icon"></div>
+        <div class="popup-choiceBox-text">Existing InfiniBoard</div>
+    </div>
+
+    <div class="popup-nextButton" onclick="newBoardPopup.switchPanel(1)">Next -></div>
+</div>
+
+<!-----
+> Panel 2
+<------>
+
+<div id="popup-leftPanel2" class="popup-leftPanel" style="left: 700px">
+    <div class="popup-picture" style="background-image: url('./images/board.png')">
+
+    </div>
+    <div class="popup-info">
+        Time to create another Infiniboard! Pick a name for the next board!
+    </div>
+</div>
+
+<div id="popup-nameYourBoard" style="left: 1100px" class="popup-rightPanel">
+    <div id="popup-title-bar">
+        New Infiniboard
+    </div>
+    <div class="popup-input-title" style="margin-top: 120px">
+        Infiniboard Name:
+    </div>
+    <input class="popup-input" id="popup-infiniboardName" placeholder="Name of the InfiniBoard" >
+    <div class="popup-error" id="popup-panel2Error"></div>
+
+    <div class="popup-nextButton" onclick="newBoardPopup.switchPanel(2)">Next -></div>
+</div>
+
+
+<!-----
+> Panel 3
+<------>
+
+
+<div id="popup-leftPanel3" class="popup-leftPanel" style="left: 700px">
+    <svg class="popup-svg" id="popup-backgroundPreview">
+
+    </svg>
+    <div class="popup-info">
+        Each Infiniboard can have a different background, this is just the background of the first one. Choosing a special background will help with organizing your board. <br/><br/>The sizing in the preview is at the default zoom level on an Infiniboard.
+    </div>
+</div>
+
+<div id="popup-pickYourBackground" style="left: 1100px" class="popup-rightPanel">
+    <div id="popup-title-bar">
+        The First Background
+    </div>
+
+    <!-----
+    > Type
+    <------>
+    <div class="popup-input-title" style="margin-top: 10px">
+        Background type:
+    </div>
+    <select id="popup-selectBackground" class="popup-input" onchange="newBoardPopup.redrawPreview()">
+        <option value="0">Solid Colour</option>
+        <option value="1">Square Dot Grid</option>
+        <option value="2">Triangle Dot Grid</option>
+        <option value="3">Hexagon Dot Grid</option>
+        <option value="4">Solid Horizontal Lines</option>
+        <option value="5">Solid Vertical Lines</option>
+        <option value="6">Square Grid</option>
+        <option value="7">Triangle Grid</option>
+        <option value="8">Hexagon Grid</option>
+        <option value="9">Music Lines</option>
+        <option value="10">Blueprint Dots</option>
+        <option value="11">Blueprint Grid</option>
+    </select>
+
+    <!-----
+    > Spacing
+    <------>
+    <div class="popup-input-title" style="margin-top: 10px">
+        Background Spacing:
+    </div>
+    <input style="border:none" class="popup-input" type="range" id="popup-backgroundSpacing" min="10" value="25" max="200" oninput="newBoardPopup.redrawPreview()">
+
+    <!-----
+    > Thickness
+    <------>
+    <div class="popup-input-title" style="margin-top: 10px">
+        Background Thickness:
+    </div>
+    <input style="border:none" class="popup-input" type="range" id="popup-backgroundThickness" min="1" value="1" max="10" oninput="newBoardPopup.redrawPreview()">
+    
+    <!-----
+    > Foreground Colour
+    <------>
+    <div class="popup-input-title" style="margin-top: 10px">
+        Foreground Colour:
+    </div>
+    <input id="popup-foregroundColor" class="popup-input" value="ffffff">
+
+    <!-----
+    > Background Colour
+    <------>
+    <div class="popup-input-title" style="margin-top: 10px">
+        Background Colour:
+    </div>
+    <input id="popup-backgroundColor" class="popup-input" value="202020">
+
+    <div class="popup-nextButton" onclick="newBoardPopup.submit(true)">Finish</div>
+</div>
+
+<!-----
+> Panel 4
+<------>
+
+<div id="popup-leftPanel4" class="popup-leftPanel" style="left: 700px">
+    <div class="popup-picture" style="background-image: url('./images/link_boards.png')">
+
+    </div>
+    <div class="popup-info">
+        Now another Question: <br><br> Which of your already existing board should this link to?
+    </div>
+</div>
+
+<div id="popup-selectBoard" class="popup-rightPanel" style="left: 1100px">
+    <div id="popup-title-bar" style="margin-bottom: 75px">
+        Select a board
+    </div>
+
+    <div id="popup-oldBoardsList">
+
+    </div>
+
+    <div class="popup-nextButton disabled" id="popup-selectBoard-finishButton" onclick="newBoardPopup.submit(false)">Finish</div>
+</div>
+    
+
+<!-- #endregion -->
+
+<!----------------------------------------------------------
+> JAVASCRIPT
+<----------------------------------------------------------->
+
+<script>
+newBoardPopup = function(){
+
+    let submitCallback = null;
+    let typeOfLink = 0;
+    let selectedPastBoard = null;
+
+    function redrawPreview(){
+        let type = util.getValueId("popup-selectBackground");
+
+        let svg = d3.select("#popup-backgroundPreview");
+        svg.selectAll("*").remove();
+
+        let backgroundBox = {
+            x1: 0,
+            y1: 0,
+            x2: 350,
+            y2: 200
+        }
+
+        let lineSpacing = parseInt(util.getValueId("popup-backgroundSpacing"));
+        let backgroundDetailColour = `#${util.getValueId("popup-foregroundColor")}`;
+        let backgroundColour = `#${util.getValueId("popup-backgroundColor")}`;
+        let backgroundThickness = parseInt(util.getValueId("popup-backgroundThickness"));
+
+        svg.style("background-color",backgroundColour);
+
+        let startingY = Math.floor(Math.floor(backgroundBox.y1-10)/lineSpacing)*lineSpacing;
+        let startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineSpacing)*lineSpacing;
+
+        let endingY = backgroundBox.y2+10;
+        let endingX = backgroundBox.x2+10;
+
+        if(type == 0){
+            d3.select("#popup-backgroundSpacing").attr("class","popup-input disabled");
+            d3.select("#popup-foregroundColor").attr("class", "popup-input disabled");
+            d3.select("#popup-backgroundThickness").attr("class","popup-input disabled");
+        }else{
+            d3.select("#popup-backgroundSpacing").attr("class","popup-input");
+            d3.select("#popup-foregroundColor").attr("class","popup-input");
+            d3.select("#popup-backgroundThickness").attr("class","popup-input");
+        }
+
+        if(type == 1){ // square dots
+            for(let y = startingY; y < endingY;y+=lineSpacing){
+                for(let x = startingX; x < endingX;x+=lineSpacing){
+                    svg.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",backgroundThickness)
+                        .attr("cx",x)
+                        .attr("cy",y);
+                }
+            }
+        }
+        else if(type == 2){ // triangle dots
+
+            // Calculate the height of the triangle
+            let lineHeight = (lineSpacing/2)*Math.sqrt(3);
+
+            // Find the new starting lines with the new line height
+            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/lineHeight)*lineHeight
+            startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineHeight)*lineHeight;
+
+            for(let y = startingY; y < endingY;y+=lineHeight){
+                // Draw the top of the triangle
+                for(let x = startingX; x < endingX;x+=lineSpacing){
+                    svg.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",backgroundThickness)
+                        .attr("cx",x)
+                        .attr("cy",y);
+                }
+
+                y+=lineHeight
+                // Draw the bottom of the triangle
+                for(let x = startingX; x < endingX;x+=lineSpacing){
+                    svg.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",backgroundThickness)
+                        .attr("cx",x+lineSpacing/2)
+                        .attr("cy",y);
+                }
+            }
+        }
+        else if(type == 3){ // Hexagon dots
+
+            // Calculate the height of the triangle
+            let lineHeight = (lineSpacing/2)*Math.sqrt(3);
+
+            // Find the new starting lines with the new line height
+            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/lineHeight)*lineHeight
+            startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineHeight)*lineHeight;
+
+
+            for(let y = startingY; y < endingY; y+=lineHeight){
+                // Draw the top of the triangle
+                for(let x = startingX; x < endingX;x+=lineSpacing*3){
+                    svg.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",backgroundThickness)
+                        .attr("cx",x)
+                        .attr("cy",y);
+
+                    svg.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",backgroundThickness)
+                        .attr("cx",x+lineSpacing)
+                        .attr("cy",y);
+                }
+
+                y+=lineHeight
+                // Draw the bottom of the triangle
+                for(let x = startingX-lineSpacing/2-lineSpacing; x < endingX;x+=lineSpacing*3){
+                    svg.append("circle")
+                    .attr("fill",backgroundDetailColour)
+                        .attr("r",backgroundThickness)
+                        .attr("cx",x)
+                        .attr("cy",y);
+
+                    svg.append("circle")
+                        .attr("fill",backgroundDetailColour)
+                        .attr("r",backgroundThickness)
+                        .attr("cx",x+lineSpacing)
+                        .attr("cy",y);
+                }
+            }
+        }
+        else if(type == 4){ // horizontal lines
+            for(let y = startingY; y < endingY;y+=lineSpacing){
+                svg.append("line")
+                    .attr("x1",backgroundBox.x1)
+                    .attr("x2",backgroundBox.x2)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none");
+            }
+        }
+        else if(type == 5){ // vertical lines
+            for(let x = startingX; x < endingX;x+=lineSpacing){
+                svg.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x)
+                    .attr("y1",backgroundBox.y1)
+                    .attr("y2",backgroundBox.y2)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none");
+            }
+        }
+        else if(type == 6){ // square line grid
+            for(let x = startingX; x < endingX;x+=lineSpacing){
+                svg.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x)
+                    .attr("y1",backgroundBox.y1)
+                    .attr("y2",backgroundBox.y2)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none");
+            }
+            for(let y = startingY; y < endingY;y+=lineSpacing){
+                svg.append("line")
+                    .attr("x1",backgroundBox.x1)
+                    .attr("x2",backgroundBox.x2)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none");
+            }
+        }
+        else if(type == 7){ // triangle line grid
+
+            // Calculate the height of the triangle
+            let lineHeight = (lineSpacing/2)*Math.sqrt(3);
+
+
+            // Find the new starting lines with the new line height
+            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/(lineHeight*2))*(lineHeight*2); // Why do you *2? No idea, it just fixes a bug
+            startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineSpacing)*lineSpacing;
+
+            let width = Math.floor((backgroundBox.x2-backgroundBox.x1)/lineSpacing)*lineSpacing;
+            let height = (endingY-startingY);
+
+            // Here it is... using trig outside of school
+            let opp = Math.tan(30 * Math.PI/180) * height;         
+
+            for(let y = startingY; y < endingY;y+=lineHeight){
+                svg.append("line")
+                    .attr("x1",backgroundBox.x1)
+                    .attr("x2",backgroundBox.x2)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none");
+            }
+
+            // console.log(startingX-width);
+            // console.log(startingY);
+            for(let x = startingX-width; x < endingX+width;x+=lineSpacing){
+
+                svg.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x-opp)
+                    .attr("y1",startingY)
+                    .attr("y2",startingY+height)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none");
+
+                svg.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x+opp)
+                    .attr("y1",startingY)
+                    .attr("y2",startingY+height)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none");
+            }
+
+        }
+        else if(type == 8){ // Hexagon grid
+
+            /**
+             * Reason for the *2 or *6 and things
+             * This makes the lines start being drawn on the 2nd or 6th or whatever multiple of that number
+             * So if there's like 2 different line types, it ensures that line 1 will always be on the same line
+             * Same for *6, 6 different types of lines, so always make sure they're on the same lines
+             * */
+
+            // Calculate the height of the triangle
+            let lineHeight = (lineSpacing/2)*Math.sqrt(3);
+            
+            // Find the new starting lines with the new line height
+            startingY = Math.floor(Math.floor(backgroundBox.y1)/(lineHeight*2))*(lineHeight*2);
+            startingX = Math.floor(Math.floor(backgroundBox.x1)/(lineSpacing*6))*(lineSpacing*6);
+
+            for(let y = startingY; y < endingY;y+=lineHeight){
+                svg.append("line")
+                    .attr("x1",startingX)
+                    .attr("x2",endingX)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`);
+
+                y+=lineHeight;
+
+                svg.append("line")
+                    .attr("x1",startingX)
+                    .attr("x2",endingX)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`)
+                    .attr("stroke-dashoffset",lineSpacing/2*3);
+
+            }
+
+            
+            startingY = Math.floor(Math.floor(backgroundBox.y1)/(lineHeight*2))*(lineHeight*2);
+            startingX = Math.floor(Math.floor(backgroundBox.x1)/(lineSpacing*3))*(lineSpacing*3);
+
+            let height = (endingY-startingY);
+
+            // Here it is... using trig outside of school
+            let opp = Math.tan(30 * Math.PI/180) * height; 
+
+            let offset = 3;
+            for(let x = startingX-(lineSpacing*60); x < endingX+(lineSpacing*60);x+=lineSpacing){
+                svg.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x+opp)
+                    .attr("y1",startingY)
+                    .attr("y2",startingY+height)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`)
+                    .attr("stroke-dashoffset",lineSpacing*offset)
+
+                offset += 2;
+
+                if(offset > 10){
+                    offset = 0;
+                }
+            }
+
+            ///////////////////////////
+            offset = 0;
+            for(let x = startingX-(lineSpacing*60); x < endingX+(lineSpacing*60);x+=lineSpacing){
+                svg.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x-opp)
+                    .attr("y1",startingY)
+                    .attr("y2",startingY+height)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", backgroundThickness)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`)
+                    .attr("stroke-dashoffset",lineSpacing*offset)
+
+                offset += 1;
+
+                if(offset > 2){
+                    offset = 0;
+                }
+            }
+
+            ////////////////////
+
+        }
+        else if(type == 9){ // music lines
+            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/(lineSpacing*10))*(lineSpacing*10);
+            for(let y = startingY; y < endingY;y+=lineSpacing*10){
+                // Draw 5 lines
+                for(let set = 0; set < 5;set++){
+                    svg.append("line")
+                        .attr("x1",backgroundBox.x1)
+                        .attr("x2",backgroundBox.x2)
+                        .attr("y1",y+(set*lineSpacing))
+                        .attr("y2",y+(set*lineSpacing))
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", backgroundThickness)
+                        .attr("fill", "none");
+                }
+                
+            }
+        }
+        else if(type == 10){ // DnD grid
+            for(let y = Math.floor(backgroundBox.y1-10); y < backgroundBox.y2+10;y++){
+                if(y%lineSpacing==0){
+                    for(let x = Math.floor(backgroundBox.x1-10); x < backgroundBox.x2+10;x++){
+                        if(x%(lineSpacing*5)==0 && y%(lineSpacing*5)==0){
+                            svg.append("circle")
+                                .attr("fill",backgroundDetailColour)
+                                .attr("r",backgroundThickness*3)
+                                .attr("cx",x)
+                                .attr("cy",y);
+                        
+                        }else if(x%lineSpacing==0){
+                            svg.append("circle")
+                                .attr("fill",backgroundDetailColour)
+                                .attr("r",backgroundThickness)
+                                .attr("cx",x)
+                                .attr("cy",y);
+                        }
+                    }
+                }
+            }
+        }
+        else if(type == 11){ // square line grid
+            for(let x = startingX; x < endingX;x+=lineSpacing){
+                if(x%(lineSpacing*5)==0){
+                    svg.append("line")
+                        .attr("x1",x)
+                        .attr("x2",x)
+                        .attr("y1",backgroundBox.y1)
+                        .attr("y2",backgroundBox.y2)
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", backgroundThickness*3)
+                        .attr("fill", "none");
+                }else{
+                    svg.append("line")
+                        .attr("x1",x)
+                        .attr("x2",x)
+                        .attr("y1",backgroundBox.y1)
+                        .attr("y2",backgroundBox.y2)
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", backgroundThickness)
+                        .attr("fill", "none");
+                }
+            }
+            for(let y = startingY; y < endingY;y+=lineSpacing){
+                if(y%(lineSpacing*5)==0){
+                    svg.append("line")
+                        .attr("x1",backgroundBox.x1)
+                        .attr("x2",backgroundBox.x2)
+                        .attr("y1",y)
+                        .attr("y2",y)
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", backgroundThickness*3)
+                        .attr("fill", "none");
+                }else{
+                    svg.append("line")
+                        .attr("x1",backgroundBox.x1)
+                        .attr("x2",backgroundBox.x2)
+                        .attr("y1",y)
+                        .attr("y2",y)
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", backgroundThickness)
+                        .attr("fill", "none");
+                }
+            }
+        }
+    }
+
+    function initPopup(callback){
+        d3.select("#popup-blackout").on("click",closePopup);
+
+        // Build the colour picker for background
+        var background = new jscolor(document.getElementById('popup-backgroundColor'));
+        // Set the background/border colour for the colour picker
+        background.backgroundColor = "var(--main)";
+        background.borderColor = "var(--highlight)";
+        background.onFineChange = 'newBoardPopup.redrawPreview()';
+
+        // Build the colour picker for foreground
+        var foreground = new jscolor(document.getElementById('popup-foregroundColor'));
+        // Set the background/border colour for the colour picker
+        foreground.backgroundColor = "var(--main)";
+        foreground.borderColor = "var(--highlight)";
+        foreground.onFineChange = 'newBoardPopup.redrawPreview()';
+
+        redrawPreview();
+        d3.select("#popup").style("display",null);
+
+        submitCallback = callback;
+
+        // Draw the existing boards
+        for(let board of boxManager.getBox().boards){
+            let row = d3.select("#popup-oldBoardsList")
+                .append("div")
+                .attr("class","popup-oldBoardsList-board")
+                .attr("id","popup-oldBoardsList-board-"+board.id)
+                .html(board.name);
+
+            row.on("click",()=>{
+
+                if(selectedPastBoard != null){
+                    d3.select("#popup-oldBoardsList-board-"+selectedPastBoard.id).attr("class","popup-oldBoardsList-board");
+                }
+
+                d3.select("#popup-selectBoard-finishButton").attr("class","popup-nextButton");
+                selectedPastBoard = board;
+                d3.select("#popup-oldBoardsList-board-"+selectedPastBoard.id).attr("class","popup-oldBoardsList-board selected");
+            })
+        }
+    }
+
+    /**
+     * Submit the given information if it passes checks
+     */
+    function submit(isNewBoard){
+
+        if(isNewBoard){
+            let boardName = util.getValueId("popup-infiniboardName");
+
+            let type = util.getValueId("popup-selectBackground");
+            let lineSpacing = parseInt(util.getValueId("popup-backgroundSpacing"));
+            let backgroundDetailColour = `#${util.getValueId("popup-foregroundColor")}`;
+            let backgroundColour = `#${util.getValueId("popup-backgroundColor")}`;
+            let backgroundThickness = parseInt(util.getValueId("popup-backgroundThickness"));
+
+
+            let newBoard = {
+                name: boardName,
+                bgType:type,
+                spacing: lineSpacing,
+                foreground: backgroundDetailColour,
+                background: backgroundColour,
+                thickness: backgroundThickness
+            }
+
+            submitCallback(true,newBoard);
+        }else{
+            submitCallback(false,selectedPastBoard);
+        }
+
+        // Turn off the popup
+        d3.select("#popup").style("display","none");
+        // Clear the popup
+        d3.select("#popup-box").html(null);
+        
+    }
+
+    /**
+     * Forget all the info given and close the popup
+     */
+    function closePopup(){
+        d3.select("#popup-box").html(null);
+        d3.select("#popup").style("display","none");
+        keyManager.clearEvent(13,0);
+        submitCallback(false,null);
+    }
+
+    function linkType(type){
+        if(type == 0){
+            d3.select("#popup-type-new").attr("class","popup-choiceBox selected");
+            d3.select("#popup-type-old").attr("class","popup-choiceBox");
+            typeOfLink = 0;
+        }else{
+            d3.select("#popup-type-new").attr("class","popup-choiceBox");
+            d3.select("#popup-type-old").attr("class","popup-choiceBox selected");
+            typeOfLink = 1
+        }
+    }
+
+    function switchPanel(panel){
+        
+        if(panel == 1){ // Go to either create board or select existing board
+            if(typeOfLink == 0){
+                d3.select("#popup-typeOfLink").transition().duration(1000).style("opacity",0).style("left","-300px");
+                d3.select("#popup-leftPanel1").transition().duration(1000).style("opacity",0).style("left","-700px");
+                d3.select("#popup-nameYourBoard").transition().duration(1000).style("left","400px");
+                d3.select("#popup-leftPanel2").transition().duration(1000).style("left","0px");
+            }else{
+                d3.select("#popup-typeOfLink").transition().duration(1000).style("opacity",0).style("left","-300px");
+                d3.select("#popup-leftPanel1").transition().duration(1000).style("opacity",0).style("left","-700px");
+                d3.select("#popup-selectBoard").transition().duration(1000).style("left","400px");
+                d3.select("#popup-leftPanel4").transition().duration(1000).style("left","0px");
+            }
+        }
+        else if(panel == 2){ // board name -> Board background
+
+            let boardName = util.getValueId("popup-infiniboardName");
+
+            if(boardName == ""){ // If no name was used
+                d3.select("#popup-infiniboardName").style("border","1px solid var(--red)")
+                    .transition()
+                    .duration(100)
+                    .style("margin-left","10px")
+                    .transition()
+                    .duration(100)
+                    .style("margin-left","30px")
+                    .transition()
+                    .duration(100)
+                    .style("margin-left","10px")
+                    .transition()
+                    .duration(50)
+                    .style("margin-left","20px");
+                d3.select("#popup-panel2Error").html("Please enter a name");
+                return
+            }
+            else{ // If good to go
+                d3.select("#popup-infiniboardName").style("border",null);
+                d3.select("#popup-panel2Error").html("");
+            }
+
+
+            d3.select("#popup-nameYourBoard").transition().duration(1000).style("opacity",0).style("left","-300px");
+            d3.select("#popup-leftPanel2").transition().duration(1000).style("opacity",0).style("left","-700px");
+            d3.select("#popup-pickYourBackground").transition().duration(1000).style("left","400px");
+            d3.select("#popup-leftPanel3").transition().duration(1000).style("left","0px");
+        }
+        
+    }
+
+
+    return{
+        init:initPopup,
+        redrawPreview:redrawPreview,
+        switchPanel:switchPanel,
+        closePopup:closePopup,
+        submit:submit,
+        linkType:linkType
+    }
+}();
+</script>
