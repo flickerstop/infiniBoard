@@ -5,7 +5,7 @@ popup = function(){
      */
     function newBoardBox(callback){
         $("#popup-box").load("./js/popup/newBox.html",()=>{
-            initPopup(callback);
+            newBoxPopup.init(callback);
         })
     }
 

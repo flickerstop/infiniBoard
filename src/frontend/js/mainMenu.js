@@ -30,9 +30,9 @@ mainMenu = function(){
         }
     }
 
-    function createNewBox(boardBoxName,boardName,bgColor){
-        boxManager.createBox(boardBoxName,boardName,bgColor);
-        changeState("whiteboard", boardBoxName);
+    function createNewBox(newBox, newBoard){
+        boxManager.createBox(newBox, newBoard);
+        changeState("whiteboard", newBox.name);
     }
 
     /**

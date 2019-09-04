@@ -5,6 +5,8 @@
         "boardbox",
         "infiniboard",
         "infiniboards",
+        "infinibox",
+        "jscolor",
         "viewbox"
     ],
     "git.ignoreMissingGitWarning": true,

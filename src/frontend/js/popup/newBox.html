@@ -63,6 +63,12 @@
         font-size: 15px;
         width: calc(100% - 40px);
     }
+    
+    .popup-error{
+        color: var(--red);
+        width: 100%;
+        text-align: center;
+    }
 
     .popup-rightPanel{
         position: absolute;
@@ -120,9 +126,10 @@
     <div class="popup-input-title" style="margin-top: 120px">
         Infinibox Name:
     </div>
-    <input class="popup-input" placeholder="Name of the InfiniBox" >
+    <input class="popup-input" id="popup-infiniboxName" placeholder="Name of the InfiniBox" >
+    <div class="popup-error" id="popup-panel1Error"></div>
 
-    <div class="popup-nextButton" onclick="switchPanel(1)">Next -></div>
+    <div class="popup-nextButton" onclick="newBoxPopup.switchPanel(1)">Next -></div>
 </div>
 
 <!-----
@@ -145,9 +152,10 @@
     <div class="popup-input-title" style="margin-top: 120px">
         Infiniboard Name:
     </div>
-    <input class="popup-input" placeholder="Name of the InfiniBoard" >
+    <input class="popup-input" id="popup-infiniboardName" placeholder="Name of the InfiniBoard" >
+    <div class="popup-error" id="popup-panel2Error"></div>
 
-    <div class="popup-nextButton" onclick="switchPanel(2)">Next -></div>
+    <div class="popup-nextButton" onclick="newBoxPopup.switchPanel(2)">Next -></div>
 </div>
 
 
@@ -176,7 +184,7 @@
     <div class="popup-input-title" style="margin-top: 10px">
         Background type:
     </div>
-    <select id="popup-selectBackground" class="popup-input" onchange="redrawPreview()">
+    <select id="popup-selectBackground" class="popup-input" onchange="newBoxPopup.redrawPreview()">
         <option value="0">Solid Colour</option>
         <option value="1">Square Dot Grid</option>
         <option value="2">Triangle Dot Grid</option>
@@ -197,7 +205,7 @@
     <div class="popup-input-title" style="margin-top: 10px">
         Background Spacing:
     </div>
-    <input style="border:none" class="popup-input" type="range" id="popup-backgroundSpacing" min="10" value="25" max="200" oninput="redrawPreview()">
+    <input style="border:none" class="popup-input" type="range" id="popup-backgroundSpacing" min="10" value="25" max="200" oninput="newBoxPopup.redrawPreview()">
 
     <!-----
     > Thickness
@@ -205,7 +213,7 @@
     <div class="popup-input-title" style="margin-top: 10px">
         Background Thickness:
     </div>
-    <input style="border:none" class="popup-input" type="range" id="popup-backgroundThickness" min="1" value="1" max="10" oninput="redrawPreview()">
+    <input style="border:none" class="popup-input" type="range" id="popup-backgroundThickness" min="1" value="1" max="10" oninput="newBoxPopup.redrawPreview()">
     
     <!-----
     > Foreground Colour
@@ -223,7 +231,7 @@
     </div>
     <input id="popup-backgroundColor" class="popup-input" value="202020">
 
-    <div class="popup-nextButton" onclick="">Next -></div>
+    <div class="popup-nextButton" onclick="newBoxPopup.submit()">Finish</div>
 </div>
 
 <!-- #endregion -->
@@ -233,6 +241,9 @@
 <----------------------------------------------------------->
 
 <script>
+newBoxPopup = function(){
+
+    let submitCallback = null;
 
     function redrawPreview(){
         let type = util.getValueId("popup-selectBackground");
@@ -632,59 +643,62 @@
     }
 
     function initPopup(callback){
-        console.log(callback);
         d3.select("#popup-blackout").on("click",closePopup);
-        
+
         // Build the colour picker for background
         var background = new jscolor(document.getElementById('popup-backgroundColor'));
         // Set the background/border colour for the colour picker
         background.backgroundColor = "var(--main)";
         background.borderColor = "var(--highlight)";
-        background.onFineChange = 'redrawPreview()';
+        background.onFineChange = 'newBoxPopup.redrawPreview()';
 
         // Build the colour picker for foreground
         var foreground = new jscolor(document.getElementById('popup-foregroundColor'));
         // Set the background/border colour for the colour picker
         foreground.backgroundColor = "var(--main)";
         foreground.borderColor = "var(--highlight)";
-        foreground.onFineChange = 'redrawPreview()';
+        foreground.onFineChange = 'newBoxPopup.redrawPreview()';
 
         redrawPreview();
         d3.select("#popup").style("display",null);
+
+        submitCallback = callback;
     }
 
     /**
      * Submit the given information if it passes checks
      */
     function submit(){
-        let boxName = util.getValueId("popup-boardBoxName");
-        let boardName = util.getValueId("popup-boardName");
-        let bgcolor = util.getValueId("popup-colorPicker");
-        // Make sure they wrote a name
-        if(boxName == ""){
-            d3.select("#popup-boardBoxName").style("background-color","#c0392b");
-            d3.select("#popup-error").html("Please Write a Name for this Infiniboard Box!");
-            return;
-        }
-        if(boardName == ""){
-            d3.select("#popup-boardName").style("background-color","#c0392b");
-            d3.select("#popup-error").html("Please Write a Name for the first Infiniboard!");
-            return;
-        }
-        // Check if the name is already used
-        if(boxManager.checkBoxNameUsed(boxName)){ 
-            d3.select("#popup-boardBoxName").style("background-color","#c0392b");
-            d3.select("#popup-error").html("This name is already in use!");
-            return;
+
+        let boxName = util.getValueId("popup-infiniboxName")
+        let boardName = util.getValueId("popup-infiniboardName");
+
+        let type = util.getValueId("popup-selectBackground");
+        let lineSpacing = parseInt(util.getValueId("popup-backgroundSpacing"));
+        let backgroundDetailColour = `#${util.getValueId("popup-foregroundColor")}`;
+        let backgroundColour = `#${util.getValueId("popup-backgroundColor")}`;
+        let backgroundThickness = parseInt(util.getValueId("popup-backgroundThickness"));
+
+
+        let newBox = {
+            name: boxName
         }
 
-        // Clear the key event for the enter key
-        keyManager.clearEvent(13,0);
+        let newBoard = {
+            name: boardName,
+            bgType:type,
+            spacing: lineSpacing,
+            foreground: backgroundDetailColour,
+            background: backgroundColour,
+            thickness: backgroundThickness
+        }
+
         // Turn off the popup
         d3.select("#popup").style("display","none");
         // Clear the popup
         d3.select("#popup-box").html(null);
-        callback(boxName,boardName,bgcolor);
+
+        submitCallback(newBox,newBoard);
     }
 
     /**
@@ -697,12 +711,79 @@
     }
 
     function switchPanel(panel){
-        if(panel == 1){
+        if(panel == 1){ // Done getting box name
+
+            let boxName = util.getValueId("popup-infiniboxName");
+            if(boxName == ""){ // If no name was used
+                d3.select("#popup-infiniboxName").style("border","1px solid var(--red)")
+                    .transition()
+                    .duration(100)
+                    .style("margin-left","10px")
+                    .transition()
+                    .duration(100)
+                    .style("margin-left","30px")
+                    .transition()
+                    .duration(100)
+                    .style("margin-left","10px")
+                    .transition()
+                    .duration(50)
+                    .style("margin-left","20px");
+                d3.select("#popup-panel1Error").html("Please enter a name");
+                return
+            }
+            else if(boxManager.checkBoxNameUsed(boxName)){ // If the name was already used
+                d3.select("#popup-infiniboxName").style("border","1px solid var(--red)")
+                    .transition()
+                    .duration(100)
+                    .style("margin-left","10px")
+                    .transition()
+                    .duration(100)
+                    .style("margin-left","30px")
+                    .transition()
+                    .duration(100)
+                    .style("margin-left","10px")
+                    .transition()
+                    .duration(50)
+                    .style("margin-left","20px");
+                d3.select("#popup-panel1Error").html("This name is already in use");
+                return
+            }
+            else{ // If good to go
+                d3.select("#popup-infiniboxName").style("border",null);
+                d3.select("#popup-panel1Error").html("");
+            }
+
             d3.select("#popup-nameYourBox").transition().duration(1000).style("opacity",0).style("left","-300px");
             d3.select("#popup-leftPanel1").transition().duration(1000).style("opacity",0).style("left","-700px");
             d3.select("#popup-nameYourBoard").transition().duration(1000).style("left","400px");
             d3.select("#popup-leftPanel2").transition().duration(1000).style("left","0px");
-        }else if(panel == 2){
+        }else if(panel == 2){ // Done getting board name
+
+            let boardName = util.getValueId("popup-infiniboardName");
+
+            if(boardName == ""){ // If no name was used
+                d3.select("#popup-infiniboardName").style("border","1px solid var(--red)")
+                    .transition()
+                    .duration(100)
+                    .style("margin-left","10px")
+                    .transition()
+                    .duration(100)
+                    .style("margin-left","30px")
+                    .transition()
+                    .duration(100)
+                    .style("margin-left","10px")
+                    .transition()
+                    .duration(50)
+                    .style("margin-left","20px");
+                d3.select("#popup-panel2Error").html("Please enter a name");
+                return
+            }
+            else{ // If good to go
+                d3.select("#popup-infiniboardName").style("border",null);
+                d3.select("#popup-panel2Error").html("");
+            }
+
+
             d3.select("#popup-nameYourBoard").transition().duration(1000).style("opacity",0).style("left","-300px");
             d3.select("#popup-leftPanel2").transition().duration(1000).style("opacity",0).style("left","-700px");
             d3.select("#popup-pickYourBackground").transition().duration(1000).style("left","400px");
@@ -710,4 +791,14 @@
         }
         
     }
+
+
+    return{
+        init:initPopup,
+        redrawPreview:redrawPreview,
+        switchPanel:switchPanel,
+        closePopup:closePopup,
+        submit:submit
+    }
+}();
 </script>

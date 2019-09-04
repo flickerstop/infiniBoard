@@ -1769,7 +1769,9 @@ whiteboard = function(){
         }
 
         let lineSpacing = thisBoard.bgSpacing;
-        let backgroundDetailColour = "#ecf0f1";
+        let backgroundDetailColour = thisBoard.fgcolor;
+
+        let lineThickness = thisBoard.bgThickness;
 
         // 1 - square dot grid
         // 2 - triangle dot grid
@@ -1793,7 +1795,7 @@ whiteboard = function(){
                 for(let x = startingX; x < endingX;x+=lineSpacing){
                     svg.background.append("circle")
                         .attr("fill",backgroundDetailColour)
-                        .attr("r",1)
+                        .attr("r",lineThickness)
                         .attr("cx",x)
                         .attr("cy",y);
                 }
@@ -1812,7 +1814,7 @@ whiteboard = function(){
                 for(let x = startingX; x < endingX;x+=lineSpacing){
                     svg.background.append("circle")
                         .attr("fill",backgroundDetailColour)
-                        .attr("r",1)
+                        .attr("r",lineThickness)
                         .attr("cx",x)
                         .attr("cy",y);
                 }
@@ -1822,7 +1824,7 @@ whiteboard = function(){
                 for(let x = startingX; x < endingX;x+=lineSpacing){
                     svg.background.append("circle")
                         .attr("fill",backgroundDetailColour)
-                        .attr("r",1)
+                        .attr("r",lineThickness)
                         .attr("cx",x+lineSpacing/2)
                         .attr("cy",y);
                 }
@@ -1842,13 +1844,13 @@ whiteboard = function(){
                 for(let x = startingX; x < endingX;x+=lineSpacing*3){
                     svg.background.append("circle")
                         .attr("fill",backgroundDetailColour)
-                        .attr("r",1)
+                        .attr("r",lineThickness)
                         .attr("cx",x)
                         .attr("cy",y);
 
                     svg.background.append("circle")
                         .attr("fill",backgroundDetailColour)
-                        .attr("r",1)
+                        .attr("r",lineThickness)
                         .attr("cx",x+lineSpacing)
                         .attr("cy",y);
                 }
@@ -1858,13 +1860,13 @@ whiteboard = function(){
                 for(let x = startingX-lineSpacing/2-lineSpacing; x < endingX;x+=lineSpacing*3){
                     svg.background.append("circle")
                     .attr("fill",backgroundDetailColour)
-                        .attr("r",1)
+                        .attr("r",lineThickness)
                         .attr("cx",x)
                         .attr("cy",y);
 
                     svg.background.append("circle")
                         .attr("fill",backgroundDetailColour)
-                        .attr("r",1)
+                        .attr("r",lineThickness)
                         .attr("cx",x+lineSpacing)
                         .attr("cy",y);
                 }
@@ -1877,7 +1879,7 @@ whiteboard = function(){
                     .attr("y1",y)
                     .attr("y2",y)
                     .attr("stroke", backgroundDetailColour)
-                    .attr("stroke-width", 0.5)
+                    .attr("stroke-width", lineThickness)
                     .attr("fill", "none");
             }
         }else if(type == 5){ // vertical lines
@@ -1888,7 +1890,7 @@ whiteboard = function(){
                     .attr("y1",backgroundBox.y1)
                     .attr("y2",backgroundBox.y2)
                     .attr("stroke", backgroundDetailColour)
-                    .attr("stroke-width", 0.5)
+                    .attr("stroke-width", lineThickness)
                     .attr("fill", "none");
             }
         }else if(type == 6){ // square line grid
@@ -1899,7 +1901,7 @@ whiteboard = function(){
                     .attr("y1",backgroundBox.y1)
                     .attr("y2",backgroundBox.y2)
                     .attr("stroke", backgroundDetailColour)
-                    .attr("stroke-width", 0.5)
+                    .attr("stroke-width", lineThickness)
                     .attr("fill", "none");
             }
             for(let y = startingY; y < endingY;y+=lineSpacing){
@@ -1909,7 +1911,7 @@ whiteboard = function(){
                     .attr("y1",y)
                     .attr("y2",y)
                     .attr("stroke", backgroundDetailColour)
-                    .attr("stroke-width", 0.5)
+                    .attr("stroke-width", lineThickness)
                     .attr("fill", "none");
             }
         }else if(type == 7){ // triangle line grid
@@ -1935,7 +1937,7 @@ whiteboard = function(){
                     .attr("y1",y)
                     .attr("y2",y)
                     .attr("stroke", backgroundDetailColour)
-                    .attr("stroke-width", 0.5)
+                    .attr("stroke-width", lineThickness)
                     .attr("fill", "none");
             }
 
@@ -1949,7 +1951,7 @@ whiteboard = function(){
                     .attr("y1",startingY)
                     .attr("y2",startingY+height)
                     .attr("stroke", backgroundDetailColour)
-                    .attr("stroke-width", 0.5)
+                    .attr("stroke-width", lineThickness)
                     .attr("fill", "none");
 
                 svg.background.append("line")
@@ -1958,7 +1960,7 @@ whiteboard = function(){
                     .attr("y1",startingY)
                     .attr("y2",startingY+height)
                     .attr("stroke", backgroundDetailColour)
-                    .attr("stroke-width", 0.5)
+                    .attr("stroke-width", lineThickness)
                     .attr("fill", "none");
             }
 
@@ -1985,7 +1987,7 @@ whiteboard = function(){
                     .attr("y1",y)
                     .attr("y2",y)
                     .attr("stroke", backgroundDetailColour)
-                    .attr("stroke-width", 0.5)
+                    .attr("stroke-width", lineThickness)
                     .attr("fill", "none")
                     .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`);
 
@@ -1997,7 +1999,7 @@ whiteboard = function(){
                     .attr("y1",y)
                     .attr("y2",y)
                     .attr("stroke", backgroundDetailColour)
-                    .attr("stroke-width", 0.5)
+                    .attr("stroke-width", lineThickness)
                     .attr("fill", "none")
                     .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`)
                     .attr("stroke-dashoffset",lineSpacing/2*3);
@@ -2021,7 +2023,7 @@ whiteboard = function(){
                     .attr("y1",startingY)
                     .attr("y2",startingY+height)
                     .attr("stroke", backgroundDetailColour)
-                    .attr("stroke-width", 0.5)
+                    .attr("stroke-width", lineThickness)
                     .attr("fill", "none")
                     .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`)
                     .attr("stroke-dashoffset",lineSpacing*offset)
@@ -2042,7 +2044,7 @@ whiteboard = function(){
                     .attr("y1",startingY)
                     .attr("y2",startingY+height)
                     .attr("stroke", backgroundDetailColour)
-                    .attr("stroke-width", 0.5)
+                    .attr("stroke-width", lineThickness)
                     .attr("fill", "none")
                     .attr("stroke-dasharray",`${lineSpacing} ${lineSpacing*2}`)
                     .attr("stroke-dashoffset",lineSpacing*offset)
@@ -2067,7 +2069,7 @@ whiteboard = function(){
                         .attr("y1",y+(set*lineSpacing))
                         .attr("y2",y+(set*lineSpacing))
                         .attr("stroke", backgroundDetailColour)
-                        .attr("stroke-width", 0.5)
+                        .attr("stroke-width", lineThickness)
                         .attr("fill", "none");
                 }
                 
@@ -2079,18 +2081,61 @@ whiteboard = function(){
                         if(x%(lineSpacing*5)==0 && y%(lineSpacing*5)==0){
                             svg.background.append("circle")
                                 .attr("fill",backgroundDetailColour)
-                                .attr("r",2)
+                                .attr("r",lineThickness*3)
                                 .attr("cx",x)
                                 .attr("cy",y);
                         
                         }else if(x%lineSpacing==0){
                             svg.background.append("circle")
                                 .attr("fill",backgroundDetailColour)
-                                .attr("r",1)
+                                .attr("r",lineThickness)
                                 .attr("cx",x)
                                 .attr("cy",y);
                         }
                     }
+                }
+            }
+        }else if(type == 11){ // square line grid
+            for(let x = startingX; x < endingX;x+=lineSpacing){
+                if(x%(lineSpacing*5)==0){
+                    svg.background.append("line")
+                        .attr("x1",x)
+                        .attr("x2",x)
+                        .attr("y1",backgroundBox.y1)
+                        .attr("y2",backgroundBox.y2)
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", lineThickness*3)
+                        .attr("fill", "none");
+                }else{
+                    svg.background.append("line")
+                        .attr("x1",x)
+                        .attr("x2",x)
+                        .attr("y1",backgroundBox.y1)
+                        .attr("y2",backgroundBox.y2)
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", lineThickness)
+                        .attr("fill", "none");
+                }
+            }
+            for(let y = startingY; y < endingY;y+=lineSpacing){
+                if(y%(lineSpacing*5)==0){
+                    svg.background.append("line")
+                        .attr("x1",backgroundBox.x1)
+                        .attr("x2",backgroundBox.x2)
+                        .attr("y1",y)
+                        .attr("y2",y)
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", lineThickness*3)
+                        .attr("fill", "none");
+                }else{
+                    svg.background.append("line")
+                        .attr("x1",backgroundBox.x1)
+                        .attr("x2",backgroundBox.x2)
+                        .attr("y1",y)
+                        .attr("y2",y)
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", lineThickness)
+                        .attr("fill", "none");
                 }
             }
         }

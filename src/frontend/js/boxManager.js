@@ -27,23 +27,22 @@ boxManager = function(){
     /**
      * Button function for when selecting "new boardbox"
      */
-    function createBox(boardBoxName,boardName,bgColor){
+    function createBox(newBox,newBoard){
         console.log({
-            boxName: boardBoxName,
-            boardName: boardName,
-            bgColor: bgColor
+            newBox: newBox,
+            newBoard: newBoard
         });
 
         // create the box for all the boards
         currentBox = {
-            saveName: boardBoxName,
+            saveName: newBox.name,
             lastUsed: Date.now(),
             boardCount: 0,
             boards: []
         };
 
         // Create the first board to put in the box
-        newBoard(boardName,bgColor);
+        createBoard(newBoard);
 
         // Add the new box to the shelf
         shelf.push(currentBox);
@@ -69,15 +68,17 @@ boxManager = function(){
      * @param {String} boardName Name for the new board
      * @param {String} bgcolor color for the background
      */
-    function newBoard(boardName,bgcolor){
+    function createBoard(boardData){
         let id = currentBox.boardCount++;
 
         currentBox.boards.push({
             id: id,
-            name: boardName,
-            bgType: 0, // make this do something like 0 -> solid color, 1 -> grid etc
-            bgSpacing: 25,
-            bgcolor: bgcolor,
+            name: boardData.name,
+            bgType: boardData.bgType, // make this do something like 0 -> solid color, 1 -> grid etc
+            bgSpacing: boardData.spacing,
+            bgcolor: boardData.background,
+            fgcolor: boardData.foreground,
+            bgThickness: boardData.thickness,
             idCounter:0,
             layerCounter: 0,
             pens:defaultPens(),
@@ -150,7 +151,7 @@ boxManager = function(){
         setBox:setBox,
         getBox:getBox,
         createBox:createBox,
-        newBoard:newBoard,
+        newBoard:createBoard,
         getBoard:getBoard,
         setShelf:setShelf,
         getShelf:getShelf,
