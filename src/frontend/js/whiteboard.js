@@ -645,7 +645,7 @@ whiteboard = function(){
             });
         }
         else if(isHand() || isMiddleClick()){
-            clearBackground();
+            //clearBackground();
         }else if(isMouse()){
             if(imageResize == null){
                 closeMenus();
@@ -833,6 +833,8 @@ whiteboard = function(){
             if(isHand() || mouseDownPoint.button == 1){
                 viewbox.x = viewbox.x - (mouse.gx-mouse.lgx)*viewbox.scale;
                 viewbox.y = viewbox.y - (mouse.gy-mouse.lgy)*viewbox.scale;
+
+                //generateBackground();
                 updateViewbox();
             }
 
@@ -933,7 +935,6 @@ whiteboard = function(){
         }
         if(isMouse()){
             if(imageResize != null){
-                //FIXME Clicking quickly on one of the balls fucks it up
                 if(imageResize.point == "tl"){
                     // If dragging from top left, make the mouse x,y the new image x,y
                     // Then calculate the new width+height by finding the difference between the new x,y and the old
@@ -1777,109 +1778,117 @@ whiteboard = function(){
 
         let lineThickness = thisBoard.bgThickness;
 
-        // 1 - square dot grid
-        // 2 - triangle dot grid
-        // 3 - hexagon dot grid
-        // 4 - horizontal lines
-        // 5 - vertical lines
-        // 6 - square grid
-        // 7 - triangle grid
-        // 8 - hexagon grid
-        // 9 - music lines
-        // 10 - dnd grid
 
-        let startingY = Math.floor(Math.floor(backgroundBox.y1-10)/lineSpacing)*lineSpacing;
-        let startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineSpacing)*lineSpacing;
+        let startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/lineSpacing)*lineSpacing;
+        let startingX = Math.floor(Math.floor(backgroundBox.x1-viewbox.w)/lineSpacing)*lineSpacing;
 
-        let endingY = backgroundBox.y2+10;
-        let endingX = backgroundBox.x2+10;
+        let endingY = backgroundBox.y2+viewbox.h;
+        let endingX = backgroundBox.x2+viewbox.w;
 
         if(type == 1){ // square dots
             for(let y = startingY; y < endingY;y+=lineSpacing){
-                for(let x = startingX; x < endingX;x+=lineSpacing){
-                    svg.background.append("circle")
-                        .attr("fill",backgroundDetailColour)
-                        .attr("r",lineThickness)
-                        .attr("cx",x)
-                        .attr("cy",y);
-                }
+                svg.background.append("line")
+                    .attr("x1",startingX)
+                    .attr("x2",endingX)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", lineThickness)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`0 ${lineSpacing}`)
+                    .attr("stroke-linecap","round");
+
             }
         }else if(type == 2){ // triangle dots
 
             // Calculate the height of the triangle
             let lineHeight = (lineSpacing/2)*Math.sqrt(3);
 
+
             // Find the new starting lines with the new line height
-            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/lineHeight)*lineHeight
-            startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineHeight)*lineHeight;
+            startingY = Math.floor(Math.floor(backgroundBox.y1)/(lineHeight*2))*(lineHeight*2); // Why do you *2? No idea, it just fixes a bug
+            startingX = Math.floor(Math.floor(backgroundBox.x1)/lineSpacing)*lineSpacing;
 
-            for(let y = startingY; y < endingY;y+=lineHeight){
-                // Draw the top of the triangle
-                for(let x = startingX; x < endingX;x+=lineSpacing){
-                    svg.background.append("circle")
-                        .attr("fill",backgroundDetailColour)
-                        .attr("r",lineThickness)
-                        .attr("cx",x)
-                        .attr("cy",y);
-                }
 
-                y+=lineHeight
-                // Draw the bottom of the triangle
-                for(let x = startingX; x < endingX;x+=lineSpacing){
-                    svg.background.append("circle")
-                        .attr("fill",backgroundDetailColour)
-                        .attr("r",lineThickness)
-                        .attr("cx",x+lineSpacing/2)
-                        .attr("cy",y);
-                }
+            endingY = backgroundBox.y2;
+            
+            // Here it is... using trig outside of school
+            let opp = Math.tan(30 * Math.PI/180) * (endingY-startingY);         
+            for(let x = startingX; x < endingX;x+=lineSpacing){
+
+                svg.background.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x-opp)
+                    .attr("y1",startingY)
+                    .attr("y2",endingY)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", lineThickness)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`0 ${lineSpacing}`)
+                    .attr("stroke-linecap","round");
+
             }
+
         }else if(type == 3){ // Hexagon dots
 
-            // Calculate the height of the triangle
-            let lineHeight = (lineSpacing/2)*Math.sqrt(3);
+            // NOTE diagonal lines cause more lag than straight lines
 
             // Find the new starting lines with the new line height
-            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/lineHeight)*lineHeight
-            startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineHeight)*lineHeight;
+            // Why 45? I legit have no idea, somehow I did some math and got that answer so they don't move...
+            // It's something about how far apart they are
+            startingY = Math.floor(Math.floor(backgroundBox.y1)/(lineSpacing*45))*(lineSpacing*45);
+            startingX = Math.floor(Math.floor(backgroundBox.x1)/(lineSpacing*45))*(lineSpacing*45);
 
+            endingY = backgroundBox.y2;
 
-            for(let y = startingY; y < endingY; y+=lineHeight){
-                // Draw the top of the triangle
-                for(let x = startingX; x < endingX;x+=lineSpacing*3){
-                    svg.background.append("circle")
-                        .attr("fill",backgroundDetailColour)
-                        .attr("r",lineThickness)
-                        .attr("cx",x)
-                        .attr("cy",y);
+            // Here it is... using trig outside of school
+            let opp = Math.tan(30 * Math.PI/180) * (endingY-startingY);
 
-                    svg.background.append("circle")
-                        .attr("fill",backgroundDetailColour)
-                        .attr("r",lineThickness)
-                        .attr("cx",x+lineSpacing)
-                        .attr("cy",y);
-                }
+            for(let x = startingX; x < endingX;x+=lineSpacing){
+                svg.background.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x-opp)
+                    .attr("y1",startingY)
+                    .attr("y2",endingY)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", lineThickness)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`0 ${lineSpacing} 0 ${(lineSpacing)*2}`)
+                    .attr("stroke-linecap","round");
 
-                y+=lineHeight
-                // Draw the bottom of the triangle
-                for(let x = startingX-lineSpacing/2-lineSpacing; x < endingX;x+=lineSpacing*3){
-                    svg.background.append("circle")
-                    .attr("fill",backgroundDetailColour)
-                        .attr("r",lineThickness)
-                        .attr("cx",x)
-                        .attr("cy",y);
+                x+=lineSpacing
 
-                    svg.background.append("circle")
-                        .attr("fill",backgroundDetailColour)
-                        .attr("r",lineThickness)
-                        .attr("cx",x+lineSpacing)
-                        .attr("cy",y);
-                }
+                svg.background.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x-opp)
+                    .attr("y1",startingY)
+                    .attr("y2",endingY)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", lineThickness)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`0 ${lineSpacing} 0 ${(lineSpacing)*2}`)
+                    .attr("stroke-linecap","round")
+                    .attr("stroke-dashoffset",lineSpacing);
+
+                    x+=lineSpacing
+
+                svg.background.append("line")
+                    .attr("x1",x)
+                    .attr("x2",x-opp)
+                    .attr("y1",startingY)
+                    .attr("y2",endingY)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", lineThickness)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`0 ${lineSpacing} 0 ${(lineSpacing)*2}`)
+                    .attr("stroke-linecap","round")
+                    .attr("stroke-dashoffset",lineSpacing*2);
             }
         }else if(type == 4){ // horizontal lines
             for(let y = startingY; y < endingY;y+=lineSpacing){
                 svg.background.append("line")
-                    .attr("x1",backgroundBox.x1)
-                    .attr("x2",backgroundBox.x2)
+                    .attr("x1",startingX)
+                    .attr("x2",endingX)
                     .attr("y1",y)
                     .attr("y2",y)
                     .attr("stroke", backgroundDetailColour)
@@ -1891,8 +1900,8 @@ whiteboard = function(){
                 svg.background.append("line")
                     .attr("x1",x)
                     .attr("x2",x)
-                    .attr("y1",backgroundBox.y1)
-                    .attr("y2",backgroundBox.y2)
+                    .attr("y1",startingY)
+                    .attr("y2",endingY)
                     .attr("stroke", backgroundDetailColour)
                     .attr("stroke-width", lineThickness)
                     .attr("fill", "none");
@@ -1902,16 +1911,16 @@ whiteboard = function(){
                 svg.background.append("line")
                     .attr("x1",x)
                     .attr("x2",x)
-                    .attr("y1",backgroundBox.y1)
-                    .attr("y2",backgroundBox.y2)
+                    .attr("y1",startingY)
+                    .attr("y2",endingY)
                     .attr("stroke", backgroundDetailColour)
                     .attr("stroke-width", lineThickness)
                     .attr("fill", "none");
             }
             for(let y = startingY; y < endingY;y+=lineSpacing){
                 svg.background.append("line")
-                    .attr("x1",backgroundBox.x1)
-                    .attr("x2",backgroundBox.x2)
+                    .attr("x1",startingX)
+                    .attr("x2",endingX)
                     .attr("y1",y)
                     .attr("y2",y)
                     .attr("stroke", backgroundDetailColour)
@@ -1925,8 +1934,8 @@ whiteboard = function(){
 
 
             // Find the new starting lines with the new line height
-            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/(lineHeight*2))*(lineHeight*2); // Why do you *2? No idea, it just fixes a bug
-            startingX = Math.floor(Math.floor(backgroundBox.x1-10)/lineSpacing)*lineSpacing;
+            startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/(lineHeight*2))*(lineHeight*2); // Why do you *2? No idea, it just fixes a bug
+            startingX = Math.floor(Math.floor(backgroundBox.x1-viewbox.w)/lineSpacing)*lineSpacing;
 
             let width = Math.floor((backgroundBox.x2-backgroundBox.x1)/lineSpacing)*lineSpacing;
             let height = (endingY-startingY);
@@ -1936,8 +1945,8 @@ whiteboard = function(){
 
             for(let y = startingY; y < endingY;y+=lineHeight){
                 svg.background.append("line")
-                    .attr("x1",backgroundBox.x1)
-                    .attr("x2",backgroundBox.x2)
+                    .attr("x1",startingX)
+                    .attr("x2",endingX)
                     .attr("y1",y)
                     .attr("y2",y)
                     .attr("stroke", backgroundDetailColour)
@@ -1945,8 +1954,6 @@ whiteboard = function(){
                     .attr("fill", "none");
             }
 
-            // console.log(startingX-width);
-            // console.log(startingY);
             for(let x = startingX-width; x < endingX+width;x+=lineSpacing){
 
                 svg.background.append("line")
@@ -1981,8 +1988,8 @@ whiteboard = function(){
             let lineHeight = (lineSpacing/2)*Math.sqrt(3);
             
             // Find the new starting lines with the new line height
-            startingY = Math.floor(Math.floor(backgroundBox.y1)/(lineHeight*2))*(lineHeight*2);
-            startingX = Math.floor(Math.floor(backgroundBox.x1)/(lineSpacing*6))*(lineSpacing*6);
+            startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/(lineHeight*2))*(lineHeight*2);
+            startingX = Math.floor(Math.floor(backgroundBox.x1-viewbox.w)/(lineSpacing*6))*(lineSpacing*6);
 
             for(let y = startingY; y < endingY;y+=lineHeight){
                 svg.background.append("line")
@@ -2011,8 +2018,8 @@ whiteboard = function(){
             }
 
             
-            startingY = Math.floor(Math.floor(backgroundBox.y1)/(lineHeight*2))*(lineHeight*2);
-            startingX = Math.floor(Math.floor(backgroundBox.x1)/(lineSpacing*3))*(lineSpacing*3);
+            startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/(lineHeight*2))*(lineHeight*2);
+            startingX = Math.floor(Math.floor(backgroundBox.x1-viewbox.w)/(lineSpacing*3))*(lineSpacing*3);
 
             let height = (endingY-startingY);
 
@@ -2063,13 +2070,13 @@ whiteboard = function(){
             ////////////////////
 
         }else if(type == 9){ // music lines
-            startingY = Math.floor(Math.floor(backgroundBox.y1-10)/(lineSpacing*10))*(lineSpacing*10);
+            startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/(lineSpacing*10))*(lineSpacing*10);
             for(let y = startingY; y < endingY;y+=lineSpacing*10){
                 // Draw 5 lines
                 for(let set = 0; set < 5;set++){
                     svg.background.append("line")
-                        .attr("x1",backgroundBox.x1)
-                        .attr("x2",backgroundBox.x2)
+                        .attr("x1",startingX)
+                        .attr("x2",endingX)
                         .attr("y1",y+(set*lineSpacing))
                         .attr("y2",y+(set*lineSpacing))
                         .attr("stroke", backgroundDetailColour)
@@ -2079,25 +2086,34 @@ whiteboard = function(){
                 
             }
         }else if(type == 10){ // DnD grid
-            for(let y = Math.floor(backgroundBox.y1-10); y < backgroundBox.y2+10;y++){
-                if(y%lineSpacing==0){
-                    for(let x = Math.floor(backgroundBox.x1-10); x < backgroundBox.x2+10;x++){
-                        if(x%(lineSpacing*5)==0 && y%(lineSpacing*5)==0){
-                            svg.background.append("circle")
-                                .attr("fill",backgroundDetailColour)
-                                .attr("r",lineThickness*3)
-                                .attr("cx",x)
-                                .attr("cy",y);
-                        
-                        }else if(x%lineSpacing==0){
-                            svg.background.append("circle")
-                                .attr("fill",backgroundDetailColour)
-                                .attr("r",lineThickness)
-                                .attr("cx",x)
-                                .attr("cy",y);
-                        }
-                    }
+
+            let offset = startingX%(lineSpacing*5);
+            for(let y = startingY; y < endingY;y+=lineSpacing){
+                svg.background.append("line")
+                    .attr("x1",startingX)
+                    .attr("x2",endingX)
+                    .attr("y1",y)
+                    .attr("y2",y)
+                    .attr("stroke", backgroundDetailColour)
+                    .attr("stroke-width", lineThickness)
+                    .attr("fill", "none")
+                    .attr("stroke-dasharray",`0 ${lineSpacing}`)
+                    .attr("stroke-linecap","round");
+
+                if(y%(lineSpacing*5) == 0){
+                    svg.background.append("line")
+                        .attr("x1",startingX)
+                        .attr("x2",endingX)
+                        .attr("y1",y)
+                        .attr("y2",y)
+                        .attr("stroke", backgroundDetailColour)
+                        .attr("stroke-width", lineThickness*3)
+                        .attr("fill", "none")
+                        .attr("stroke-dasharray",`0 ${lineSpacing*5}`)
+                        .attr("stroke-linecap","round")
+                        .attr("stroke-dashoffset",offset);
                 }
+                    
             }
         }else if(type == 11){ // square line grid
             for(let x = startingX; x < endingX;x+=lineSpacing){
@@ -2105,8 +2121,8 @@ whiteboard = function(){
                     svg.background.append("line")
                         .attr("x1",x)
                         .attr("x2",x)
-                        .attr("y1",backgroundBox.y1)
-                        .attr("y2",backgroundBox.y2)
+                        .attr("y1",startingY)
+                        .attr("y2",endingY)
                         .attr("stroke", backgroundDetailColour)
                         .attr("stroke-width", lineThickness*3)
                         .attr("fill", "none");
@@ -2114,8 +2130,8 @@ whiteboard = function(){
                     svg.background.append("line")
                         .attr("x1",x)
                         .attr("x2",x)
-                        .attr("y1",backgroundBox.y1)
-                        .attr("y2",backgroundBox.y2)
+                        .attr("y1",startingY)
+                        .attr("y2",endingY)
                         .attr("stroke", backgroundDetailColour)
                         .attr("stroke-width", lineThickness)
                         .attr("fill", "none");
@@ -2124,8 +2140,8 @@ whiteboard = function(){
             for(let y = startingY; y < endingY;y+=lineSpacing){
                 if(y%(lineSpacing*5)==0){
                     svg.background.append("line")
-                        .attr("x1",backgroundBox.x1)
-                        .attr("x2",backgroundBox.x2)
+                        .attr("x1",startingX)
+                        .attr("x2",endingX)
                         .attr("y1",y)
                         .attr("y2",y)
                         .attr("stroke", backgroundDetailColour)
@@ -2133,8 +2149,8 @@ whiteboard = function(){
                         .attr("fill", "none");
                 }else{
                     svg.background.append("line")
-                        .attr("x1",backgroundBox.x1)
-                        .attr("x2",backgroundBox.x2)
+                        .attr("x1",startingX)
+                        .attr("x2",endingX)
                         .attr("y1",y)
                         .attr("y2",y)
                         .attr("stroke", backgroundDetailColour)
