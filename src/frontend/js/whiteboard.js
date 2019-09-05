@@ -723,7 +723,7 @@ whiteboard = function(){
 
                 if(isLine()){
                     // Check if the height and width is 0
-                    if((buffer[0].x - buffer[1].x) != 0 && (buffer[0].y - buffer[1].y) != 0){
+                    if((buffer[0].x - buffer[1].x) != 0 || (buffer[0].y - buffer[1].y) != 0){
                         let line = newLine(buffer,0,currentColor,currentStroke);
                         drawLine(line);
                     }
