@@ -129,6 +129,7 @@ whiteboard = function(){
         
         // Set the groups where to draw the objects
         svg.background = svg.parent.append("g").attr("id","drawingBoard-svg-background");
+        svg.layerGroup = svg.parent.append("g");
         svg.temp = svg.parent.append("g").attr("id","temp-line");
         svg.layers = [];
 
@@ -139,7 +140,7 @@ whiteboard = function(){
         
         // Look through all the layers
         for(let layer of thisBoard.layers){
-            let svgLayer = svg.parent.append("g").attr("id","svg-layer-"+layer.id);
+            let svgLayer = svg.layerGroup.append("g").attr("id","svg-layer-"+layer.id);
             // draw all the objects in the current whiteboard
             for(let object of layer.objects){
                 drawLine(object,svgLayer);
@@ -1547,7 +1548,7 @@ whiteboard = function(){
             .on("click",()=>{
                 let id = boxManager.newLayer(thisBoard.id);
                 svg.layers.push({
-                    svg: svg.parent.append("g").attr("id","svg-layer-"+id),
+                    svg: svg.layerGroup.append("g").attr("id","svg-layer-"+id),
                     id: id
                 });
                 initNavBar();
