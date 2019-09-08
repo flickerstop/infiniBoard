@@ -718,15 +718,42 @@ whiteboard = function(){
         }
         if(isLine() || isRect()){
             if(mouseDownPoint != null){
-                buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouse.y}]
+                buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouse.y}];
 
                 // Draw the line in the buffer
 
                 if(isLine()){
                     // Check if the height and width is 0
                     if((buffer[0].x - buffer[1].x) != 0 || (buffer[0].y - buffer[1].y) != 0){
-                        let line = newLine(buffer,0,currentColor,currentStroke);
-                        drawLine(line);
+                        if(holdShift.isHeld){
+                            svg.temp.html(null);
+        
+                            // if the x distance from the lastX is greater than the y, draw a line only on the x axis
+                            if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
+        
+                                svg.temp.append("line")
+                                    .attr("x1",mouse.x)
+                                    .attr("y1",mouseDownPoint.y)
+                                    .attr("x2",mouseDownPoint.x)
+                                    .attr("y2",mouseDownPoint.y)
+                                    .attr("stroke", currentColor)
+                                    .attr("stroke-width", currentStroke);
+        
+                                buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouseDownPoint.y}];
+                                let line = newLine(buffer,0,currentColor,currentStroke);
+                                drawLine(line);
+                            }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
+        
+
+                                buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouseDownPoint.x,y:mouse.y}];
+                                let line = newLine(buffer,0,currentColor,currentStroke);
+                                drawLine(line);
+                            }
+                        }else{
+                            let line = newLine(buffer,0,currentColor,currentStroke);
+                            drawLine(line);
+                        }
+                        
                     }
                 }else if(isRect()){
                     // Check if the height or width is 0
@@ -890,15 +917,43 @@ whiteboard = function(){
         }
         if(isLine()){
             if(isDrawing){
-                svg.temp.html(null);
+                if(holdShift.isHeld){
+                    svg.temp.html(null);
 
-                svg.temp.append("line")
-                    .attr("x1",mouse.x)
-                    .attr("y1",mouse.y)
-                    .attr("x2",mouseDownPoint.x)
-                    .attr("y2",mouseDownPoint.y)
-                    .attr("stroke", currentColor)
-                    .attr("stroke-width", currentStroke);
+                    // if the x distance from the lastX is greater than the y, draw a line only on the x axis
+                    if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
+
+                        svg.temp.append("line")
+                            .attr("x1",mouse.x)
+                            .attr("y1",mouseDownPoint.y)
+                            .attr("x2",mouseDownPoint.x)
+                            .attr("y2",mouseDownPoint.y)
+                            .attr("stroke", currentColor)
+                            .attr("stroke-width", currentStroke);
+
+
+                    }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
+
+                        svg.temp.append("line")
+                            .attr("x1",mouseDownPoint.x)
+                            .attr("y1",mouse.y)
+                            .attr("x2",mouseDownPoint.x)
+                            .attr("y2",mouseDownPoint.y)
+                            .attr("stroke", currentColor)
+                            .attr("stroke-width", currentStroke);
+                        
+                    }
+                }else{
+                    svg.temp.html(null);
+
+                    svg.temp.append("line")
+                        .attr("x1",mouse.x)
+                        .attr("y1",mouse.y)
+                        .attr("x2",mouseDownPoint.x)
+                        .attr("y2",mouseDownPoint.y)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke);
+                }
             }
         }
         if(isRect()){
