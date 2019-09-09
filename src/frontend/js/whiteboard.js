@@ -19,7 +19,7 @@ whiteboard = function(){
     let currentStroke = 2; // Current selected stroke
     let currentColor = "white"; // Current selected color
     let currentLayer = 0; // Current Selected Layer
-
+    let currentFill = "#fffff"; // Current Selected fill
 
     let mouseDownPoint = null; // Point where the mouse was pressed down
     let viewbox = null; // Current viewbox
@@ -79,7 +79,7 @@ whiteboard = function(){
                             w: file.width,
                             h: file.height
                         }
-                        let line = newLine(data,4,null,null,file.path);
+                        let line = newLine(data,4,null,null,null,file.path);
                         drawLine(line);
 
                         autoSaveTimeout();
@@ -163,19 +163,58 @@ whiteboard = function(){
             currentColor = thisBoard.pens[0];
         }
 
-        if(thisBoard.currentLayer != undefined){
-            currentLayer = thisBoard.currentLayer;
-        }else{
+        // if(thisBoard.currentLayer != undefined){
+        //     currentLayer = thisBoard.currentLayer;
+        // }else{
             currentLayer = thisBoard.layers[0];
-        }
+        // }
         
         if(thisBoard.currentStroke != undefined){
             currentStroke = thisBoard.currentStroke;
         }else{
             currentStroke = 2;
         }
+
+        if(thisBoard.currentFill != undefined){
+            currentFill = thisBoard.currentFill;
+        }else{
+            currentFill = thisBoard.pens[0];
+        }
         
-        
+        // If the type of board is DnD
+        if(thisBoard.type == 1){
+            d3.select("#toolbar-dndIcons").append("div")
+                .attr("id","toolbar-icon-10")
+                .attr("class","toolbar-icon")
+                .style("background-image","url('./images/check_white.png')")
+                .attr("onclick","whiteboard.setTool(10)")
+                .html("b");
+
+            let textureGroup = svg.parent.append("g").append("defs");
+
+            
+
+            d3.select("#navBar-Titles").append("div")
+                .attr("id","navBar-titles-textures")
+                .attr("class","navBar-titles-containers")
+                .append("div")
+                .attr("class","navBar-titles-text")
+                .html("Textures");
+
+            for(let texture of textures){
+                textureGroup.append("pattern")
+                    .attr("id",texture.id)
+                    .attr("patternUnits","userSpaceOnUse")
+                    .attr("width",texture.dimensions)
+                    .attr("height",texture.dimensions)
+                    .append("image")
+                    .attr("xlink:href",texture.path)
+                    .attr("x",0)
+                    .attr("y",0)
+                    .attr("width",texture.dimensions)
+                    .attr("height",texture.dimensions);
+            }
+        }
         
         
         // Set the background colour
@@ -202,16 +241,6 @@ whiteboard = function(){
 
         setTool(7); // Set the tool to the direct selection
 
-        
-        // If the type of board is DnD
-        if(thisBoard.type == 1){
-            d3.select("#toolbar-dndIcons").append("div")
-                .attr("id","toolbar-icon-10")
-                .attr("class","toolbar-icon")
-                .style("background-image","url('./images/check_white.png')")
-                .attr("onclick","whiteboard.setTool(10)")
-                .html("b");
-        }
 
         // Mouse event for scrolling in/out (zooming)
         // this took fucking 5 hours to figure out...
@@ -288,7 +317,8 @@ whiteboard = function(){
                 .attr("d", drawLine(line.dots))
                 .attr("stroke", line.color)
                 .attr("stroke-width", line.stroke)
-                .attr("fill", "none");
+                .attr("fill", "none")
+                .attr("stroke-linecap","round");
 
         }else if(line.type == 1){ // Rectangle
 
@@ -313,7 +343,7 @@ whiteboard = function(){
                 .attr("y",rectY)
                 .attr("height",height)
                 .attr("width",width)
-                .attr("fill", line.color);
+                .attr("fill", line.fill);
 
 
         }else if(line.type == 2){ // Link
@@ -391,6 +421,26 @@ whiteboard = function(){
                         setTimeout(()=>{drawResize(line)},10);
                     }
                 })
+        }else if(line.type == 5){ // Custom Shape
+            // Create the line
+            let drawLine = d3.line().curve(d3.curveCardinal);
+
+            // for every x and y, set the value to (object passed).x
+            drawLine.x((d)=>{
+                return d.x;
+            });
+            drawLine.y((d)=>{
+                return d.y;
+            });
+
+            // Append the line
+            drawOnSvg.append("path")
+                .attr("d", drawLine(line.dots))
+                .attr("stroke", line.color)
+                .attr("stroke-width", line.stroke)
+                .attr("fill", line.fill)
+                .attr("stroke-linecap","round");
+                
         }
 
         // If the tool is the move tool, set the selected element to this one
@@ -461,7 +511,7 @@ whiteboard = function(){
             autoSaveTimeout();
         }
 
-        if(isPen() && isLeftClick()){
+        if((isPen()||isCustomShape()) && isLeftClick()){
             isDrawing = true;
 
             let isNewPen = true;
@@ -659,7 +709,7 @@ whiteboard = function(){
                     w: image.width,
                     h: image.height
                 }
-                let line = newLine(data,4,null,null,image.path);
+                let line = newLine(data,4,null,null,null,image.path);
                 drawLine(line);
 
                 autoSaveTimeout();
@@ -685,12 +735,12 @@ whiteboard = function(){
         function isLeftClick(){return d3.event.button==0}
         function isRightClick(){return d3.event.button==2}
         function isMiddleClick(){return d3.event.button==1}
-        if(isPen() || isLink()){
+        if(isPen() || isLink() || isCustomShape()){
             if(buffer.length > 1){
                 // Draw the line in the buffer
 
                 if(isPen()){
-                    let line = newLine(buffer,0,currentColor,currentStroke);
+                    let line = newLine(buffer,0,currentColor,currentStroke,null);
                     drawLine(line);
                     
                     // clear the buffer
@@ -704,12 +754,12 @@ whiteboard = function(){
                         if(isNewBoard){ // If a new board is to be created
                             let newBoardID = boxManager.newBoard(boardData);
                             
-                            let line = newLine(buffer,2,currentColor,currentStroke,newBoardID);
+                            let line = newLine(buffer,2,currentColor,currentStroke,null,newBoardID);
                             drawLine(line);
                             save();
                         }else{ // If no new board is created
                             if(boardData != null){ // If they didn't close the popup
-                                let line = newLine(buffer,2,currentColor,currentStroke,boardData.id);
+                                let line = newLine(buffer,2,currentColor,currentStroke,null,boardData.id);
                                 drawLine(line);
                                 
                                 save();
@@ -720,7 +770,18 @@ whiteboard = function(){
                         // clear the buffer
                         buffer = [];
                     });
+                }else if(isCustomShape()){
+                    // Make sure the line goes back to the start
+                    buffer.push({x:buffer[0].x,y:buffer[0].y});
+
+                    let line = newLine(buffer,5,currentColor,currentStroke,currentFill);
+                    drawLine(line);
+                    
+                    // clear the buffer
+                    buffer = [];
                 }
+
+
                 autoSaveTimeout();
             }
             // clear the temp line
@@ -760,7 +821,7 @@ whiteboard = function(){
                                     .attr("stroke-width", currentStroke);
         
                                 buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouseDownPoint.y}];
-                                let line = newLine(buffer,0,currentColor,currentStroke);
+                                let line = newLine(buffer,0,currentColor,currentStroke,null);
                                 drawLine(line);
                             }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
         
@@ -770,7 +831,7 @@ whiteboard = function(){
                                 drawLine(line);
                             }
                         }else{
-                            let line = newLine(buffer,0,currentColor,currentStroke);
+                            let line = newLine(buffer,0,currentColor,currentStroke,null);
                             drawLine(line);
                         }
                         
@@ -778,7 +839,7 @@ whiteboard = function(){
                 }else if(isRect()){
                     // Check if the height or width is 0
                     if((buffer[0].x - buffer[1].x) != 0 || (buffer[0].y - buffer[1].y) != 0){
-                        let line = newLine(buffer,1,currentColor,currentStroke);
+                        let line = newLine(buffer,1,currentColor,currentStroke,currentFill);
                         drawLine(line);
                     }
                 }
@@ -893,7 +954,7 @@ whiteboard = function(){
                 }
             }
         }
-        if(isPen() || isLink()){
+        if(isPen() || isLink() || isCustomShape()){
             let currentTime = Date.now();
             
             // if the user is drawing, add the x,y to the buffer
@@ -991,7 +1052,7 @@ whiteboard = function(){
                     .attr("y",rectY)
                     .attr("height",height)
                     .attr("width",width)
-                    .attr("fill", currentColor);
+                    .attr("fill", currentFill);
             }
         }
         if(isMove() && selectedElement != null && imageResize == null){
@@ -1106,6 +1167,7 @@ whiteboard = function(){
         thisBoard.currentColor = currentColor;
         thisBoard.currentLayer = currentLayer;
         thisBoard.currentStroke = currentStroke;
+        thisBoard.currentFill = currentFill;
 
         // Send a message with the tag "save" and payload of the boardbox
         comm.sendMessage("save", boxManager.getBox());
@@ -1135,14 +1197,16 @@ whiteboard = function(){
      * @param {Number} type type of line
      * @param {String} color color of the line
      * @param {Number} stroke Stroke size of the line
+     * @param {String} fill fill colour
      * @param {?String} link id to link to
      */
-    function newLine(buffer,type,color,stroke,link=null){
+    function newLine(buffer,type,color,stroke,fill,link=null){
         let obj = {
             id: thisBoard.idCounter++,
             type:type,
             color:color,
             stroke:stroke,
+            fill:fill,
             linkID:link,
             dots:buffer,
             transform: {
@@ -1239,6 +1303,7 @@ whiteboard = function(){
     function isMouse(){return currentTool==7?true:false;}
     function isMove(){return currentTool==7?true:false;} // Was changed to be the same as mouse
     function isImage(){return currentTool==9?true:false;}
+    function isCustomShape(){return currentTool==11?true:false;}
 
     /**
      * Checks to see if the user is typing something into the text tool
@@ -1305,6 +1370,7 @@ whiteboard = function(){
             currentPenTip.attr("fill",newcolor);
             currentPenShaft.attr("fill",newcolor);
             colorBar.strokeSizeLine.attr("stroke", newcolor);
+            currentFillBox.attr("stroke", newcolor);
             if(isTyping()){
                 updateTextArea();
             }
@@ -1319,6 +1385,25 @@ whiteboard = function(){
             }
         }
 
+        x+=45
+        // Draw the fill colour
+        let currentFillGroup = colorBar.svg.append("g");
+
+        let currentFillBox = currentFillGroup.append("rect")
+            .attr("x",x)
+            .attr("width",34)
+            .attr("y",3)
+            .attr("height",30)
+            .attr("fill",currentFill)
+            .attr("stroke-width", 2)
+            .attr("rx",5)
+            .attr("stroke", currentColor);
+
+        colorBar.changeFill = function(newcolor){
+            closeRightClickMenu();
+            currentFill = newcolor;
+            currentFillBox.attr("fill", newcolor);
+        }
         // Line between current pen and past pens
         colorBar.svg.append("line")
             .attr("x1",x+45)
@@ -1382,6 +1467,10 @@ whiteboard = function(){
                     updateTextArea();
                 }
             });
+
+            group.on("contextmenu",()=>{
+                colorBar.changeFill(colorBar.pens[i].getcolor());
+            })
 
             colorBar.pens.push({
                 color: color,
@@ -1510,6 +1599,13 @@ whiteboard = function(){
         colorBar.changecolor(newcolor);
         colorBar.strokeSizeLine.attr("stroke", newcolor);
     }
+
+    function changeFill(){
+        let newcolor = "#"+d3.select("#colorBar-newFill").html();
+        // Check if there's a # before
+        currentFill = newcolor;
+        colorBar.changeFill(newcolor);
+    }
     // #endregion
     //==//==//==//==//==//==//
     // Nav bar
@@ -1520,6 +1616,7 @@ whiteboard = function(){
         
         d3.select("#navBar-content-boards").html(null);
         d3.select("#navBar-content-history").html(null);
+        d3.select("#navBar-content-textures").html(null);
         d3.select("#navBar-side").on("click",()=>{
             openNavBar();
         });
@@ -1551,9 +1648,19 @@ whiteboard = function(){
             d3.select("#navBar-content-images").style("background-image","url('./images/loading_white.gif')");
             initNavBarImages()
         });
+
+        // if a dnd board
+        if(thisBoard.type == 1){
+            d3.select("#navBar-titles-textures").on("click",()=>{
+                resetTabs();
+                d3.select("#navBar-content-textures").style("display",null);
+                d3.select("#navBar-titles-textures").attr("class","navBar-titles-containers selected");
+                initNavBarImages()
+            });
+        }
         //#endregion
         
-        // Draw the boards panel
+        //#region Draw the boards panel
         let boardsPanel = d3.select("#navBar-content-boards");
         let boards = boxManager.getBox().boards;
         for(let board of boards){
@@ -1566,7 +1673,9 @@ whiteboard = function(){
             });
         }
 
-        // Draw the history panel
+        //#endregion
+
+        //#region Draw the history panel
         let historyPanel = d3.select("#navBar-content-history");
 
         let undoCount = 1;
@@ -1622,7 +1731,9 @@ whiteboard = function(){
 
         }
 
-        // Draw the layers
+        //#endregion
+
+        //#region Draw the layers
         let layerPanel = d3.select("#navBar-content-layers").html("");
         layerPanel.append("div").html("Add new layer")
             .on("click",()=>{
@@ -1697,6 +1808,23 @@ whiteboard = function(){
             d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container selected");
         }
 
+        //#endregion
+
+        //#region Draw the textures
+        let texturePanel = d3.select("#navBar-content-textures");
+
+        for(let texture of textures){
+            texturePanel.append("div")
+                .attr("class","navBar-content-textures-card")
+                .style("background-image",`url("${texture.path}")`)
+                .on("click",()=>{
+                    colorBar.changeFill(`url(#${texture.id})`)
+                    
+                    console.log(currentFill);
+                })
+        }
+        //#endregion
+
         /**
          * Runs the undo function x amount of times
          * @param {Number} amount Number of times to undo
@@ -1731,6 +1859,11 @@ whiteboard = function(){
             d3.select("#navBar-titles-history").attr("class","navBar-titles-containers");
             d3.select("#navBar-titles-layers").attr("class","navBar-titles-containers");
             d3.select("#navBar-titles-images").attr("class","navBar-titles-containers");
+
+            if(thisBoard.type == 1){
+                d3.select("#navBar-content-textures").style("display","none");
+                d3.select("#navBar-titles-textures").attr("class","navBar-titles-containers");
+            }
         }
 
     }
@@ -1808,7 +1941,7 @@ whiteboard = function(){
             y: textDrawArea.y+13+fontSize-(2+Math.floor(currentStroke/5)) // All this math adjusts the generated text to align the text area
         };
 
-        let line = newLine(data,3,currentColor,currentStroke);
+        let line = newLine(data,3,currentColor,currentStroke,null);
 
         // Draw the new text area
         drawLine(line);
@@ -2384,6 +2517,9 @@ whiteboard = function(){
                         updateTextArea();
                     }
                 })
+                .on("contextmenu",()=>{
+                    colorBar.changeFill(pen);
+                })
 
         }
     }
@@ -2588,7 +2724,7 @@ whiteboard = function(){
                                 w: image.width,
                                 h: image.height
                             }
-                            let line = newLine(data,4,null,null,image.absolutePath);
+                            let line = newLine(data,4,null,null,null,image.absolutePath);
                             drawLine(line);
                             attachedImage = line;
                         })
@@ -2668,6 +2804,7 @@ whiteboard = function(){
         save:save,
         getPens:getPens,
         changecolor:changecolor,
+        changeFill:changeFill,
         closeWhiteboard:closeWhiteboard,
         generateBackground:generateBackground
     }

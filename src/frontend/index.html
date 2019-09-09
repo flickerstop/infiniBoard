@@ -14,6 +14,8 @@
         <link rel="stylesheet" href="./css/mainMenu.css">
         <link rel="stylesheet" href="./css/popup.css">
 
+        <link rel="stylesheet" href="./css/dndMap.css">
+
         <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto&display=swap" rel="stylesheet">
         <!-- <script src="./js/data.js"></script> -->
 
@@ -30,6 +32,7 @@
         <script src="./js/boxManager.js"></script>
         <script src="./js/keyboardManager.js"></script>
         <script src="./js/dropManager.js"></script>
+        <script src="./js/textures.js"></script>
 
     </head>
     <style id="themeStyle">
@@ -104,6 +107,7 @@
                         <div id="toolbar-icon-5" class="toolbar-icon" style="background-image:url('./images/link_white.png')" onclick="whiteboard.setTool(5)">?</div>
                         <div id="toolbar-icon-6" class="toolbar-icon" style="background-image:url('./images/text_white.png')" onclick="whiteboard.setTool(6)">T</div>
                         <div id="toolbar-icon-9" class="toolbar-icon" style="background-image:url('./images/image_white.png')" onclick="whiteboard.setTool(9)">I</div>
+                        <div id="toolbar-icon-11" class="toolbar-icon" style="background-image:url('./images/customShape_white.png')" onclick="whiteboard.setTool(11)">C</div>
                     
                         <div id="toolbar-dndIcons"></div>
 
@@ -111,6 +115,7 @@
                     </div>
                     <div id="colorBar">
                         <button id="colorBar-newcolor" class="jscolor {onFineChange:'whiteboard.changecolor()' ,width:243, height:150,value:'66ccff',borderColor:'var(--highlight)', backgroundColor:'var(--main)'}"></button>
+                        <button id="colorBar-newFill" class="jscolor {onFineChange:'whiteboard.changeFill()' ,width:243, height:150,value:'66ccff',borderColor:'var(--highlight)', backgroundColor:'var(--main)'}"></button>
                     </div>
     
                     <div id="navBar">
@@ -128,12 +133,12 @@
                             <div id="navBar-titles-images" class="navBar-titles-containers">
                                 <div class="navBar-titles-text">Images</div>
                             </div>
-                            <div id="navBar-titles-filler" style="height: calc(100% - 400px)"></div>
                         </div>
                         <div id="navBar-content">
                             <div id="navBar-content-history" style="display: none"></div>
                             <div id="navBar-content-layers" style="display: none"></div>
                             <div id="navBar-content-images" style="display: none"></div>
+                            <div id="navBar-content-textures" style="display: none"></div>
                             <div id="navBar-content-boards"></div>
                         </div>
                     </div>
