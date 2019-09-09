@@ -116,8 +116,7 @@ whiteboard = function(){
             scale:1
         }
 
-        // Set the current colour to the
-        currentColor = thisBoard.pens[0];
+        
 
         // Create the svg
         svg.parent = d3.select("#drawingBoard").append("svg")
@@ -157,7 +156,26 @@ whiteboard = function(){
             });
         }
 
-        currentLayer = thisBoard.layers[0];
+        // Load the previous layer/stroke/colour
+        if(thisBoard.currentColor != undefined){
+            currentColor = thisBoard.currentColor;
+        }else{
+            currentColor = thisBoard.pens[0];
+        }
+
+        if(thisBoard.currentLayer != undefined){
+            currentLayer = thisBoard.currentLayer;
+        }else{
+            currentLayer = thisBoard.layers[0];
+        }
+        
+        if(thisBoard.currentStroke != undefined){
+            currentStroke = thisBoard.currentStroke;
+        }else{
+            currentStroke = 2;
+        }
+        
+        
         
         
         // Set the background colour
@@ -169,6 +187,7 @@ whiteboard = function(){
         // Init the colour/nav bar
         initColorBar();
         initNavBar();
+
         // Auto select the layer
         d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container selected");
 
@@ -183,6 +202,7 @@ whiteboard = function(){
 
         setTool(7); // Set the tool to the direct selection
 
+        
         // If the type of board is DnD
         if(thisBoard.type == 1){
             d3.select("#toolbar-dndIcons").append("div")
@@ -1068,7 +1088,7 @@ whiteboard = function(){
 
     // #endregion
     //==//==//==//==//==//==//
-    // Functions for saving
+    // saving
     // #region 
 
     /**
@@ -1081,6 +1101,11 @@ whiteboard = function(){
             pens.push(pen.getcolor());
         }
         thisBoard.pens = pens;
+
+        // Save current pen/layer/stroke
+        thisBoard.currentColor = currentColor;
+        thisBoard.currentLayer = currentLayer;
+        thisBoard.currentStroke = currentStroke;
 
         // Send a message with the tag "save" and payload of the boardbox
         comm.sendMessage("save", boxManager.getBox());
@@ -1101,7 +1126,7 @@ whiteboard = function(){
 
     // #endregion
     //==//==//==//==//==//==//
-    // Functions for new lines
+    // new lines
     // #region
 
     /**
@@ -1181,7 +1206,7 @@ whiteboard = function(){
 
     // #endregion
     //==//==//==//==//==//==//
-    // Functions for tools
+    // tools
     // #region
 
     /**
