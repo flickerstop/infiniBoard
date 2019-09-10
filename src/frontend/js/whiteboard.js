@@ -16,6 +16,7 @@ whiteboard = function(){
     let thisBoard = null; // The current infiniboard that's being drawn on
 
     let currentTool = 0; // Current tool being used
+    let currentToolAltCode = 0; // Used to set different versions of tools
     let currentStroke = 2; // Current selected stroke
     let currentColor = "white"; // Current selected color
     let currentLayer = 0; // Current Selected Layer
@@ -183,12 +184,12 @@ whiteboard = function(){
         
         // If the type of board is DnD
         if(thisBoard.type == 1){
-            d3.select("#toolbar-dndIcons").append("div")
-                .attr("id","toolbar-icon-10")
-                .attr("class","toolbar-icon")
-                .style("background-image","url('./images/check_white.png')")
-                .attr("onclick","whiteboard.setTool(10)")
-                .html("b");
+            // d3.select("#toolbar-dndIcons").append("div")
+            //     .attr("id","toolbar-icon-10")
+            //     .attr("class","toolbar-icon")
+            //     .style("background-image","url('./images/check_white.png')")
+            //     .attr("onclick","whiteboard.setTool(10)")
+            //     .html("b");
 
             let textureGroup = svg.parent.append("g").append("defs");
 
@@ -343,7 +344,9 @@ whiteboard = function(){
                 .attr("y",rectY)
                 .attr("height",height)
                 .attr("width",width)
-                .attr("fill", line.fill);
+                .attr("fill", line.fill)
+                .attr("stroke-width", line.stroke)
+                .attr("stroke", line.color);
 
 
         }else if(line.type == 2){ // Link
@@ -774,7 +777,15 @@ whiteboard = function(){
                     // Make sure the line goes back to the start
                     buffer.push({x:buffer[0].x,y:buffer[0].y});
 
-                    let line = newLine(buffer,5,currentColor,currentStroke,currentFill);
+                    let line = null;
+                    if(currentToolAltCode == 0){
+                        line = newLine(buffer,5,currentColor,currentStroke,currentFill);
+                    }else if(currentToolAltCode == 1){
+                        line = newLine(buffer,5,"none",currentStroke,currentFill);
+                    }else if(currentToolAltCode == 2){
+                        line = newLine(buffer,5,currentColor,currentStroke,"none");
+                    }
+
                     drawLine(line);
                     
                     // clear the buffer
@@ -839,7 +850,14 @@ whiteboard = function(){
                 }else if(isRect()){
                     // Check if the height or width is 0
                     if((buffer[0].x - buffer[1].x) != 0 || (buffer[0].y - buffer[1].y) != 0){
-                        let line = newLine(buffer,1,currentColor,currentStroke,currentFill);
+                        let line = null;
+                        if(currentToolAltCode == 0){
+                            line = newLine(buffer,1,currentColor,currentStroke,currentFill);
+                        }else if(currentToolAltCode == 1){
+                            line = newLine(buffer,1,"none",currentStroke,currentFill);
+                        }else if(currentToolAltCode == 2){
+                            line = newLine(buffer,1,currentColor,currentStroke,"none");
+                        }
                         drawLine(line);
                     }
                 }
@@ -954,7 +972,7 @@ whiteboard = function(){
                 }
             }
         }
-        if(isPen() || isLink() || isCustomShape()){
+        if(isPen() || isLink()){
             let currentTime = Date.now();
             
             // if the user is drawing, add the x,y to the buffer
@@ -1047,12 +1065,33 @@ whiteboard = function(){
 
                 svg.temp.html(null);
 
-                svg.temp.append("rect")
-                    .attr("x",rectX)
-                    .attr("y",rectY)
-                    .attr("height",height)
-                    .attr("width",width)
-                    .attr("fill", currentFill);
+                if(currentToolAltCode == 0){
+                    svg.temp.append("rect")
+                        .attr("x",rectX)
+                        .attr("y",rectY)
+                        .attr("height",height)
+                        .attr("width",width)
+                        .attr("fill", currentFill)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke);
+                }else if(currentToolAltCode == 1){
+                    svg.temp.append("rect")
+                        .attr("x",rectX)
+                        .attr("y",rectY)
+                        .attr("height",height)
+                        .attr("width",width)
+                        .attr("fill", currentFill);
+                }else if(currentToolAltCode == 2){
+                    svg.temp.append("rect")
+                        .attr("x",rectX)
+                        .attr("y",rectY)
+                        .attr("height",height)
+                        .attr("width",width)
+                        .attr("fill", "none")
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke);
+                }
+                
             }
         }
         if(isMove() && selectedElement != null && imageResize == null){
@@ -1142,6 +1181,64 @@ whiteboard = function(){
                 d3.select("#imageResizeCircle-br")
                     .attr("cx",imageResize.tx+imageResize.tw)
                     .attr("cy",imageResize.ty+imageResize.th);
+            }
+        }
+        if(isCustomShape()){
+            let currentTime = Date.now();
+            
+            // if the user is drawing, add the x,y to the buffer
+            if(isDrawing){
+                // if it has been x milliseconds since the last coordinate saved
+                if(currentTime>=lastPointTime+10){
+                    if(holdShift.isHeld){
+                        // if the x distance from the lastX is greater than the y, draw a line only on the x axis
+                        if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
+                            lastPointTime = currentTime;
+                            buffer.push({x:mouse.x,y:holdShift.y});
+                        }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
+                            lastPointTime = currentTime;
+                            buffer.push({x:holdShift.x,y:mouse.y});
+                        }
+                    }else{
+                        lastPointTime = currentTime;
+                        buffer.push({x:mouse.x,y:mouse.y});
+                    }
+
+                    // Draw the new shape
+                    svg.temp.html(null);
+
+                    // Create the line
+                    let drawLine = d3.line().curve(d3.curveCardinal);
+
+                    // for every x and y, set the value to (object passed).x
+                    drawLine.x((d)=>{
+                        return d.x;
+                    });
+                    drawLine.y((d)=>{
+                        return d.y;
+                    });
+
+                    if(currentToolAltCode == 0){
+                        svg.temp.append("path")
+                            .attr("d", drawLine(buffer))
+                            .attr("stroke", currentColor)
+                            .attr("stroke-width", currentStroke)
+                            .attr("fill", currentFill)
+                            .attr("stroke-linecap","round");
+                    }else if(currentToolAltCode == 1){
+                        svg.temp.append("path")
+                            .attr("d", drawLine(buffer))
+                            .attr("fill", currentFill)
+                            .attr("stroke-linecap","round");
+                    }else if(currentToolAltCode == 2){
+                        svg.temp.append("path")
+                            .attr("d", drawLine(buffer))
+                            .attr("stroke", currentColor)
+                            .attr("stroke-width", currentStroke)
+                            .attr("fill", "none")
+                            .attr("stroke-linecap","round");
+                    }
+                }
             }
         }
     }
@@ -1277,7 +1374,16 @@ whiteboard = function(){
      * Changes the current tool to the passed number
      * @param {Number} toolID number for the tool
      */
-    function setTool(toolID,isKeyboardShortcut){
+    function setTool(toolID,altCode = 0){
+        closeMenus();
+
+        d3.select("#toolbar-icon-"+currentTool).attr("class","toolbar-icon");
+        currentTool = toolID;
+        currentToolAltCode = altCode;
+        d3.select("#toolbar-icon-"+currentTool).attr("class","toolbar-icon selected");
+    }
+
+    function toolShortcut(toolID){
         // If they're typing and a keyboard shortcut is clicked
         if(isTyping() && isKeyboardShortcut){
             // Ignore it
@@ -1976,7 +2082,7 @@ whiteboard = function(){
 
         //TODO maybe instead of redrawing the board on a pan, just transform the board?
         // Prevents massive lag from filling in a huge viewbox
-        if(viewbox.scale > 2.1 || type == 0){
+        if(viewbox.scale > 5 || type == 0){
             return;
         }
 
@@ -2321,7 +2427,7 @@ whiteboard = function(){
                         .attr("y1",y)
                         .attr("y2",y)
                         .attr("stroke", backgroundDetailColour)
-                        .attr("stroke-width", lineThickness*3)
+                        .attr("stroke-width", lineThickness*6)
                         .attr("fill", "none")
                         .attr("stroke-dasharray",`0 ${lineSpacing*5}`)
                         .attr("stroke-linecap","round")
@@ -2780,13 +2886,13 @@ whiteboard = function(){
 
     function setupKeyboardShortcuts(){
         // https://keycode.info/
-        keyManager.newEvent(80,0,function(){setTool(0,true)}); // pen
-        keyManager.newEvent(72,0,function(){setTool(1,true)}); // Hand
-        keyManager.newEvent(69,0,function(){setTool(2,true)}); // eraser
-        keyManager.newEvent(76,0,function(){setTool(3,true)}); // line
-        keyManager.newEvent(82,0,function(){setTool(4,true)}); // rect
-        keyManager.newEvent(77,0,function(){setTool(7,true)}); // move
-        keyManager.newEvent(84,0,function(){setTool(6,true)}); // text
+        keyManager.newEvent(80,0,function(){toolShortcut(0)}); // pen
+        keyManager.newEvent(72,0,function(){toolShortcut(1)}); // Hand
+        keyManager.newEvent(69,0,function(){toolShortcut(2)}); // eraser
+        keyManager.newEvent(76,0,function(){toolShortcut(3)}); // line
+        keyManager.newEvent(82,0,function(){toolShortcut(4)}); // rect
+        keyManager.newEvent(77,0,function(){toolShortcut(7)}); // move
+        keyManager.newEvent(84,0,function(){toolShortcut(6)}); // text
 
         keyManager.newEvent(89,1,redo); // Redo
         keyManager.newEvent(90,1,undo); // Undo

@@ -103,11 +103,25 @@
                         <div id="toolbar-icon-2" class="toolbar-icon" style="background-image:url('./images/eraser_white.png')" onclick="whiteboard.setTool(2)">E</div>
                         <div id="toolbar-icon-1" class="toolbar-icon" style="background-image:url('./images/hand_white.png')" onclick="whiteboard.setTool(1)">H</div>
                         <div id="toolbar-icon-3" class="toolbar-icon" style="background-image:url('./images/line_white.png')" onclick="whiteboard.setTool(3)">L</div>
-                        <div id="toolbar-icon-4" class="toolbar-icon" style="background-image:url('./images/rect_white.png')" onclick="whiteboard.setTool(4)">R</div>
+                        <div class="toolbar-slot">
+                            <div id="toolbar-icon-4" class="toolbar-icon" style="background-image:url('./images/rect_white.png')" onclick="whiteboard.setTool(4)">R</div>
+                            <div class="toolbar-rightClickMenu" style="width: 150px">
+                                <div class="toolbar-icon" style="background-image:url('./images/rect_white.png')" onclick="whiteboard.setTool(4,0)"></div>
+                                <div class="toolbar-icon" style="background-image:url('./images/rect_fill_white.png')" onclick="whiteboard.setTool(4,1)"></div>
+                                <div class="toolbar-icon" style="background-image:url('./images/rect_outline_white.png')" onclick="whiteboard.setTool(4,2)"></div>
+                            </div>
+                        </div>
+                        <div class="toolbar-slot">
+                            <div id="toolbar-icon-11" class="toolbar-icon" style="background-image:url('./images/customShape_white.png')" onclick="whiteboard.setTool(11)">C</div>
+                            <div class="toolbar-rightClickMenu" style="width: 150px">
+                                <div class="toolbar-icon" style="background-image:url('./images/customShape_white.png')" onclick="whiteboard.setTool(11,0)"></div>
+                                <div class="toolbar-icon" style="background-image:url('./images/customShape_fill_white.png')" onclick="whiteboard.setTool(11,1)"></div>
+                                <div class="toolbar-icon" style="background-image:url('./images/customShape_outline_white.png')" onclick="whiteboard.setTool(11,2)"></div>
+                            </div>
+                        </div>
                         <div id="toolbar-icon-5" class="toolbar-icon" style="background-image:url('./images/link_white.png')" onclick="whiteboard.setTool(5)">?</div>
                         <div id="toolbar-icon-6" class="toolbar-icon" style="background-image:url('./images/text_white.png')" onclick="whiteboard.setTool(6)">T</div>
                         <div id="toolbar-icon-9" class="toolbar-icon" style="background-image:url('./images/image_white.png')" onclick="whiteboard.setTool(9)">I</div>
-                        <div id="toolbar-icon-11" class="toolbar-icon" style="background-image:url('./images/customShape_white.png')" onclick="whiteboard.setTool(11)">C</div>
                     
                         <div id="toolbar-dndIcons"></div>
 
