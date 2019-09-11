@@ -301,7 +301,7 @@ whiteboard = function(){
         // Append a new group for the draw object
         drawOnSvg = drawOnSvg.append("g").attr("id",`object${line.id}`);
 
-        if(line.type == 0){ // Normal Line
+        if(line.type == 0){ // Pen Tool
             // Create the line
             let drawLine = d3.line().curve(d3.curveCardinal);
 
@@ -444,6 +444,102 @@ whiteboard = function(){
                 .attr("fill", line.fill)
                 .attr("stroke-linecap","round");
                 
+        }else if(line.type == 6){ // Line Tool
+            let coords = {
+                x1: line.dots[0].x,
+                y1: line.dots[0].y,
+                x2: line.dots[1].x,
+                y2: line.dots[1].y
+            }
+
+            if(line.linkID != 3){ // If the line isn't dashed
+                drawOnSvg.append("line")
+                    .attr("x1",coords.x1)
+                    .attr("y1",coords.y1)
+                    .attr("x2",coords.x2)
+                    .attr("y2",coords.y2)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-linecap","round");
+            }else{ // If the line is dashed
+                drawOnSvg.append("line")
+                    .attr("x1",coords.x1)
+                    .attr("y1",coords.y1)
+                    .attr("x2",coords.x2)
+                    .attr("y2",coords.y2)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-dasharray",`${line.stroke*10} ${line.stroke*10}`)
+                    .attr("stroke-linecap","round");
+            }
+
+            // Calculate the length of the line and arrow
+            let lineLength = (coords.x2-coords.x1)!=0?(coords.x2-coords.x1):(coords.y2-coords.y1);
+            let arrowLength = (lineLength/4);
+
+            // https://math.stackexchange.com/questions/1314006/drawing-an-arrow
+            let x3Change = (arrowLength/lineLength)*((coords.x1-coords.x2)*Math.cos(30* Math.PI/180)+(coords.y1-coords.y2)*Math.sin(30* Math.PI/180));
+            let y3Change = (arrowLength/lineLength)*((coords.y1-coords.y2)*Math.cos(30* Math.PI/180)-(coords.x1-coords.x2)*Math.sin(30* Math.PI/180));
+            let x4Change = (arrowLength/lineLength)*((coords.x1-coords.x2)*Math.cos(30* Math.PI/180)-(coords.y1-coords.y2)*Math.sin(30* Math.PI/180));
+            let y4Change = (arrowLength/lineLength)*((coords.y1-coords.y2)*Math.cos(30* Math.PI/180)+(coords.x1-coords.x2)*Math.sin(30* Math.PI/180));
+
+            // Opened end arrows
+            if(line.linkID == 1 || line.linkID == 2){
+                drawOnSvg.append("line")
+                    .attr("x1",coords.x2)
+                    .attr("y1",coords.y2)
+                    .attr("x2",coords.x2+x3Change)
+                    .attr("y2",coords.y2+y3Change)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-linecap","round");
+
+                drawOnSvg.append("line")
+                    .attr("x1",coords.x2)
+                    .attr("y1",coords.y2)
+                    .attr("x2",coords.x2+x4Change)
+                    .attr("y2",coords.y2+y4Change)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-linecap","round");
+            }
+            if(line.linkID == 2){
+                drawOnSvg.append("line")
+                    .attr("x1",coords.x1)
+                    .attr("y1",coords.y1)
+                    .attr("x2",coords.x1-x3Change)
+                    .attr("y2",coords.y1-y3Change)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-linecap","round");
+
+                drawOnSvg.append("line")
+                    .attr("x1",coords.x1)
+                    .attr("y1",coords.y1)
+                    .attr("x2",coords.x1-x4Change)
+                    .attr("y2",coords.y1-y4Change)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-linecap","round");
+            }
+
+            // Filled end arrows
+            if(line.linkID == 4 || line.linkID == 5){
+                drawOnSvg.append("polygon")
+                    .attr("points",`${coords.x2} ${coords.y2}, ${coords.x2+x3Change} ${coords.y2+y3Change}, ${coords.x2+x4Change} ${coords.y2+y4Change}`)
+                    .style("fill",line.color)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-linecap","round");
+            }
+            if(line.linkID == 5){
+                drawOnSvg.append("polygon")
+                    .attr("points",`${coords.x1} ${coords.y1}, ${coords.x1-x3Change} ${coords.y1-y3Change}, ${coords.x1-x4Change} ${coords.y1-y4Change}`)
+                    .style("fill",line.color)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-linecap","round");
+            }
         }
 
         // If the tool is the move tool, set the selected element to this one
@@ -832,17 +928,17 @@ whiteboard = function(){
                                     .attr("stroke-width", currentStroke);
         
                                 buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouseDownPoint.y}];
-                                let line = newLine(buffer,0,currentColor,currentStroke,null);
+                                let line = newLine(buffer,6,currentColor,currentStroke,null,currentToolAltCode);
                                 drawLine(line);
                             }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
         
 
                                 buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouseDownPoint.x,y:mouse.y}];
-                                let line = newLine(buffer,0,currentColor,currentStroke);
+                                let line = newLine(buffer,6,currentColor,currentStroke,null,currentToolAltCode);
                                 drawLine(line);
                             }
                         }else{
-                            let line = newLine(buffer,0,currentColor,currentStroke,null);
+                            let line = newLine(buffer,6,currentColor,currentStroke,null,currentToolAltCode);
                             drawLine(line);
                         }
                         
@@ -1016,43 +1112,122 @@ whiteboard = function(){
         }
         if(isLine()){
             if(isDrawing){
+                let coords = {};
                 if(holdShift.isHeld){
-                    svg.temp.html(null);
-
                     // if the x distance from the lastX is greater than the y, draw a line only on the x axis
                     if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
-
-                        svg.temp.append("line")
-                            .attr("x1",mouse.x)
-                            .attr("y1",mouseDownPoint.y)
-                            .attr("x2",mouseDownPoint.x)
-                            .attr("y2",mouseDownPoint.y)
-                            .attr("stroke", currentColor)
-                            .attr("stroke-width", currentStroke);
-
-
+                        coords.x1 = mouseDownPoint.x;
+                        coords.x2 = mouse.x;
+                        coords.y1 = mouseDownPoint.y;
+                        coords.y2 = mouseDownPoint.y;
                     }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
-
-                        svg.temp.append("line")
-                            .attr("x1",mouseDownPoint.x)
-                            .attr("y1",mouse.y)
-                            .attr("x2",mouseDownPoint.x)
-                            .attr("y2",mouseDownPoint.y)
-                            .attr("stroke", currentColor)
-                            .attr("stroke-width", currentStroke);
-                        
+                        coords.x1 = mouseDownPoint.x;
+                        coords.x2 = mouseDownPoint.x;
+                        coords.y1 = mouseDownPoint.y;
+                        coords.y2 = mouse.y;   
                     }
                 }else{
-                    svg.temp.html(null);
+                    coords.x2 = mouse.x;
+                    coords.x1 = mouseDownPoint.x;
+                    coords.y2 = mouse.y;
+                    coords.y1 = mouseDownPoint.y; 
+                }
+                svg.temp.html(null);
+
+                if(currentToolAltCode != 3){ // If the line isn't dashed
+                    svg.temp.append("line")
+                        .attr("x1",coords.x1)
+                        .attr("y1",coords.y1)
+                        .attr("x2",coords.x2)
+                        .attr("y2",coords.y2)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-linecap","round");
+                }else{ // If the line is dashed
+                    svg.temp.append("line")
+                        .attr("x1",coords.x1)
+                        .attr("y1",coords.y1)
+                        .attr("x2",coords.x2)
+                        .attr("y2",coords.y2)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-dasharray",`${currentStroke*10} ${currentStroke*10}`)
+                        .attr("stroke-linecap","round");
+                }
+                
+
+                // Calculate the length of the line and arrow
+                let lineLength = (coords.x2-coords.x1)!=0?(coords.x2-coords.x1):(coords.y2-coords.y1);
+                let arrowLength = (lineLength/4);
+                
+                if(lineLength == 0){// Line is just a dot
+                    return;
+                }
+
+                // https://math.stackexchange.com/questions/1314006/drawing-an-arrow
+                let x3Change = (arrowLength/lineLength)*((coords.x1-coords.x2)*Math.cos(30* Math.PI/180)+(coords.y1-coords.y2)*Math.sin(30* Math.PI/180));
+                let y3Change = (arrowLength/lineLength)*((coords.y1-coords.y2)*Math.cos(30* Math.PI/180)-(coords.x1-coords.x2)*Math.sin(30* Math.PI/180));
+                let x4Change = (arrowLength/lineLength)*((coords.x1-coords.x2)*Math.cos(30* Math.PI/180)-(coords.y1-coords.y2)*Math.sin(30* Math.PI/180));
+                let y4Change = (arrowLength/lineLength)*((coords.y1-coords.y2)*Math.cos(30* Math.PI/180)+(coords.x1-coords.x2)*Math.sin(30* Math.PI/180));
+
+                // Opened end arrows
+                if(currentToolAltCode == 1 || currentToolAltCode == 2){
+                    svg.temp.append("line")
+                        .attr("x1",coords.x2)
+                        .attr("y1",coords.y2)
+                        .attr("x2",coords.x2+x3Change)
+                        .attr("y2",coords.y2+y3Change)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-linecap","round");
 
                     svg.temp.append("line")
-                        .attr("x1",mouse.x)
-                        .attr("y1",mouse.y)
-                        .attr("x2",mouseDownPoint.x)
-                        .attr("y2",mouseDownPoint.y)
+                        .attr("x1",coords.x2)
+                        .attr("y1",coords.y2)
+                        .attr("x2",coords.x2+x4Change)
+                        .attr("y2",coords.y2+y4Change)
                         .attr("stroke", currentColor)
-                        .attr("stroke-width", currentStroke);
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-linecap","round");
                 }
+                if(currentToolAltCode == 2){
+                    svg.temp.append("line")
+                        .attr("x1",coords.x1)
+                        .attr("y1",coords.y1)
+                        .attr("x2",coords.x1-x3Change)
+                        .attr("y2",coords.y1-y3Change)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-linecap","round");
+
+                    svg.temp.append("line")
+                        .attr("x1",coords.x1)
+                        .attr("y1",coords.y1)
+                        .attr("x2",coords.x1-x4Change)
+                        .attr("y2",coords.y1-y4Change)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-linecap","round");
+                }
+
+                // Filled end arrows
+                if(currentToolAltCode == 4 || currentToolAltCode == 5){
+                    svg.temp.append("polygon")
+                        .attr("points",`${coords.x2} ${coords.y2}, ${coords.x2+x3Change} ${coords.y2+y3Change}, ${coords.x2+x4Change} ${coords.y2+y4Change}`)
+                        .style("fill",currentColor)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-linecap","round");
+                }
+                if(currentToolAltCode == 5){
+                    svg.temp.append("polygon")
+                        .attr("points",`${coords.x1} ${coords.y1}, ${coords.x1-x3Change} ${coords.y1-y3Change}, ${coords.x1-x4Change} ${coords.y1-y4Change}`)
+                        .style("fill",currentColor)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-linecap","round");
+                }
+
             }
         }
         if(isRect()){
@@ -1381,6 +1556,25 @@ whiteboard = function(){
         currentTool = toolID;
         currentToolAltCode = altCode;
         d3.select("#toolbar-icon-"+currentTool).attr("class","toolbar-icon selected");
+
+        // Check if the new tool should be shown in the toolbar
+        if(toolID == 3){// if line
+            d3.select("#toolbar-icon-3")
+                .style("background-image",d3.select("#toolbar-line-"+altCode).style("background-image"))
+                .attr("onclick",null)
+                .on("click",()=>{setTool(3,altCode)})
+
+        }else if(toolID == 4){// if rect
+            d3.select("#toolbar-icon-4")
+                .style("background-image",d3.select("#toolbar-rect-"+altCode).style("background-image"))
+                .attr("onclick",null)
+                .on("click",()=>{setTool(4,altCode)})
+        }else if(toolID == 11){// if rect
+            d3.select("#toolbar-icon-11")
+                .style("background-image",d3.select("#toolbar-customShape-"+altCode).style("background-image"))
+                .attr("onclick",null)
+                .on("click",()=>{setTool(11,altCode)})
+        }
     }
 
     function toolShortcut(toolID){
@@ -2642,8 +2836,14 @@ whiteboard = function(){
             .style("display","none")
             .style("top",null)
             .style("left",null);
+
+        d3.selectAll(".toolbar-rightClickMenu").style("display","none");
     }
 
+    function openAltTools(id){
+        closeRightClickMenu();
+        d3.select(id).style("display",null);
+    }
     // #endregion
     //==//==//==//==//==//==//
     // History
@@ -2859,6 +3059,7 @@ whiteboard = function(){
         mainMenu.changeState('home');
     }
 
+
     function closeMenus(){
         removeResize();
         closeRightClickMenu();
@@ -2912,6 +3113,7 @@ whiteboard = function(){
         changecolor:changecolor,
         changeFill:changeFill,
         closeWhiteboard:closeWhiteboard,
-        generateBackground:generateBackground
+        generateBackground:generateBackground,
+        openAltTools:openAltTools
     }
 }();

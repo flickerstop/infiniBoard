@@ -137,6 +137,17 @@ html{
     filter: var(--image-filter);
 }
 
+.toolbar-icon-expand{
+    pointer-events: none;
+    position: absolute;
+    margin: 5px;
+    width: 40px;
+    height: 40px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
 .toolbar-icon.selected{
     opacity: 1.0;
     background-color: var(--highlight);
