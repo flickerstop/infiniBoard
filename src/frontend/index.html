@@ -97,7 +97,14 @@
                     <div id="toolbar">
                         <div id="toolbar-background"></div>
                         <div style="height:40px"></div>
-                        <div id="toolbar-icon-7" class="toolbar-icon" style="background-image:url('./images/mouse_white.png')" onclick="whiteboard.setTool(7)">M</div>
+                        <div class="toolbar-slot">
+                            <div id="toolbar-icon-7" class="toolbar-icon" style="background-image:url('./images/mouse_white.png')" onclick="whiteboard.setTool(7)" oncontextmenu="whiteboard.openAltTools('#toolbar-rightClickMenu-mouse')">R</div>
+                            <div class="toolbar-rightClickMenu" style="width: 100px;display: none" id="toolbar-rightClickMenu-mouse">
+                                <div id="toolbar-mouse-0" class="toolbar-icon" style="background-image:url('./images/mouse_white.png')" onclick="whiteboard.setTool(7)"></div>
+                                <div id="toolbar-mouse-1" class="toolbar-icon" style="background-image:url('./images/mouse_rotate_white.png')" onclick="whiteboard.setTool(12)"></div>
+                            </div>
+                            <div class="toolbar-icon-expand" style="background-image:url('./images/expand_white.png')"></div>
+                        </div>
                         <!-- <div id="toolbar-icon-8" class="toolbar-icon" style="background-image:url('./images/move_white.png')" onclick="whiteboard.setTool(8)">M</div> -->
                         <div id="toolbar-icon-0" class="toolbar-icon" style="background-image:url('./images/pen_white.png')" onclick="whiteboard.setTool(0)">P</div>
                         <div id="toolbar-icon-2" class="toolbar-icon" style="background-image:url('./images/eraser_white.png')" onclick="whiteboard.setTool(2)">E</div>

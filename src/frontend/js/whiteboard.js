@@ -420,7 +420,7 @@ whiteboard = function(){
                 .attr("height",line.dots.h)
                 .attr("id",`image${line.id}`)
                 .on("mousedown",()=>{
-                    if(isMouse() == isCurrentLayer(line.id)){
+                    if((isMouse() || isRotate()) && isCurrentLayer(line.id)){
                         setTimeout(()=>{drawResize(line)},10);
                     }
                 })
@@ -816,7 +816,7 @@ whiteboard = function(){
         }
         else if(isHand() || isMiddleClick()){
             //clearBackground();
-        }else if(isMouse()){
+        }else if(isMouse() || isRotate()){
             if(imageResize == null){
                 closeMenus();
             }
@@ -1569,11 +1569,21 @@ whiteboard = function(){
                 .style("background-image",d3.select("#toolbar-rect-"+altCode).style("background-image"))
                 .attr("onclick",null)
                 .on("click",()=>{setTool(4,altCode)})
+        }else if(toolID == 7){
+            d3.select("#toolbar-icon-7")
+                .style("background-image","url(./images/mouse_white.png)")
+                .attr("onclick",null)
+                .on("click",()=>{setTool(7)})
         }else if(toolID == 11){// if rect
             d3.select("#toolbar-icon-11")
                 .style("background-image",d3.select("#toolbar-customShape-"+altCode).style("background-image"))
                 .attr("onclick",null)
                 .on("click",()=>{setTool(11,altCode)})
+        }else if(toolID == 12){
+            d3.select("#toolbar-icon-7")
+                .style("background-image","url(./images/mouse_rotate_white.png)")
+                .attr("onclick",null)
+                .on("click",()=>{setTool(12)})
         }
     }
 
@@ -1604,6 +1614,7 @@ whiteboard = function(){
     function isMove(){return currentTool==7?true:false;} // Was changed to be the same as mouse
     function isImage(){return currentTool==9?true:false;}
     function isCustomShape(){return currentTool==11?true:false;}
+    function isRotate(){return currentTool==12?true:false;}
 
     /**
      * Checks to see if the user is typing something into the text tool
