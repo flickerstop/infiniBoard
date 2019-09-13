@@ -564,11 +564,28 @@ whiteboard = function(){
 
         // If this element is currently being moved
         if(isMove() && line.id == selectedElement){
-            // Use the temp transform
-            drawOnSvg.attr("transform",`translate(${tempTransform.x} ${tempTransform.y})`);
+            
+            if(line.type == 4){ // if it's an image
+                let x = (line.dots.x+tempTransform.x) + line.dots.w/2;
+                let y = (line.dots.y+tempTransform.y) + line.dots.h/2;
+                let r = line.transform.r == undefined?0:line.transform.r;
+                
+                // Use the temp transform
+                drawOnSvg.attr("transform",`rotate(${-(r)} ${x} ${y}) translate(${tempTransform.x} ${tempTransform.y})`);
+            }else{
+                drawOnSvg.attr("transform",`translate(${tempTransform.x} ${tempTransform.y})`);
+            }
         }else{
-            // Use the transform for this object
-            drawOnSvg.attr("transform",`translate(${line.transform.x} ${line.transform.y})`);
+            if(line.type == 4){ // if it's an image
+                let x = (line.dots.x+line.transform.x) + line.dots.w/2;
+                let y = (line.dots.y+line.transform.y) + line.dots.h/2;
+                let r = line.transform.r == undefined?0:line.transform.r;
+                d3.select(`#image${line.id}`).attr("transform",`rotate(${(r)} ${x} ${y})`);
+                drawOnSvg.attr("transform",`rotate(${(r)} ${x} ${y}) translate(${line.transform.x} ${line.transform.y})`);
+            }else{
+                drawOnSvg.attr("transform",`translate(${line.transform.x} ${line.transform.y})`);
+            }
+            
         }
     }
 
@@ -998,23 +1015,33 @@ whiteboard = function(){
             let image = getLine(imageResize.id);
             let oldLine = JSON.parse(JSON.stringify(image));
 
-            if(imageResize.tx == undefined||imageResize.ty == undefined||imageResize.tw == undefined ||imageResize.th == undefined){
+            // if nothing was resized
+            if((imageResize.tx == undefined||imageResize.ty == undefined||imageResize.tw == undefined ||imageResize.th == undefined)&&imageResize.angle == undefined){
 
                 imageResize = null;
                 selectedElement = null;
             }else{
-                // Apply the temp dimensions 
-                image.dots.x = imageResize.tx;
-                image.dots.y = imageResize.ty;
-                image.dots.w = imageResize.tw;
-                image.dots.h = imageResize.th;
+                // If it was resize
+                if(imageResize.angle == undefined){
+                    // Apply the temp dimensions 
+                    image.dots.x = imageResize.tx;
+                    image.dots.y = imageResize.ty;
+                    image.dots.w = imageResize.tw;
+                    image.dots.h = imageResize.th;
+
+                    // Add the new data and old data to the history
+                    addToHistory("resize",JSON.parse(JSON.stringify(image)),oldLine);
+                }else{ // If they were rotating the object
+                    image.transform.r = imageResize.angle;
+
+                    
+                    // Add the new data and old data to the history
+                    addToHistory("rotate",JSON.parse(JSON.stringify(image)),oldLine);
+
+                }
 
                 imageResize = null;
                 selectedElement = null;
-
-                addToHistory("resize",JSON.parse(JSON.stringify(image)),oldLine);
-
-                updateLine(image);
                 autoSaveTimeout();
             }
 
@@ -1414,6 +1441,42 @@ whiteboard = function(){
                             .attr("stroke-linecap","round");
                     }
                 }
+            }
+        }
+        if(isRotate()){
+
+
+            if(imageResize != null){
+
+                let x = (imageResize.x+imageResize.transform.x) + imageResize.w/2;
+                let y = (imageResize.y+imageResize.transform.y) + imageResize.h/2;
+
+
+                svg.temp.html(null);
+
+                svg.temp.append("line")
+                    .attr("x1",mouse.x)
+                    .attr("y1",mouse.y)
+                    .attr("x2",x)
+                    .attr("y2",y)
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 1)
+                    .attr("stroke-linecap","round");
+
+                let degAngle = angle(mouse.x,mouse.y,x,y);
+
+                // check if the initial angle is set
+                if(imageResize.angle == undefined){
+                    imageResize.startingAngle = degAngle;
+                }
+                imageResize.angle = -(imageResize.startingAngle-degAngle);
+
+
+                d3.select(`#object${imageResize.id}`).attr("transform",`rotate(${imageResize.angle} ${x} ${y}) translate(${imageResize.transform.x} ${imageResize.transform.y}) `)
+            }
+
+            function angle(x1, y1, x2, y2) {
+                return Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
             }
         }
     }
@@ -2705,6 +2768,7 @@ whiteboard = function(){
             .attr("class","imageResizeCircle")
             .on("mousedown",()=>{
                 imageResize = {x:img.dots.x,y:img.dots.y,w:img.dots.w,h:img.dots.h};
+                imageResize.transform = img.transform;
                 imageResize.point = "tl";
                 imageResize.id = img.id;
                 imageResize.img = img;
@@ -2719,6 +2783,7 @@ whiteboard = function(){
             .attr("class","imageResizeCircle")
             .on("mousedown",()=>{
                 imageResize = {x:img.dots.x,y:img.dots.y,w:img.dots.w,h:img.dots.h};
+                imageResize.transform = img.transform;
                 imageResize.point = "tr";
                 imageResize.id = img.id;
                 imageResize.img = img;
@@ -2733,6 +2798,7 @@ whiteboard = function(){
             .attr("class","imageResizeCircle")
             .on("mousedown",()=>{
                 imageResize = {x:img.dots.x,y:img.dots.y,w:img.dots.w,h:img.dots.h};
+                imageResize.transform = img.transform;
                 imageResize.point = "bl";
                 imageResize.id = img.id;
                 imageResize.img = img;
@@ -2747,6 +2813,7 @@ whiteboard = function(){
             .attr("class","imageResizeCircle")
             .on("mousedown",()=>{
                 imageResize = {x:img.dots.x,y:img.dots.y,w:img.dots.w,h:img.dots.h};
+                imageResize.transform = img.transform;
                 imageResize.point = "br";
                 imageResize.id = img.id;
                 imageResize.img = img;
