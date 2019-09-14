@@ -289,7 +289,7 @@ whiteboard = function(){
      * @param {Object} svg d3 object for the svg
      * @param {object} line The object that holds all the data about the line
      */
-    function drawLine(line,drawOnSvg = null){
+    function drawLine(line,drawOnSvg = null,isMouseEvents = true){
         // https://www.d3indepth.com/shapes/#line-generator
         // https://github.com/d3/d3-shape/blob/v1.3.4/README.md#line
         // https://www.dashingd3js.com/svg-paths-and-d3js
@@ -370,12 +370,15 @@ whiteboard = function(){
                 .attr("fill-opacity",0.3)
                 .attr("class","whiteboard-link");
 
-            // If the tool is set to the mouse, portal to the linked whiteboard
-            svgLine.on("click",()=>{
-                if(isMouse()){
-                    init(line.linkID);
-                }
-            });
+            if(isMouseEvents){
+                // If the tool is set to the mouse, portal to the linked whiteboard
+                svgLine.on("click",()=>{
+                    if(isMouse()){
+                        init(line.linkID);
+                    }
+                });
+            }
+            
 
         }else if(line.type == 3){ // Text
 
@@ -383,20 +386,22 @@ whiteboard = function(){
             let fontSize = 12 + (line.stroke*2);
 
             // Group to draw the text
-            let textGroup = drawOnSvg.append("g")
-                .on("mouseenter",()=>{
-                    if(isCurrentLayer(line.id)){
+            let textGroup = drawOnSvg.append("g");
+                
+            if(isMouseEvents){
+                textGroup.on("mouseenter",function(){
+                    if(isCurrentLayer(line.id) && isText()){
                         overTextArea = line;
+                        d3.select(this).style("cursor", "text"); 
                     }
-                    //TODO set cursor to the I
                 })
-                .on("mouseleave",()=>{
-                    if(isCurrentLayer(line.id)){
+                .on("mouseleave",function(){
+                    if(isCurrentLayer(line.id) && isText()){
                         overTextArea = null;
+                        d3.select(this).style("cursor", "default"); 
                     }
-                    //TODO set cursor back to default
                 });
-
+            }
             let lines = 0;
             // For each line of text
             for(let textLine of line.dots.text.split("\n")){
@@ -420,10 +425,12 @@ whiteboard = function(){
                 .attr("height",line.dots.h)
                 .attr("id",`image${line.id}`)
                 .on("mousedown",()=>{
-                    if((isMouse() || isRotate()) && isCurrentLayer(line.id)){
-                        setTimeout(()=>{drawResize(line)},10);
+                    if(isMouseEvents){
+                        if((isMouse() || isRotate()) && isCurrentLayer(line.id)){
+                            setTimeout(()=>{drawResize(line)},10);
+                        }
                     }
-                })
+                });
         }else if(line.type == 5){ // Custom Shape
             // Create the line
             let drawLine = d3.line().curve(d3.curveCardinal);
@@ -542,51 +549,57 @@ whiteboard = function(){
             }
         }
 
-        // If the tool is the move tool, set the selected element to this one
-        drawOnSvg.on("mousedown",()=>{
-            if(isMove() && d3.event.button==0 && isCurrentLayer(line.id)){ // if is move & left click & object is on the current layer
-                selectedElement = line.id;
-            }
-        });
+        if(isMouseEvents){
+            // If the tool is the move tool, set the selected element to this one
+            drawOnSvg.on("mousedown",()=>{
+                if(isMove() && d3.event.button==0 && isCurrentLayer(line.id)){ // if is move & left click & object is on the current layer
+                    selectedElement = line.id;
+                }
+            });
 
-        // if the mouse moves over this line
-        drawOnSvg.on("mousemove",()=>{
-            // if the tools is set to erasers and is drawing (mouse down)
-            if(isEraser() && isDrawing && isCurrentLayer(line.id)){
-                // Delete the line from the array
-                deleteLine(line.id);
-                // set the save timeout
-                autoSaveTimeout();
-                selectedElement = null;
-                overTextArea = null;
-            }
-        });
+            // if the mouse moves over this line
+            drawOnSvg.on("mousemove",()=>{
+                // if the tools is set to erasers and is drawing (mouse down)
+                if(isEraser() && isDrawing && isCurrentLayer(line.id)){
+                    // Delete the line from the array
+                    deleteLine(line.id);
+                    // set the save timeout
+                    autoSaveTimeout();
+                    selectedElement = null;
+                    overTextArea = null;
+                }
+            });
 
-        // If this element is currently being moved
-        if(isMove() && line.id == selectedElement){
-            
-            if(line.type == 4){ // if it's an image
-                let x = (line.dots.x+tempTransform.x) + line.dots.w/2;
-                let y = (line.dots.y+tempTransform.y) + line.dots.h/2;
-                let r = line.transform.r == undefined?0:line.transform.r;
+            // If this element is currently being moved
+            if(isMove() && line.id == selectedElement){
                 
-                // Use the temp transform
-                drawOnSvg.attr("transform",`rotate(${-(r)} ${x} ${y}) translate(${tempTransform.x} ${tempTransform.y})`);
+                if(line.type == 4){ // if it's an image
+                    let x = (line.dots.x+tempTransform.x) + line.dots.w/2;
+                    let y = (line.dots.y+tempTransform.y) + line.dots.h/2;
+                    let r = line.transform.r == undefined?0:line.transform.r;
+                    
+                    // Use the temp transform
+                    drawOnSvg.attr("transform",`rotate(${(r)} ${x} ${y}) translate(${tempTransform.x} ${tempTransform.y})`);
+                }else{
+                    drawOnSvg.attr("transform",`translate(${tempTransform.x} ${tempTransform.y})`);
+                }
             }else{
-                drawOnSvg.attr("transform",`translate(${tempTransform.x} ${tempTransform.y})`);
+                if(line.type == 4){ // if it's an image
+                    let x = (line.dots.x+line.transform.x) + line.dots.w/2;
+                    let y = (line.dots.y+line.transform.y) + line.dots.h/2;
+                    let r = line.transform.r == undefined?0:line.transform.r;
+                    d3.select(`#image${line.id}`).attr("transform",`rotate(${(r)} ${x} ${y})`);
+                    drawOnSvg.attr("transform",`translate(${line.transform.x} ${line.transform.y})`);
+                    // NOTE Maybe rotate the image alone, and not the entire object, yes the orbs wont move but
+                    // It might fix some of the issues
+                }else{
+                    drawOnSvg.attr("transform",`translate(${line.transform.x} ${line.transform.y})`);
+                }
+                
             }
-        }else{
-            if(line.type == 4){ // if it's an image
-                let x = (line.dots.x+line.transform.x) + line.dots.w/2;
-                let y = (line.dots.y+line.transform.y) + line.dots.h/2;
-                let r = line.transform.r == undefined?0:line.transform.r;
-                d3.select(`#image${line.id}`).attr("transform",`rotate(${(r)} ${x} ${y})`);
-                drawOnSvg.attr("transform",`rotate(${(r)} ${x} ${y}) translate(${line.transform.x} ${line.transform.y})`);
-            }else{
-                drawOnSvg.attr("transform",`translate(${line.transform.x} ${line.transform.y})`);
-            }
-            
         }
+
+        
     }
 
     //==//==//==//==//==//==//
@@ -2341,41 +2354,59 @@ whiteboard = function(){
     //==//==//==//==//==//==//
     // Background
     // #region
-    function clearBackground(){
-        svg.background.selectAll("*").remove();
+    function clearBackground(svgToClear){
+        svgToClear.selectAll("*").remove();
     }
 
-    function generateBackground(type = thisBoard.bgType){
-        clearBackground();
+    function generateBackground(board = thisBoard,backgroundSVG = svg.background){
+        clearBackground(backgroundSVG);
 
-        //TODO maybe instead of redrawing the board on a pan, just transform the board?
-        // Prevents massive lag from filling in a huge viewbox
-        if(viewbox.scale > 5 || type == 0){
-            return;
+        
+
+        let backgroundBox = null;
+        // Check if the viewbox is defined (is not on the main menu)
+        if(viewbox == null){
+            backgroundBox = {
+                x1: 0,
+                y1: 0,
+                x2: 1000,
+                y2: 1000,
+                vh: 1000,
+                vw: 1000
+            }
+        }else{
+            // Prevents massive lag from filling in a huge viewbox
+            if(viewbox.scale > 5 || board.bgType == 0){
+                return;
+            }
+
+            backgroundBox = {
+                x1: viewbox.x,
+                y1: viewbox.y,
+                x2: viewbox.x+viewbox.w,
+                y2: viewbox.y+viewbox.h,
+                vh: viewbox.h,
+                vw: viewbox.w
+            }
         }
 
-        let backgroundBox = {
-            x1: viewbox.x,
-            y1: viewbox.y,
-            x2: viewbox.x+viewbox.w,
-            y2: viewbox.y+viewbox.h
-        }
+        let lineSpacing = board.bgSpacing;
+        let backgroundDetailColour = board.fgcolor;
 
-        let lineSpacing = thisBoard.bgSpacing;
-        let backgroundDetailColour = thisBoard.fgcolor;
+        let lineThickness = board.bgThickness;
 
-        let lineThickness = thisBoard.bgThickness;
+        let type = board.bgType;
 
 
-        let startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/lineSpacing)*lineSpacing;
-        let startingX = Math.floor(Math.floor(backgroundBox.x1-viewbox.w)/lineSpacing)*lineSpacing;
+        let startingY = Math.floor(Math.floor(backgroundBox.y1-backgroundBox.vh)/lineSpacing)*lineSpacing;
+        let startingX = Math.floor(Math.floor(backgroundBox.x1-backgroundBox.vw)/lineSpacing)*lineSpacing;
 
-        let endingY = backgroundBox.y2+viewbox.h;
-        let endingX = backgroundBox.x2+viewbox.w;
+        let endingY = backgroundBox.y2+backgroundBox.vh;
+        let endingX = backgroundBox.x2+backgroundBox.vw;
 
         if(type == 1){ // square dots
             for(let y = startingY; y < endingY;y+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",startingX)
                     .attr("x2",endingX)
                     .attr("y1",y)
@@ -2404,7 +2435,7 @@ whiteboard = function(){
             let opp = Math.tan(30 * Math.PI/180) * (endingY-startingY);         
             for(let x = startingX; x < endingX;x+=lineSpacing){
 
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x-opp)
                     .attr("y1",startingY)
@@ -2433,7 +2464,7 @@ whiteboard = function(){
             let opp = Math.tan(30 * Math.PI/180) * (endingY-startingY);
 
             for(let x = startingX; x < endingX;x+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x-opp)
                     .attr("y1",startingY)
@@ -2446,7 +2477,7 @@ whiteboard = function(){
 
                 x+=lineSpacing
 
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x-opp)
                     .attr("y1",startingY)
@@ -2460,7 +2491,7 @@ whiteboard = function(){
 
                     x+=lineSpacing
 
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x-opp)
                     .attr("y1",startingY)
@@ -2474,7 +2505,7 @@ whiteboard = function(){
             }
         }else if(type == 4){ // horizontal lines
             for(let y = startingY; y < endingY;y+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",startingX)
                     .attr("x2",endingX)
                     .attr("y1",y)
@@ -2485,7 +2516,7 @@ whiteboard = function(){
             }
         }else if(type == 5){ // vertical lines
             for(let x = startingX; x < endingX;x+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x)
                     .attr("y1",startingY)
@@ -2496,7 +2527,7 @@ whiteboard = function(){
             }
         }else if(type == 6){ // square line grid
             for(let x = startingX; x < endingX;x+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x)
                     .attr("y1",startingY)
@@ -2506,7 +2537,7 @@ whiteboard = function(){
                     .attr("fill", "none");
             }
             for(let y = startingY; y < endingY;y+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",startingX)
                     .attr("x2",endingX)
                     .attr("y1",y)
@@ -2522,8 +2553,8 @@ whiteboard = function(){
 
 
             // Find the new starting lines with the new line height
-            startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/(lineHeight*2))*(lineHeight*2); // Why do you *2? No idea, it just fixes a bug
-            startingX = Math.floor(Math.floor(backgroundBox.x1-viewbox.w)/lineSpacing)*lineSpacing;
+            startingY = Math.floor(Math.floor(backgroundBox.y1-backgroundBox.vh)/(lineHeight*2))*(lineHeight*2); // Why do you *2? No idea, it just fixes a bug
+            startingX = Math.floor(Math.floor(backgroundBox.x1-backgroundBox.vw)/lineSpacing)*lineSpacing;
 
             let width = Math.floor((backgroundBox.x2-backgroundBox.x1)/lineSpacing)*lineSpacing;
             let height = (endingY-startingY);
@@ -2532,7 +2563,7 @@ whiteboard = function(){
             let opp = Math.tan(30 * Math.PI/180) * height;         
 
             for(let y = startingY; y < endingY;y+=lineHeight){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",startingX)
                     .attr("x2",endingX)
                     .attr("y1",y)
@@ -2544,7 +2575,7 @@ whiteboard = function(){
 
             for(let x = startingX-width; x < endingX+width;x+=lineSpacing){
 
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x-opp)
                     .attr("y1",startingY)
@@ -2553,7 +2584,7 @@ whiteboard = function(){
                     .attr("stroke-width", lineThickness)
                     .attr("fill", "none");
 
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x+opp)
                     .attr("y1",startingY)
@@ -2576,11 +2607,11 @@ whiteboard = function(){
             let lineHeight = (lineSpacing/2)*Math.sqrt(3);
             
             // Find the new starting lines with the new line height
-            startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/(lineHeight*2))*(lineHeight*2);
-            startingX = Math.floor(Math.floor(backgroundBox.x1-viewbox.w)/(lineSpacing*6))*(lineSpacing*6);
+            startingY = Math.floor(Math.floor(backgroundBox.y1-backgroundBox.vh)/(lineHeight*2))*(lineHeight*2);
+            startingX = Math.floor(Math.floor(backgroundBox.x1-backgroundBox.vw)/(lineSpacing*6))*(lineSpacing*6);
 
             for(let y = startingY; y < endingY;y+=lineHeight){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",startingX)
                     .attr("x2",endingX)
                     .attr("y1",y)
@@ -2592,7 +2623,7 @@ whiteboard = function(){
 
                 y+=lineHeight;
 
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",startingX)
                     .attr("x2",endingX)
                     .attr("y1",y)
@@ -2606,8 +2637,8 @@ whiteboard = function(){
             }
 
             
-            startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/(lineHeight*2))*(lineHeight*2);
-            startingX = Math.floor(Math.floor(backgroundBox.x1-viewbox.w)/(lineSpacing*3))*(lineSpacing*3);
+            startingY = Math.floor(Math.floor(backgroundBox.y1-backgroundBox.vh)/(lineHeight*2))*(lineHeight*2);
+            startingX = Math.floor(Math.floor(backgroundBox.x1-backgroundBox.vw)/(lineSpacing*3))*(lineSpacing*3);
 
             let height = (endingY-startingY);
 
@@ -2616,7 +2647,7 @@ whiteboard = function(){
 
             let offset = 3;
             for(let x = startingX-(lineSpacing*60); x < endingX+(lineSpacing*60);x+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x+opp)
                     .attr("y1",startingY)
@@ -2637,7 +2668,7 @@ whiteboard = function(){
             ///////////////////////////
             offset = 0;
             for(let x = startingX-(lineSpacing*60); x < endingX+(lineSpacing*60);x+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x-opp)
                     .attr("y1",startingY)
@@ -2658,11 +2689,11 @@ whiteboard = function(){
             ////////////////////
 
         }else if(type == 9){ // music lines
-            startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/(lineSpacing*10))*(lineSpacing*10);
+            startingY = Math.floor(Math.floor(backgroundBox.y1-backgroundBox.vh)/(lineSpacing*10))*(lineSpacing*10);
             for(let y = startingY; y < endingY;y+=lineSpacing*10){
                 // Draw 5 lines
                 for(let set = 0; set < 5;set++){
-                    svg.background.append("line")
+                    backgroundSVG.append("line")
                         .attr("x1",startingX)
                         .attr("x2",endingX)
                         .attr("y1",y+(set*lineSpacing))
@@ -2677,7 +2708,7 @@ whiteboard = function(){
 
             let offset = startingX%(lineSpacing*5);
             for(let y = startingY; y < endingY;y+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",startingX)
                     .attr("x2",endingX)
                     .attr("y1",y)
@@ -2689,7 +2720,7 @@ whiteboard = function(){
                     .attr("stroke-linecap","round");
 
                 if(y%(lineSpacing*5) == 0){
-                    svg.background.append("line")
+                    backgroundSVG.append("line")
                         .attr("x1",startingX)
                         .attr("x2",endingX)
                         .attr("y1",y)
@@ -2706,7 +2737,7 @@ whiteboard = function(){
         }else if(type == 11){ // square line grid
             for(let x = startingX; x < endingX;x+=lineSpacing){
                 if(x%(lineSpacing*5)==0){
-                    svg.background.append("line")
+                    backgroundSVG.append("line")
                         .attr("x1",x)
                         .attr("x2",x)
                         .attr("y1",startingY)
@@ -2715,7 +2746,7 @@ whiteboard = function(){
                         .attr("stroke-width", lineThickness*3)
                         .attr("fill", "none");
                 }else{
-                    svg.background.append("line")
+                    backgroundSVG.append("line")
                         .attr("x1",x)
                         .attr("x2",x)
                         .attr("y1",startingY)
@@ -2727,7 +2758,7 @@ whiteboard = function(){
             }
             for(let y = startingY; y < endingY;y+=lineSpacing){
                 if(y%(lineSpacing*5)==0){
-                    svg.background.append("line")
+                    backgroundSVG.append("line")
                         .attr("x1",startingX)
                         .attr("x2",endingX)
                         .attr("y1",y)
@@ -2736,7 +2767,7 @@ whiteboard = function(){
                         .attr("stroke-width", lineThickness*3)
                         .attr("fill", "none");
                 }else{
-                    svg.background.append("line")
+                    backgroundSVG.append("line")
                         .attr("x1",startingX)
                         .attr("x2",endingX)
                         .attr("y1",y)
@@ -3192,6 +3223,7 @@ whiteboard = function(){
         changeFill:changeFill,
         closeWhiteboard:closeWhiteboard,
         generateBackground:generateBackground,
-        openAltTools:openAltTools
+        openAltTools:openAltTools,
+        drawLine:drawLine
     }
 }();
