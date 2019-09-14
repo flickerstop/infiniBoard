@@ -50,7 +50,7 @@ whiteboard = function(){
      * Function that runs to initialize the whiteboard and load the current board
      */
     function init(id){
-
+        let startTime = Date.now();
         // Clear the svg properly
         d3.select("#drawingBoard-svg").selectAll("*").remove();
 
@@ -281,6 +281,8 @@ whiteboard = function(){
 
             generateBackground();
         });
+
+        console.log(`${Date.now()-startTime} ms to render whiteboard`);
     }
 
     

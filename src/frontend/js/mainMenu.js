@@ -11,10 +11,12 @@ mainMenu = function(){
         });
 
         let loadingInterval = setInterval(()=>{
+            //TODO Add loading settings
             // Check if the boxes have been loaded from file
             if(boxManager.getShelf()!= null && !isBoxesLoaded){
                 loadMyBoxes();
                 isBoxesLoaded = true;
+                d3.select("#splashScreen-middleCard-text").html("Rendering Previews...");
             }
             // If loaded, check if the boxes have been draw
             if(isBoxesDrawn){
