@@ -22,3 +22,6 @@
 100 -> Frame
 101 -> Frame dragable area
 102 -> Frame Title & Frame Buttons
+
+
+200 -> Splash Screen

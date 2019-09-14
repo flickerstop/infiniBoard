@@ -44,6 +44,7 @@
             --sidebar: rgb(37, 37, 37); 
             --main: rgb(49, 49, 49); 
 
+            --accent: #e78665;
             --text: #ecf0f1;
             --green: #27ae60;
             --red: #e74c3c;
@@ -61,6 +62,13 @@
             </div>
         </div>
         <div id="mainPanel">
+            <div id="splashScreen">
+                <div id="splashScreen-middleCard">
+                    <div id="splashScreen-middleCard-loading">
+                    </div>
+                    <div id="splashScreen-middleCard-text">Loading Infiniboxes...</div>
+                </div>
+            </div>
             <div id="menuBar">
                 <div style="padding-top: 20px;">
                     <div class="menuBar-navItem button menuBar-navItem-selected" onclick="mainMenu.changeState('home');">
@@ -71,7 +79,7 @@
                         <div class="button-icon" style="background-image:url('./images/box_icon.png')" ></div>
                         My Boxes
                     </div>
-                    <div class="menuBar-navItem button">
+                    <div class="menuBar-navItem button" onclick="mainMenu.changeState('settings');">
                         <div class="button-icon" style="background-image:url('./images/gear_icon.png')"></div>
                         Settings
                     </div>
@@ -88,6 +96,20 @@
                 </div>
                 <div id="home" class="stateSection">
                     <h2>Home</h2>
+                </div>
+                <div id="settings" class="stateSection">
+                    <h2>Settings</h2>
+                    <div class="settingsRow">
+                        Theme
+                        <div id="settings-darkThemeRow">
+                            <div id="settings-darkThemeRow-checkBox"></div>
+                            <div id="settings-darkThemeRow-text">Dark Theme</div>
+                        </div>
+                        <div id="settings-lightThemeRow">
+                            <div id="settings-lightThemeRow-checkBox"></div>
+                            <div id="settings-lightThemeRow-text">Light Theme</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div id="whiteboard" class="stateSection">
@@ -200,7 +222,7 @@
 
     window.onload = function () { 
         buildWindowsButtons();
-        mainMenu.changeState('home');
+        mainMenu.init();
         //changeTheme();
 
         d3.selectAll(".menuBar-navItem").on("click", function() {

@@ -1,9 +1,31 @@
 mainMenu = function(){
 
+    let isBoxesLoaded = false;
+    let isBoxesDrawn = false;
     /**
      * Does nothing atm
      */
     function init(){
+        comm.sendSync("getBoxes","please").then((boxes)=>{
+            boxManager.setShelf(boxes);
+        });
+
+        let loadingInterval = setInterval(()=>{
+            // Check if the boxes have been loaded from file
+            if(boxManager.getShelf()!= null && !isBoxesLoaded){
+                loadMyBoxes();
+                isBoxesLoaded = true;
+            }
+            // If loaded, check if the boxes have been draw
+            if(isBoxesDrawn){
+                // Fade out
+                d3.select("#splashScreen").transition().duration(600).style("opacity",0).transition().duration(0).style("display","none");
+                // set to myboxes view
+                mainMenu.changeState('myBoxes');
+                // clear this interval
+                clearInterval(loadingInterval);
+            }
+        },100)
     }
 
     function changeState(stateID, boxName){
@@ -15,15 +37,15 @@ mainMenu = function(){
                 d3.select("#menuBar").style("display",null);
                 break;
             case "myBoxes":
-                comm.sendSync("getBoxes","please").then((boxes)=>{
-                    boxManager.setShelf(boxes);
-                    loadMyBoxes();
-                });
+
                 break;
             case "whiteboard":
                 d3.select("#menuBar").style("display","none");
                 boxManager.setBox(boxName)
                 whiteboard.init(0);
+                break;
+            case "settings":
+
                 break;
             default:
                 break;
@@ -86,6 +108,7 @@ mainMenu = function(){
                 changeState("whiteboard", box.saveName);
             });
         }
+        isBoxesDrawn = true;
     }
 
     
