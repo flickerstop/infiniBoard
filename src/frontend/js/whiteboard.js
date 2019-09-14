@@ -16,10 +16,11 @@ whiteboard = function(){
     let thisBoard = null; // The current infiniboard that's being drawn on
 
     let currentTool = 0; // Current tool being used
+    let currentToolAltCode = 0; // Used to set different versions of tools
     let currentStroke = 2; // Current selected stroke
     let currentColor = "white"; // Current selected color
     let currentLayer = 0; // Current Selected Layer
-
+    let currentFill = "#fffff"; // Current Selected fill
 
     let mouseDownPoint = null; // Point where the mouse was pressed down
     let viewbox = null; // Current viewbox
@@ -79,7 +80,7 @@ whiteboard = function(){
                             w: file.width,
                             h: file.height
                         }
-                        let line = newLine(data,4,null,null,file.path);
+                        let line = newLine(data,4,null,null,null,file.path);
                         drawLine(line);
 
                         autoSaveTimeout();
@@ -116,8 +117,7 @@ whiteboard = function(){
             scale:1
         }
 
-        // Set the current colour to the
-        currentColor = thisBoard.pens[0];
+        
 
         // Create the svg
         svg.parent = d3.select("#drawingBoard").append("svg")
@@ -157,7 +157,65 @@ whiteboard = function(){
             });
         }
 
-        currentLayer = thisBoard.layers[0];
+        // Load the previous layer/stroke/colour
+        if(thisBoard.currentColor != undefined){
+            currentColor = thisBoard.currentColor;
+        }else{
+            currentColor = thisBoard.pens[0];
+        }
+
+        // if(thisBoard.currentLayer != undefined){
+        //     currentLayer = thisBoard.currentLayer;
+        // }else{
+            currentLayer = thisBoard.layers[0];
+        // }
+        
+        if(thisBoard.currentStroke != undefined){
+            currentStroke = thisBoard.currentStroke;
+        }else{
+            currentStroke = 2;
+        }
+
+        if(thisBoard.currentFill != undefined){
+            currentFill = thisBoard.currentFill;
+        }else{
+            currentFill = thisBoard.pens[0];
+        }
+        
+        // If the type of board is DnD
+        if(thisBoard.type == 1){
+            // d3.select("#toolbar-dndIcons").append("div")
+            //     .attr("id","toolbar-icon-10")
+            //     .attr("class","toolbar-icon")
+            //     .style("background-image","url('./images/check_white.png')")
+            //     .attr("onclick","whiteboard.setTool(10)")
+            //     .html("b");
+
+            let textureGroup = svg.parent.append("g").append("defs");
+
+            
+
+            d3.select("#navBar-Titles").append("div")
+                .attr("id","navBar-titles-textures")
+                .attr("class","navBar-titles-containers")
+                .append("div")
+                .attr("class","navBar-titles-text")
+                .html("Textures");
+
+            for(let texture of textures){
+                textureGroup.append("pattern")
+                    .attr("id",texture.id)
+                    .attr("patternUnits","userSpaceOnUse")
+                    .attr("width",texture.dimensions)
+                    .attr("height",texture.dimensions)
+                    .append("image")
+                    .attr("xlink:href",texture.path)
+                    .attr("x",0)
+                    .attr("y",0)
+                    .attr("width",texture.dimensions)
+                    .attr("height",texture.dimensions);
+            }
+        }
         
         
         // Set the background colour
@@ -169,6 +227,7 @@ whiteboard = function(){
         // Init the colour/nav bar
         initColorBar();
         initNavBar();
+
         // Auto select the layer
         d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container selected");
 
@@ -183,15 +242,6 @@ whiteboard = function(){
 
         setTool(7); // Set the tool to the direct selection
 
-        // If the type of board is DnD
-        if(thisBoard.type == 1){
-            d3.select("#toolbar-dndIcons").append("div")
-                .attr("id","toolbar-icon-10")
-                .attr("class","toolbar-icon")
-                .style("background-image","url('./images/check_white.png')")
-                .attr("onclick","whiteboard.setTool(10)")
-                .html("b");
-        }
 
         // Mouse event for scrolling in/out (zooming)
         // this took fucking 5 hours to figure out...
@@ -239,7 +289,7 @@ whiteboard = function(){
      * @param {Object} svg d3 object for the svg
      * @param {object} line The object that holds all the data about the line
      */
-    function drawLine(line,drawOnSvg = null){
+    function drawLine(line,drawOnSvg = null,isMouseEvents = true){
         // https://www.d3indepth.com/shapes/#line-generator
         // https://github.com/d3/d3-shape/blob/v1.3.4/README.md#line
         // https://www.dashingd3js.com/svg-paths-and-d3js
@@ -251,7 +301,7 @@ whiteboard = function(){
         // Append a new group for the draw object
         drawOnSvg = drawOnSvg.append("g").attr("id",`object${line.id}`);
 
-        if(line.type == 0){ // Normal Line
+        if(line.type == 0){ // Pen Tool
             // Create the line
             let drawLine = d3.line().curve(d3.curveCardinal);
 
@@ -268,7 +318,8 @@ whiteboard = function(){
                 .attr("d", drawLine(line.dots))
                 .attr("stroke", line.color)
                 .attr("stroke-width", line.stroke)
-                .attr("fill", "none");
+                .attr("fill", "none")
+                .attr("stroke-linecap","round");
 
         }else if(line.type == 1){ // Rectangle
 
@@ -293,7 +344,9 @@ whiteboard = function(){
                 .attr("y",rectY)
                 .attr("height",height)
                 .attr("width",width)
-                .attr("fill", line.color);
+                .attr("fill", line.fill)
+                .attr("stroke-width", line.stroke)
+                .attr("stroke", line.color);
 
 
         }else if(line.type == 2){ // Link
@@ -317,12 +370,15 @@ whiteboard = function(){
                 .attr("fill-opacity",0.3)
                 .attr("class","whiteboard-link");
 
-            // If the tool is set to the mouse, portal to the linked whiteboard
-            svgLine.on("click",()=>{
-                if(isMouse()){
-                    init(line.linkID);
-                }
-            });
+            if(isMouseEvents){
+                // If the tool is set to the mouse, portal to the linked whiteboard
+                svgLine.on("click",()=>{
+                    if(isMouse()){
+                        init(line.linkID);
+                    }
+                });
+            }
+            
 
         }else if(line.type == 3){ // Text
 
@@ -330,20 +386,22 @@ whiteboard = function(){
             let fontSize = 12 + (line.stroke*2);
 
             // Group to draw the text
-            let textGroup = drawOnSvg.append("g")
-                .on("mouseenter",()=>{
-                    if(isCurrentLayer(line.id)){
+            let textGroup = drawOnSvg.append("g");
+                
+            if(isMouseEvents){
+                textGroup.on("mouseenter",function(){
+                    if(isCurrentLayer(line.id) && isText()){
                         overTextArea = line;
+                        d3.select(this).style("cursor", "text"); 
                     }
-                    //TODO set cursor to the I
                 })
-                .on("mouseleave",()=>{
-                    if(isCurrentLayer(line.id)){
+                .on("mouseleave",function(){
+                    if(isCurrentLayer(line.id) && isText()){
                         overTextArea = null;
+                        d3.select(this).style("cursor", "default"); 
                     }
-                    //TODO set cursor back to default
                 });
-
+            }
             let lines = 0;
             // For each line of text
             for(let textLine of line.dots.text.split("\n")){
@@ -367,40 +425,181 @@ whiteboard = function(){
                 .attr("height",line.dots.h)
                 .attr("id",`image${line.id}`)
                 .on("mousedown",()=>{
-                    if(isMouse() == isCurrentLayer(line.id)){
-                        setTimeout(()=>{drawResize(line)},10);
+                    if(isMouseEvents){
+                        if((isMouse() || isRotate()) && isCurrentLayer(line.id)){
+                            setTimeout(()=>{drawResize(line)},10);
+                        }
                     }
-                })
+                });
+        }else if(line.type == 5){ // Custom Shape
+            // Create the line
+            let drawLine = d3.line().curve(d3.curveCardinal);
+
+            // for every x and y, set the value to (object passed).x
+            drawLine.x((d)=>{
+                return d.x;
+            });
+            drawLine.y((d)=>{
+                return d.y;
+            });
+
+            // Append the line
+            drawOnSvg.append("path")
+                .attr("d", drawLine(line.dots))
+                .attr("stroke", line.color)
+                .attr("stroke-width", line.stroke)
+                .attr("fill", line.fill)
+                .attr("stroke-linecap","round");
+                
+        }else if(line.type == 6){ // Line Tool
+            let coords = {
+                x1: line.dots[0].x,
+                y1: line.dots[0].y,
+                x2: line.dots[1].x,
+                y2: line.dots[1].y
+            }
+
+            if(line.linkID != 3){ // If the line isn't dashed
+                drawOnSvg.append("line")
+                    .attr("x1",coords.x1)
+                    .attr("y1",coords.y1)
+                    .attr("x2",coords.x2)
+                    .attr("y2",coords.y2)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-linecap","round");
+            }else{ // If the line is dashed
+                drawOnSvg.append("line")
+                    .attr("x1",coords.x1)
+                    .attr("y1",coords.y1)
+                    .attr("x2",coords.x2)
+                    .attr("y2",coords.y2)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-dasharray",`${line.stroke*10} ${line.stroke*10}`)
+                    .attr("stroke-linecap","round");
+            }
+
+            // Calculate the length of the line and arrow
+            let lineLength = (coords.x2-coords.x1)!=0?(coords.x2-coords.x1):(coords.y2-coords.y1);
+            let arrowLength = (lineLength/4);
+
+            // https://math.stackexchange.com/questions/1314006/drawing-an-arrow
+            let x3Change = (arrowLength/lineLength)*((coords.x1-coords.x2)*Math.cos(30* Math.PI/180)+(coords.y1-coords.y2)*Math.sin(30* Math.PI/180));
+            let y3Change = (arrowLength/lineLength)*((coords.y1-coords.y2)*Math.cos(30* Math.PI/180)-(coords.x1-coords.x2)*Math.sin(30* Math.PI/180));
+            let x4Change = (arrowLength/lineLength)*((coords.x1-coords.x2)*Math.cos(30* Math.PI/180)-(coords.y1-coords.y2)*Math.sin(30* Math.PI/180));
+            let y4Change = (arrowLength/lineLength)*((coords.y1-coords.y2)*Math.cos(30* Math.PI/180)+(coords.x1-coords.x2)*Math.sin(30* Math.PI/180));
+
+            // Opened end arrows
+            if(line.linkID == 1 || line.linkID == 2){
+                drawOnSvg.append("line")
+                    .attr("x1",coords.x2)
+                    .attr("y1",coords.y2)
+                    .attr("x2",coords.x2+x3Change)
+                    .attr("y2",coords.y2+y3Change)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-linecap","round");
+
+                drawOnSvg.append("line")
+                    .attr("x1",coords.x2)
+                    .attr("y1",coords.y2)
+                    .attr("x2",coords.x2+x4Change)
+                    .attr("y2",coords.y2+y4Change)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-linecap","round");
+            }
+            if(line.linkID == 2){
+                drawOnSvg.append("line")
+                    .attr("x1",coords.x1)
+                    .attr("y1",coords.y1)
+                    .attr("x2",coords.x1-x3Change)
+                    .attr("y2",coords.y1-y3Change)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-linecap","round");
+
+                drawOnSvg.append("line")
+                    .attr("x1",coords.x1)
+                    .attr("y1",coords.y1)
+                    .attr("x2",coords.x1-x4Change)
+                    .attr("y2",coords.y1-y4Change)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-linecap","round");
+            }
+
+            // Filled end arrows
+            if(line.linkID == 4 || line.linkID == 5){
+                drawOnSvg.append("polygon")
+                    .attr("points",`${coords.x2} ${coords.y2}, ${coords.x2+x3Change} ${coords.y2+y3Change}, ${coords.x2+x4Change} ${coords.y2+y4Change}`)
+                    .style("fill",line.color)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-linecap","round");
+            }
+            if(line.linkID == 5){
+                drawOnSvg.append("polygon")
+                    .attr("points",`${coords.x1} ${coords.y1}, ${coords.x1-x3Change} ${coords.y1-y3Change}, ${coords.x1-x4Change} ${coords.y1-y4Change}`)
+                    .style("fill",line.color)
+                    .attr("stroke", line.color)
+                    .attr("stroke-width", line.stroke)
+                    .attr("stroke-linecap","round");
+            }
         }
 
-        // If the tool is the move tool, set the selected element to this one
-        drawOnSvg.on("mousedown",()=>{
-            if(isMove() && d3.event.button==0 && isCurrentLayer(line.id)){ // if is move & left click & object is on the current layer
-                selectedElement = line.id;
-            }
-        });
+        if(isMouseEvents){
+            // If the tool is the move tool, set the selected element to this one
+            drawOnSvg.on("mousedown",()=>{
+                if(isMove() && d3.event.button==0 && isCurrentLayer(line.id)){ // if is move & left click & object is on the current layer
+                    selectedElement = line.id;
+                }
+            });
 
-        // if the mouse moves over this line
-        drawOnSvg.on("mousemove",()=>{
-            // if the tools is set to erasers and is drawing (mouse down)
-            if(isEraser() && isDrawing && isCurrentLayer(line.id)){
-                // Delete the line from the array
-                deleteLine(line.id);
-                // set the save timeout
-                autoSaveTimeout();
-                selectedElement = null;
-                overTextArea = null;
-            }
-        });
+            // if the mouse moves over this line
+            drawOnSvg.on("mousemove",()=>{
+                // if the tools is set to erasers and is drawing (mouse down)
+                if(isEraser() && isDrawing && isCurrentLayer(line.id)){
+                    // Delete the line from the array
+                    deleteLine(line.id);
+                    // set the save timeout
+                    autoSaveTimeout();
+                    selectedElement = null;
+                    overTextArea = null;
+                }
+            });
 
-        // If this element is currently being moved
-        if(isMove() && line.id == selectedElement){
-            // Use the temp transform
-            drawOnSvg.attr("transform",`translate(${tempTransform.x} ${tempTransform.y})`);
-        }else{
-            // Use the transform for this object
-            drawOnSvg.attr("transform",`translate(${line.transform.x} ${line.transform.y})`);
+            // If this element is currently being moved
+            if(isMove() && line.id == selectedElement){
+                
+                if(line.type == 4){ // if it's an image
+                    let x = (line.dots.x+tempTransform.x) + line.dots.w/2;
+                    let y = (line.dots.y+tempTransform.y) + line.dots.h/2;
+                    let r = line.transform.r == undefined?0:line.transform.r;
+                    
+                    // Use the temp transform
+                    drawOnSvg.attr("transform",`rotate(${(r)} ${x} ${y}) translate(${tempTransform.x} ${tempTransform.y})`);
+                }else{
+                    drawOnSvg.attr("transform",`translate(${tempTransform.x} ${tempTransform.y})`);
+                }
+            }else{
+                if(line.type == 4){ // if it's an image
+                    let x = (line.dots.x+line.transform.x) + line.dots.w/2;
+                    let y = (line.dots.y+line.transform.y) + line.dots.h/2;
+                    let r = line.transform.r == undefined?0:line.transform.r;
+                    d3.select(`#image${line.id}`).attr("transform",`rotate(${(r)} ${x} ${y})`);
+                    drawOnSvg.attr("transform",`translate(${line.transform.x} ${line.transform.y})`);
+                    // NOTE Maybe rotate the image alone, and not the entire object, yes the orbs wont move but
+                    // It might fix some of the issues
+                }else{
+                    drawOnSvg.attr("transform",`translate(${line.transform.x} ${line.transform.y})`);
+                }
+                
+            }
         }
+
+        
     }
 
     //==//==//==//==//==//==//
@@ -441,7 +640,7 @@ whiteboard = function(){
             autoSaveTimeout();
         }
 
-        if(isPen() && isLeftClick()){
+        if((isPen()||isCustomShape()) && isLeftClick()){
             isDrawing = true;
 
             let isNewPen = true;
@@ -639,7 +838,7 @@ whiteboard = function(){
                     w: image.width,
                     h: image.height
                 }
-                let line = newLine(data,4,null,null,image.path);
+                let line = newLine(data,4,null,null,null,image.path);
                 drawLine(line);
 
                 autoSaveTimeout();
@@ -647,7 +846,7 @@ whiteboard = function(){
         }
         else if(isHand() || isMiddleClick()){
             //clearBackground();
-        }else if(isMouse()){
+        }else if(isMouse() || isRotate()){
             if(imageResize == null){
                 closeMenus();
             }
@@ -665,12 +864,12 @@ whiteboard = function(){
         function isLeftClick(){return d3.event.button==0}
         function isRightClick(){return d3.event.button==2}
         function isMiddleClick(){return d3.event.button==1}
-        if(isPen() || isLink()){
+        if(isPen() || isLink() || isCustomShape()){
             if(buffer.length > 1){
                 // Draw the line in the buffer
 
                 if(isPen()){
-                    let line = newLine(buffer,0,currentColor,currentStroke);
+                    let line = newLine(buffer,0,currentColor,currentStroke,null);
                     drawLine(line);
                     
                     // clear the buffer
@@ -684,12 +883,12 @@ whiteboard = function(){
                         if(isNewBoard){ // If a new board is to be created
                             let newBoardID = boxManager.newBoard(boardData);
                             
-                            let line = newLine(buffer,2,currentColor,currentStroke,newBoardID);
+                            let line = newLine(buffer,2,currentColor,currentStroke,null,newBoardID);
                             drawLine(line);
                             save();
                         }else{ // If no new board is created
                             if(boardData != null){ // If they didn't close the popup
-                                let line = newLine(buffer,2,currentColor,currentStroke,boardData.id);
+                                let line = newLine(buffer,2,currentColor,currentStroke,null,boardData.id);
                                 drawLine(line);
                                 
                                 save();
@@ -700,7 +899,26 @@ whiteboard = function(){
                         // clear the buffer
                         buffer = [];
                     });
+                }else if(isCustomShape()){
+                    // Make sure the line goes back to the start
+                    buffer.push({x:buffer[0].x,y:buffer[0].y});
+
+                    let line = null;
+                    if(currentToolAltCode == 0){
+                        line = newLine(buffer,5,currentColor,currentStroke,currentFill);
+                    }else if(currentToolAltCode == 1){
+                        line = newLine(buffer,5,"none",currentStroke,currentFill);
+                    }else if(currentToolAltCode == 2){
+                        line = newLine(buffer,5,currentColor,currentStroke,"none");
+                    }
+
+                    drawLine(line);
+                    
+                    // clear the buffer
+                    buffer = [];
                 }
+
+
                 autoSaveTimeout();
             }
             // clear the temp line
@@ -718,20 +936,54 @@ whiteboard = function(){
         }
         if(isLine() || isRect()){
             if(mouseDownPoint != null){
-                buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouse.y}]
+                buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouse.y}];
 
                 // Draw the line in the buffer
 
                 if(isLine()){
                     // Check if the height and width is 0
                     if((buffer[0].x - buffer[1].x) != 0 || (buffer[0].y - buffer[1].y) != 0){
-                        let line = newLine(buffer,0,currentColor,currentStroke);
-                        drawLine(line);
+                        if(holdShift.isHeld){
+                            svg.temp.html(null);
+        
+                            // if the x distance from the lastX is greater than the y, draw a line only on the x axis
+                            if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
+        
+                                svg.temp.append("line")
+                                    .attr("x1",mouse.x)
+                                    .attr("y1",mouseDownPoint.y)
+                                    .attr("x2",mouseDownPoint.x)
+                                    .attr("y2",mouseDownPoint.y)
+                                    .attr("stroke", currentColor)
+                                    .attr("stroke-width", currentStroke);
+        
+                                buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouseDownPoint.y}];
+                                let line = newLine(buffer,6,currentColor,currentStroke,null,currentToolAltCode);
+                                drawLine(line);
+                            }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
+        
+
+                                buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouseDownPoint.x,y:mouse.y}];
+                                let line = newLine(buffer,6,currentColor,currentStroke,null,currentToolAltCode);
+                                drawLine(line);
+                            }
+                        }else{
+                            let line = newLine(buffer,6,currentColor,currentStroke,null,currentToolAltCode);
+                            drawLine(line);
+                        }
+                        
                     }
                 }else if(isRect()){
                     // Check if the height or width is 0
                     if((buffer[0].x - buffer[1].x) != 0 || (buffer[0].y - buffer[1].y) != 0){
-                        let line = newLine(buffer,1,currentColor,currentStroke);
+                        let line = null;
+                        if(currentToolAltCode == 0){
+                            line = newLine(buffer,1,currentColor,currentStroke,currentFill);
+                        }else if(currentToolAltCode == 1){
+                            line = newLine(buffer,1,"none",currentStroke,currentFill);
+                        }else if(currentToolAltCode == 2){
+                            line = newLine(buffer,1,currentColor,currentStroke,"none");
+                        }
                         drawLine(line);
                     }
                 }
@@ -776,23 +1028,33 @@ whiteboard = function(){
             let image = getLine(imageResize.id);
             let oldLine = JSON.parse(JSON.stringify(image));
 
-            if(imageResize.tx == undefined||imageResize.ty == undefined||imageResize.tw == undefined ||imageResize.th == undefined){
+            // if nothing was resized
+            if((imageResize.tx == undefined||imageResize.ty == undefined||imageResize.tw == undefined ||imageResize.th == undefined)&&imageResize.angle == undefined){
 
                 imageResize = null;
                 selectedElement = null;
             }else{
-                // Apply the temp dimensions 
-                image.dots.x = imageResize.tx;
-                image.dots.y = imageResize.ty;
-                image.dots.w = imageResize.tw;
-                image.dots.h = imageResize.th;
+                // If it was resize
+                if(imageResize.angle == undefined){
+                    // Apply the temp dimensions 
+                    image.dots.x = imageResize.tx;
+                    image.dots.y = imageResize.ty;
+                    image.dots.w = imageResize.tw;
+                    image.dots.h = imageResize.th;
+
+                    // Add the new data and old data to the history
+                    addToHistory("resize",JSON.parse(JSON.stringify(image)),oldLine);
+                }else{ // If they were rotating the object
+                    image.transform.r = imageResize.angle;
+
+                    
+                    // Add the new data and old data to the history
+                    addToHistory("rotate",JSON.parse(JSON.stringify(image)),oldLine);
+
+                }
 
                 imageResize = null;
                 selectedElement = null;
-
-                addToHistory("resize",JSON.parse(JSON.stringify(image)),oldLine);
-
-                updateLine(image);
                 autoSaveTimeout();
             }
 
@@ -890,15 +1152,122 @@ whiteboard = function(){
         }
         if(isLine()){
             if(isDrawing){
+                let coords = {};
+                if(holdShift.isHeld){
+                    // if the x distance from the lastX is greater than the y, draw a line only on the x axis
+                    if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
+                        coords.x1 = mouseDownPoint.x;
+                        coords.x2 = mouse.x;
+                        coords.y1 = mouseDownPoint.y;
+                        coords.y2 = mouseDownPoint.y;
+                    }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
+                        coords.x1 = mouseDownPoint.x;
+                        coords.x2 = mouseDownPoint.x;
+                        coords.y1 = mouseDownPoint.y;
+                        coords.y2 = mouse.y;   
+                    }
+                }else{
+                    coords.x2 = mouse.x;
+                    coords.x1 = mouseDownPoint.x;
+                    coords.y2 = mouse.y;
+                    coords.y1 = mouseDownPoint.y; 
+                }
                 svg.temp.html(null);
 
-                svg.temp.append("line")
-                    .attr("x1",mouse.x)
-                    .attr("y1",mouse.y)
-                    .attr("x2",mouseDownPoint.x)
-                    .attr("y2",mouseDownPoint.y)
-                    .attr("stroke", currentColor)
-                    .attr("stroke-width", currentStroke);
+                if(currentToolAltCode != 3){ // If the line isn't dashed
+                    svg.temp.append("line")
+                        .attr("x1",coords.x1)
+                        .attr("y1",coords.y1)
+                        .attr("x2",coords.x2)
+                        .attr("y2",coords.y2)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-linecap","round");
+                }else{ // If the line is dashed
+                    svg.temp.append("line")
+                        .attr("x1",coords.x1)
+                        .attr("y1",coords.y1)
+                        .attr("x2",coords.x2)
+                        .attr("y2",coords.y2)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-dasharray",`${currentStroke*10} ${currentStroke*10}`)
+                        .attr("stroke-linecap","round");
+                }
+                
+
+                // Calculate the length of the line and arrow
+                let lineLength = (coords.x2-coords.x1)!=0?(coords.x2-coords.x1):(coords.y2-coords.y1);
+                let arrowLength = (lineLength/4);
+                
+                if(lineLength == 0){// Line is just a dot
+                    return;
+                }
+
+                // https://math.stackexchange.com/questions/1314006/drawing-an-arrow
+                let x3Change = (arrowLength/lineLength)*((coords.x1-coords.x2)*Math.cos(30* Math.PI/180)+(coords.y1-coords.y2)*Math.sin(30* Math.PI/180));
+                let y3Change = (arrowLength/lineLength)*((coords.y1-coords.y2)*Math.cos(30* Math.PI/180)-(coords.x1-coords.x2)*Math.sin(30* Math.PI/180));
+                let x4Change = (arrowLength/lineLength)*((coords.x1-coords.x2)*Math.cos(30* Math.PI/180)-(coords.y1-coords.y2)*Math.sin(30* Math.PI/180));
+                let y4Change = (arrowLength/lineLength)*((coords.y1-coords.y2)*Math.cos(30* Math.PI/180)+(coords.x1-coords.x2)*Math.sin(30* Math.PI/180));
+
+                // Opened end arrows
+                if(currentToolAltCode == 1 || currentToolAltCode == 2){
+                    svg.temp.append("line")
+                        .attr("x1",coords.x2)
+                        .attr("y1",coords.y2)
+                        .attr("x2",coords.x2+x3Change)
+                        .attr("y2",coords.y2+y3Change)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-linecap","round");
+
+                    svg.temp.append("line")
+                        .attr("x1",coords.x2)
+                        .attr("y1",coords.y2)
+                        .attr("x2",coords.x2+x4Change)
+                        .attr("y2",coords.y2+y4Change)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-linecap","round");
+                }
+                if(currentToolAltCode == 2){
+                    svg.temp.append("line")
+                        .attr("x1",coords.x1)
+                        .attr("y1",coords.y1)
+                        .attr("x2",coords.x1-x3Change)
+                        .attr("y2",coords.y1-y3Change)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-linecap","round");
+
+                    svg.temp.append("line")
+                        .attr("x1",coords.x1)
+                        .attr("y1",coords.y1)
+                        .attr("x2",coords.x1-x4Change)
+                        .attr("y2",coords.y1-y4Change)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-linecap","round");
+                }
+
+                // Filled end arrows
+                if(currentToolAltCode == 4 || currentToolAltCode == 5){
+                    svg.temp.append("polygon")
+                        .attr("points",`${coords.x2} ${coords.y2}, ${coords.x2+x3Change} ${coords.y2+y3Change}, ${coords.x2+x4Change} ${coords.y2+y4Change}`)
+                        .style("fill",currentColor)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-linecap","round");
+                }
+                if(currentToolAltCode == 5){
+                    svg.temp.append("polygon")
+                        .attr("points",`${coords.x1} ${coords.y1}, ${coords.x1-x3Change} ${coords.y1-y3Change}, ${coords.x1-x4Change} ${coords.y1-y4Change}`)
+                        .style("fill",currentColor)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("stroke-linecap","round");
+                }
+
             }
         }
         if(isRect()){
@@ -911,12 +1280,33 @@ whiteboard = function(){
 
                 svg.temp.html(null);
 
-                svg.temp.append("rect")
-                    .attr("x",rectX)
-                    .attr("y",rectY)
-                    .attr("height",height)
-                    .attr("width",width)
-                    .attr("fill", currentColor);
+                if(currentToolAltCode == 0){
+                    svg.temp.append("rect")
+                        .attr("x",rectX)
+                        .attr("y",rectY)
+                        .attr("height",height)
+                        .attr("width",width)
+                        .attr("fill", currentFill)
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke);
+                }else if(currentToolAltCode == 1){
+                    svg.temp.append("rect")
+                        .attr("x",rectX)
+                        .attr("y",rectY)
+                        .attr("height",height)
+                        .attr("width",width)
+                        .attr("fill", currentFill);
+                }else if(currentToolAltCode == 2){
+                    svg.temp.append("rect")
+                        .attr("x",rectX)
+                        .attr("y",rectY)
+                        .attr("height",height)
+                        .attr("width",width)
+                        .attr("fill", "none")
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke);
+                }
+                
             }
         }
         if(isMove() && selectedElement != null && imageResize == null){
@@ -1008,12 +1398,106 @@ whiteboard = function(){
                     .attr("cy",imageResize.ty+imageResize.th);
             }
         }
+        if(isCustomShape()){
+            let currentTime = Date.now();
+            
+            // if the user is drawing, add the x,y to the buffer
+            if(isDrawing){
+                // if it has been x milliseconds since the last coordinate saved
+                if(currentTime>=lastPointTime+10){
+                    if(holdShift.isHeld){
+                        // if the x distance from the lastX is greater than the y, draw a line only on the x axis
+                        if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
+                            lastPointTime = currentTime;
+                            buffer.push({x:mouse.x,y:holdShift.y});
+                        }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
+                            lastPointTime = currentTime;
+                            buffer.push({x:holdShift.x,y:mouse.y});
+                        }
+                    }else{
+                        lastPointTime = currentTime;
+                        buffer.push({x:mouse.x,y:mouse.y});
+                    }
+
+                    // Draw the new shape
+                    svg.temp.html(null);
+
+                    // Create the line
+                    let drawLine = d3.line().curve(d3.curveCardinal);
+
+                    // for every x and y, set the value to (object passed).x
+                    drawLine.x((d)=>{
+                        return d.x;
+                    });
+                    drawLine.y((d)=>{
+                        return d.y;
+                    });
+
+                    if(currentToolAltCode == 0){
+                        svg.temp.append("path")
+                            .attr("d", drawLine(buffer))
+                            .attr("stroke", currentColor)
+                            .attr("stroke-width", currentStroke)
+                            .attr("fill", currentFill)
+                            .attr("stroke-linecap","round");
+                    }else if(currentToolAltCode == 1){
+                        svg.temp.append("path")
+                            .attr("d", drawLine(buffer))
+                            .attr("fill", currentFill)
+                            .attr("stroke-linecap","round");
+                    }else if(currentToolAltCode == 2){
+                        svg.temp.append("path")
+                            .attr("d", drawLine(buffer))
+                            .attr("stroke", currentColor)
+                            .attr("stroke-width", currentStroke)
+                            .attr("fill", "none")
+                            .attr("stroke-linecap","round");
+                    }
+                }
+            }
+        }
+        if(isRotate()){
+
+
+            if(imageResize != null){
+
+                let x = (imageResize.x+imageResize.transform.x) + imageResize.w/2;
+                let y = (imageResize.y+imageResize.transform.y) + imageResize.h/2;
+
+
+                svg.temp.html(null);
+
+                svg.temp.append("line")
+                    .attr("x1",mouse.x)
+                    .attr("y1",mouse.y)
+                    .attr("x2",x)
+                    .attr("y2",y)
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 1)
+                    .attr("stroke-linecap","round");
+
+                let degAngle = angle(mouse.x,mouse.y,x,y);
+
+                // check if the initial angle is set
+                if(imageResize.angle == undefined){
+                    imageResize.startingAngle = degAngle;
+                }
+                imageResize.angle = -(imageResize.startingAngle-degAngle);
+
+
+                d3.select(`#object${imageResize.id}`).attr("transform",`rotate(${imageResize.angle} ${x} ${y}) translate(${imageResize.transform.x} ${imageResize.transform.y}) `)
+            }
+
+            function angle(x1, y1, x2, y2) {
+                return Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+            }
+        }
     }
 
 
     // #endregion
     //==//==//==//==//==//==//
-    // Functions for saving
+    // saving
     // #region 
 
     /**
@@ -1026,6 +1510,12 @@ whiteboard = function(){
             pens.push(pen.getcolor());
         }
         thisBoard.pens = pens;
+
+        // Save current pen/layer/stroke
+        thisBoard.currentColor = currentColor;
+        thisBoard.currentLayer = currentLayer;
+        thisBoard.currentStroke = currentStroke;
+        thisBoard.currentFill = currentFill;
 
         // Send a message with the tag "save" and payload of the boardbox
         comm.sendMessage("save", boxManager.getBox());
@@ -1046,7 +1536,7 @@ whiteboard = function(){
 
     // #endregion
     //==//==//==//==//==//==//
-    // Functions for new lines
+    // new lines
     // #region
 
     /**
@@ -1055,14 +1545,16 @@ whiteboard = function(){
      * @param {Number} type type of line
      * @param {String} color color of the line
      * @param {Number} stroke Stroke size of the line
+     * @param {String} fill fill colour
      * @param {?String} link id to link to
      */
-    function newLine(buffer,type,color,stroke,link=null){
+    function newLine(buffer,type,color,stroke,fill,link=null){
         let obj = {
             id: thisBoard.idCounter++,
             type:type,
             color:color,
             stroke:stroke,
+            fill:fill,
             linkID:link,
             dots:buffer,
             transform: {
@@ -1126,14 +1618,52 @@ whiteboard = function(){
 
     // #endregion
     //==//==//==//==//==//==//
-    // Functions for tools
+    // tools
     // #region
 
     /**
      * Changes the current tool to the passed number
      * @param {Number} toolID number for the tool
      */
-    function setTool(toolID,isKeyboardShortcut){
+    function setTool(toolID,altCode = 0){
+        closeMenus();
+
+        d3.select("#toolbar-icon-"+currentTool).attr("class","toolbar-icon");
+        currentTool = toolID;
+        currentToolAltCode = altCode;
+        d3.select("#toolbar-icon-"+currentTool).attr("class","toolbar-icon selected");
+
+        // Check if the new tool should be shown in the toolbar
+        if(toolID == 3){// if line
+            d3.select("#toolbar-icon-3")
+                .style("background-image",d3.select("#toolbar-line-"+altCode).style("background-image"))
+                .attr("onclick",null)
+                .on("click",()=>{setTool(3,altCode)})
+
+        }else if(toolID == 4){// if rect
+            d3.select("#toolbar-icon-4")
+                .style("background-image",d3.select("#toolbar-rect-"+altCode).style("background-image"))
+                .attr("onclick",null)
+                .on("click",()=>{setTool(4,altCode)})
+        }else if(toolID == 7){
+            d3.select("#toolbar-icon-7")
+                .style("background-image","url(./images/mouse_white.png)")
+                .attr("onclick",null)
+                .on("click",()=>{setTool(7)})
+        }else if(toolID == 11){// if rect
+            d3.select("#toolbar-icon-11")
+                .style("background-image",d3.select("#toolbar-customShape-"+altCode).style("background-image"))
+                .attr("onclick",null)
+                .on("click",()=>{setTool(11,altCode)})
+        }else if(toolID == 12){
+            d3.select("#toolbar-icon-7")
+                .style("background-image","url(./images/mouse_rotate_white.png)")
+                .attr("onclick",null)
+                .on("click",()=>{setTool(12)})
+        }
+    }
+
+    function toolShortcut(toolID){
         // If they're typing and a keyboard shortcut is clicked
         if(isTyping() && isKeyboardShortcut){
             // Ignore it
@@ -1159,6 +1689,8 @@ whiteboard = function(){
     function isMouse(){return currentTool==7?true:false;}
     function isMove(){return currentTool==7?true:false;} // Was changed to be the same as mouse
     function isImage(){return currentTool==9?true:false;}
+    function isCustomShape(){return currentTool==11?true:false;}
+    function isRotate(){return currentTool==12?true:false;}
 
     /**
      * Checks to see if the user is typing something into the text tool
@@ -1225,6 +1757,7 @@ whiteboard = function(){
             currentPenTip.attr("fill",newcolor);
             currentPenShaft.attr("fill",newcolor);
             colorBar.strokeSizeLine.attr("stroke", newcolor);
+            currentFillBox.attr("stroke", newcolor);
             if(isTyping()){
                 updateTextArea();
             }
@@ -1239,6 +1772,25 @@ whiteboard = function(){
             }
         }
 
+        x+=45
+        // Draw the fill colour
+        let currentFillGroup = colorBar.svg.append("g");
+
+        let currentFillBox = currentFillGroup.append("rect")
+            .attr("x",x)
+            .attr("width",34)
+            .attr("y",3)
+            .attr("height",30)
+            .attr("fill",currentFill)
+            .attr("stroke-width", 2)
+            .attr("rx",5)
+            .attr("stroke", currentColor);
+
+        colorBar.changeFill = function(newcolor){
+            closeRightClickMenu();
+            currentFill = newcolor;
+            currentFillBox.attr("fill", newcolor);
+        }
         // Line between current pen and past pens
         colorBar.svg.append("line")
             .attr("x1",x+45)
@@ -1302,6 +1854,10 @@ whiteboard = function(){
                     updateTextArea();
                 }
             });
+
+            group.on("contextmenu",()=>{
+                colorBar.changeFill(colorBar.pens[i].getcolor());
+            })
 
             colorBar.pens.push({
                 color: color,
@@ -1430,6 +1986,13 @@ whiteboard = function(){
         colorBar.changecolor(newcolor);
         colorBar.strokeSizeLine.attr("stroke", newcolor);
     }
+
+    function changeFill(){
+        let newcolor = "#"+d3.select("#colorBar-newFill").html();
+        // Check if there's a # before
+        currentFill = newcolor;
+        colorBar.changeFill(newcolor);
+    }
     // #endregion
     //==//==//==//==//==//==//
     // Nav bar
@@ -1440,6 +2003,7 @@ whiteboard = function(){
         
         d3.select("#navBar-content-boards").html(null);
         d3.select("#navBar-content-history").html(null);
+        d3.select("#navBar-content-textures").html(null);
         d3.select("#navBar-side").on("click",()=>{
             openNavBar();
         });
@@ -1471,9 +2035,19 @@ whiteboard = function(){
             d3.select("#navBar-content-images").style("background-image","url('./images/loading_white.gif')");
             initNavBarImages()
         });
+
+        // if a dnd board
+        if(thisBoard.type == 1){
+            d3.select("#navBar-titles-textures").on("click",()=>{
+                resetTabs();
+                d3.select("#navBar-content-textures").style("display",null);
+                d3.select("#navBar-titles-textures").attr("class","navBar-titles-containers selected");
+                initNavBarImages()
+            });
+        }
         //#endregion
         
-        // Draw the boards panel
+        //#region Draw the boards panel
         let boardsPanel = d3.select("#navBar-content-boards");
         let boards = boxManager.getBox().boards;
         for(let board of boards){
@@ -1486,7 +2060,9 @@ whiteboard = function(){
             });
         }
 
-        // Draw the history panel
+        //#endregion
+
+        //#region Draw the history panel
         let historyPanel = d3.select("#navBar-content-history");
 
         let undoCount = 1;
@@ -1542,7 +2118,9 @@ whiteboard = function(){
 
         }
 
-        // Draw the layers
+        //#endregion
+
+        //#region Draw the layers
         let layerPanel = d3.select("#navBar-content-layers").html("");
         layerPanel.append("div").html("Add new layer")
             .on("click",()=>{
@@ -1617,6 +2195,23 @@ whiteboard = function(){
             d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container selected");
         }
 
+        //#endregion
+
+        //#region Draw the textures
+        let texturePanel = d3.select("#navBar-content-textures");
+
+        for(let texture of textures){
+            texturePanel.append("div")
+                .attr("class","navBar-content-textures-card")
+                .style("background-image",`url("${texture.path}")`)
+                .on("click",()=>{
+                    colorBar.changeFill(`url(#${texture.id})`)
+                    
+                    console.log(currentFill);
+                })
+        }
+        //#endregion
+
         /**
          * Runs the undo function x amount of times
          * @param {Number} amount Number of times to undo
@@ -1651,6 +2246,11 @@ whiteboard = function(){
             d3.select("#navBar-titles-history").attr("class","navBar-titles-containers");
             d3.select("#navBar-titles-layers").attr("class","navBar-titles-containers");
             d3.select("#navBar-titles-images").attr("class","navBar-titles-containers");
+
+            if(thisBoard.type == 1){
+                d3.select("#navBar-content-textures").style("display","none");
+                d3.select("#navBar-titles-textures").attr("class","navBar-titles-containers");
+            }
         }
 
     }
@@ -1728,7 +2328,7 @@ whiteboard = function(){
             y: textDrawArea.y+13+fontSize-(2+Math.floor(currentStroke/5)) // All this math adjusts the generated text to align the text area
         };
 
-        let line = newLine(data,3,currentColor,currentStroke);
+        let line = newLine(data,3,currentColor,currentStroke,null);
 
         // Draw the new text area
         drawLine(line);
@@ -1754,41 +2354,59 @@ whiteboard = function(){
     //==//==//==//==//==//==//
     // Background
     // #region
-    function clearBackground(){
-        svg.background.selectAll("*").remove();
+    function clearBackground(svgToClear){
+        svgToClear.selectAll("*").remove();
     }
 
-    function generateBackground(type = thisBoard.bgType){
-        clearBackground();
+    function generateBackground(board = thisBoard,backgroundSVG = svg.background){
+        clearBackground(backgroundSVG);
 
-        //TODO maybe instead of redrawing the board on a pan, just transform the board?
-        // Prevents massive lag from filling in a huge viewbox
-        if(viewbox.scale > 2.1 || type == 0){
-            return;
+        
+
+        let backgroundBox = null;
+        // Check if the viewbox is defined (is not on the main menu)
+        if(viewbox == null){
+            backgroundBox = {
+                x1: 0,
+                y1: 0,
+                x2: 1000,
+                y2: 1000,
+                vh: 1000,
+                vw: 1000
+            }
+        }else{
+            // Prevents massive lag from filling in a huge viewbox
+            if(viewbox.scale > 5 || board.bgType == 0){
+                return;
+            }
+
+            backgroundBox = {
+                x1: viewbox.x,
+                y1: viewbox.y,
+                x2: viewbox.x+viewbox.w,
+                y2: viewbox.y+viewbox.h,
+                vh: viewbox.h,
+                vw: viewbox.w
+            }
         }
 
-        let backgroundBox = {
-            x1: viewbox.x,
-            y1: viewbox.y,
-            x2: viewbox.x+viewbox.w,
-            y2: viewbox.y+viewbox.h
-        }
+        let lineSpacing = board.bgSpacing;
+        let backgroundDetailColour = board.fgcolor;
 
-        let lineSpacing = thisBoard.bgSpacing;
-        let backgroundDetailColour = thisBoard.fgcolor;
+        let lineThickness = board.bgThickness;
 
-        let lineThickness = thisBoard.bgThickness;
+        let type = board.bgType;
 
 
-        let startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/lineSpacing)*lineSpacing;
-        let startingX = Math.floor(Math.floor(backgroundBox.x1-viewbox.w)/lineSpacing)*lineSpacing;
+        let startingY = Math.floor(Math.floor(backgroundBox.y1-backgroundBox.vh)/lineSpacing)*lineSpacing;
+        let startingX = Math.floor(Math.floor(backgroundBox.x1-backgroundBox.vw)/lineSpacing)*lineSpacing;
 
-        let endingY = backgroundBox.y2+viewbox.h;
-        let endingX = backgroundBox.x2+viewbox.w;
+        let endingY = backgroundBox.y2+backgroundBox.vh;
+        let endingX = backgroundBox.x2+backgroundBox.vw;
 
         if(type == 1){ // square dots
             for(let y = startingY; y < endingY;y+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",startingX)
                     .attr("x2",endingX)
                     .attr("y1",y)
@@ -1817,7 +2435,7 @@ whiteboard = function(){
             let opp = Math.tan(30 * Math.PI/180) * (endingY-startingY);         
             for(let x = startingX; x < endingX;x+=lineSpacing){
 
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x-opp)
                     .attr("y1",startingY)
@@ -1846,7 +2464,7 @@ whiteboard = function(){
             let opp = Math.tan(30 * Math.PI/180) * (endingY-startingY);
 
             for(let x = startingX; x < endingX;x+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x-opp)
                     .attr("y1",startingY)
@@ -1859,7 +2477,7 @@ whiteboard = function(){
 
                 x+=lineSpacing
 
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x-opp)
                     .attr("y1",startingY)
@@ -1873,7 +2491,7 @@ whiteboard = function(){
 
                     x+=lineSpacing
 
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x-opp)
                     .attr("y1",startingY)
@@ -1887,7 +2505,7 @@ whiteboard = function(){
             }
         }else if(type == 4){ // horizontal lines
             for(let y = startingY; y < endingY;y+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",startingX)
                     .attr("x2",endingX)
                     .attr("y1",y)
@@ -1898,7 +2516,7 @@ whiteboard = function(){
             }
         }else if(type == 5){ // vertical lines
             for(let x = startingX; x < endingX;x+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x)
                     .attr("y1",startingY)
@@ -1909,7 +2527,7 @@ whiteboard = function(){
             }
         }else if(type == 6){ // square line grid
             for(let x = startingX; x < endingX;x+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x)
                     .attr("y1",startingY)
@@ -1919,7 +2537,7 @@ whiteboard = function(){
                     .attr("fill", "none");
             }
             for(let y = startingY; y < endingY;y+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",startingX)
                     .attr("x2",endingX)
                     .attr("y1",y)
@@ -1935,8 +2553,8 @@ whiteboard = function(){
 
 
             // Find the new starting lines with the new line height
-            startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/(lineHeight*2))*(lineHeight*2); // Why do you *2? No idea, it just fixes a bug
-            startingX = Math.floor(Math.floor(backgroundBox.x1-viewbox.w)/lineSpacing)*lineSpacing;
+            startingY = Math.floor(Math.floor(backgroundBox.y1-backgroundBox.vh)/(lineHeight*2))*(lineHeight*2); // Why do you *2? No idea, it just fixes a bug
+            startingX = Math.floor(Math.floor(backgroundBox.x1-backgroundBox.vw)/lineSpacing)*lineSpacing;
 
             let width = Math.floor((backgroundBox.x2-backgroundBox.x1)/lineSpacing)*lineSpacing;
             let height = (endingY-startingY);
@@ -1945,7 +2563,7 @@ whiteboard = function(){
             let opp = Math.tan(30 * Math.PI/180) * height;         
 
             for(let y = startingY; y < endingY;y+=lineHeight){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",startingX)
                     .attr("x2",endingX)
                     .attr("y1",y)
@@ -1957,7 +2575,7 @@ whiteboard = function(){
 
             for(let x = startingX-width; x < endingX+width;x+=lineSpacing){
 
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x-opp)
                     .attr("y1",startingY)
@@ -1966,7 +2584,7 @@ whiteboard = function(){
                     .attr("stroke-width", lineThickness)
                     .attr("fill", "none");
 
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x+opp)
                     .attr("y1",startingY)
@@ -1989,11 +2607,11 @@ whiteboard = function(){
             let lineHeight = (lineSpacing/2)*Math.sqrt(3);
             
             // Find the new starting lines with the new line height
-            startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/(lineHeight*2))*(lineHeight*2);
-            startingX = Math.floor(Math.floor(backgroundBox.x1-viewbox.w)/(lineSpacing*6))*(lineSpacing*6);
+            startingY = Math.floor(Math.floor(backgroundBox.y1-backgroundBox.vh)/(lineHeight*2))*(lineHeight*2);
+            startingX = Math.floor(Math.floor(backgroundBox.x1-backgroundBox.vw)/(lineSpacing*6))*(lineSpacing*6);
 
             for(let y = startingY; y < endingY;y+=lineHeight){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",startingX)
                     .attr("x2",endingX)
                     .attr("y1",y)
@@ -2005,7 +2623,7 @@ whiteboard = function(){
 
                 y+=lineHeight;
 
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",startingX)
                     .attr("x2",endingX)
                     .attr("y1",y)
@@ -2019,8 +2637,8 @@ whiteboard = function(){
             }
 
             
-            startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/(lineHeight*2))*(lineHeight*2);
-            startingX = Math.floor(Math.floor(backgroundBox.x1-viewbox.w)/(lineSpacing*3))*(lineSpacing*3);
+            startingY = Math.floor(Math.floor(backgroundBox.y1-backgroundBox.vh)/(lineHeight*2))*(lineHeight*2);
+            startingX = Math.floor(Math.floor(backgroundBox.x1-backgroundBox.vw)/(lineSpacing*3))*(lineSpacing*3);
 
             let height = (endingY-startingY);
 
@@ -2029,7 +2647,7 @@ whiteboard = function(){
 
             let offset = 3;
             for(let x = startingX-(lineSpacing*60); x < endingX+(lineSpacing*60);x+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x+opp)
                     .attr("y1",startingY)
@@ -2050,7 +2668,7 @@ whiteboard = function(){
             ///////////////////////////
             offset = 0;
             for(let x = startingX-(lineSpacing*60); x < endingX+(lineSpacing*60);x+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",x)
                     .attr("x2",x-opp)
                     .attr("y1",startingY)
@@ -2071,11 +2689,11 @@ whiteboard = function(){
             ////////////////////
 
         }else if(type == 9){ // music lines
-            startingY = Math.floor(Math.floor(backgroundBox.y1-viewbox.h)/(lineSpacing*10))*(lineSpacing*10);
+            startingY = Math.floor(Math.floor(backgroundBox.y1-backgroundBox.vh)/(lineSpacing*10))*(lineSpacing*10);
             for(let y = startingY; y < endingY;y+=lineSpacing*10){
                 // Draw 5 lines
                 for(let set = 0; set < 5;set++){
-                    svg.background.append("line")
+                    backgroundSVG.append("line")
                         .attr("x1",startingX)
                         .attr("x2",endingX)
                         .attr("y1",y+(set*lineSpacing))
@@ -2090,7 +2708,7 @@ whiteboard = function(){
 
             let offset = startingX%(lineSpacing*5);
             for(let y = startingY; y < endingY;y+=lineSpacing){
-                svg.background.append("line")
+                backgroundSVG.append("line")
                     .attr("x1",startingX)
                     .attr("x2",endingX)
                     .attr("y1",y)
@@ -2102,13 +2720,13 @@ whiteboard = function(){
                     .attr("stroke-linecap","round");
 
                 if(y%(lineSpacing*5) == 0){
-                    svg.background.append("line")
+                    backgroundSVG.append("line")
                         .attr("x1",startingX)
                         .attr("x2",endingX)
                         .attr("y1",y)
                         .attr("y2",y)
                         .attr("stroke", backgroundDetailColour)
-                        .attr("stroke-width", lineThickness*3)
+                        .attr("stroke-width", lineThickness*6)
                         .attr("fill", "none")
                         .attr("stroke-dasharray",`0 ${lineSpacing*5}`)
                         .attr("stroke-linecap","round")
@@ -2119,7 +2737,7 @@ whiteboard = function(){
         }else if(type == 11){ // square line grid
             for(let x = startingX; x < endingX;x+=lineSpacing){
                 if(x%(lineSpacing*5)==0){
-                    svg.background.append("line")
+                    backgroundSVG.append("line")
                         .attr("x1",x)
                         .attr("x2",x)
                         .attr("y1",startingY)
@@ -2128,7 +2746,7 @@ whiteboard = function(){
                         .attr("stroke-width", lineThickness*3)
                         .attr("fill", "none");
                 }else{
-                    svg.background.append("line")
+                    backgroundSVG.append("line")
                         .attr("x1",x)
                         .attr("x2",x)
                         .attr("y1",startingY)
@@ -2140,7 +2758,7 @@ whiteboard = function(){
             }
             for(let y = startingY; y < endingY;y+=lineSpacing){
                 if(y%(lineSpacing*5)==0){
-                    svg.background.append("line")
+                    backgroundSVG.append("line")
                         .attr("x1",startingX)
                         .attr("x2",endingX)
                         .attr("y1",y)
@@ -2149,7 +2767,7 @@ whiteboard = function(){
                         .attr("stroke-width", lineThickness*3)
                         .attr("fill", "none");
                 }else{
-                    svg.background.append("line")
+                    backgroundSVG.append("line")
                         .attr("x1",startingX)
                         .attr("x2",endingX)
                         .attr("y1",y)
@@ -2181,6 +2799,7 @@ whiteboard = function(){
             .attr("class","imageResizeCircle")
             .on("mousedown",()=>{
                 imageResize = {x:img.dots.x,y:img.dots.y,w:img.dots.w,h:img.dots.h};
+                imageResize.transform = img.transform;
                 imageResize.point = "tl";
                 imageResize.id = img.id;
                 imageResize.img = img;
@@ -2195,6 +2814,7 @@ whiteboard = function(){
             .attr("class","imageResizeCircle")
             .on("mousedown",()=>{
                 imageResize = {x:img.dots.x,y:img.dots.y,w:img.dots.w,h:img.dots.h};
+                imageResize.transform = img.transform;
                 imageResize.point = "tr";
                 imageResize.id = img.id;
                 imageResize.img = img;
@@ -2209,6 +2829,7 @@ whiteboard = function(){
             .attr("class","imageResizeCircle")
             .on("mousedown",()=>{
                 imageResize = {x:img.dots.x,y:img.dots.y,w:img.dots.w,h:img.dots.h};
+                imageResize.transform = img.transform;
                 imageResize.point = "bl";
                 imageResize.id = img.id;
                 imageResize.img = img;
@@ -2223,6 +2844,7 @@ whiteboard = function(){
             .attr("class","imageResizeCircle")
             .on("mousedown",()=>{
                 imageResize = {x:img.dots.x,y:img.dots.y,w:img.dots.w,h:img.dots.h};
+                imageResize.transform = img.transform;
                 imageResize.point = "br";
                 imageResize.id = img.id;
                 imageResize.img = img;
@@ -2304,6 +2926,9 @@ whiteboard = function(){
                         updateTextArea();
                     }
                 })
+                .on("contextmenu",()=>{
+                    colorBar.changeFill(pen);
+                })
 
         }
     }
@@ -2320,8 +2945,14 @@ whiteboard = function(){
             .style("display","none")
             .style("top",null)
             .style("left",null);
+
+        d3.selectAll(".toolbar-rightClickMenu").style("display","none");
     }
 
+    function openAltTools(id){
+        closeRightClickMenu();
+        d3.select(id).style("display",null);
+    }
     // #endregion
     //==//==//==//==//==//==//
     // History
@@ -2508,7 +3139,7 @@ whiteboard = function(){
                                 w: image.width,
                                 h: image.height
                             }
-                            let line = newLine(data,4,null,null,image.absolutePath);
+                            let line = newLine(data,4,null,null,null,image.absolutePath);
                             drawLine(line);
                             attachedImage = line;
                         })
@@ -2537,6 +3168,7 @@ whiteboard = function(){
         mainMenu.changeState('home');
     }
 
+
     function closeMenus(){
         removeResize();
         closeRightClickMenu();
@@ -2564,13 +3196,13 @@ whiteboard = function(){
 
     function setupKeyboardShortcuts(){
         // https://keycode.info/
-        keyManager.newEvent(80,0,function(){setTool(0,true)}); // pen
-        keyManager.newEvent(72,0,function(){setTool(1,true)}); // Hand
-        keyManager.newEvent(69,0,function(){setTool(2,true)}); // eraser
-        keyManager.newEvent(76,0,function(){setTool(3,true)}); // line
-        keyManager.newEvent(82,0,function(){setTool(4,true)}); // rect
-        keyManager.newEvent(77,0,function(){setTool(7,true)}); // move
-        keyManager.newEvent(84,0,function(){setTool(6,true)}); // text
+        keyManager.newEvent(80,0,function(){toolShortcut(0)}); // pen
+        keyManager.newEvent(72,0,function(){toolShortcut(1)}); // Hand
+        keyManager.newEvent(69,0,function(){toolShortcut(2)}); // eraser
+        keyManager.newEvent(76,0,function(){toolShortcut(3)}); // line
+        keyManager.newEvent(82,0,function(){toolShortcut(4)}); // rect
+        keyManager.newEvent(77,0,function(){toolShortcut(7)}); // move
+        keyManager.newEvent(84,0,function(){toolShortcut(6)}); // text
 
         keyManager.newEvent(89,1,redo); // Redo
         keyManager.newEvent(90,1,undo); // Undo
@@ -2588,7 +3220,10 @@ whiteboard = function(){
         save:save,
         getPens:getPens,
         changecolor:changecolor,
+        changeFill:changeFill,
         closeWhiteboard:closeWhiteboard,
-        generateBackground:generateBackground
+        generateBackground:generateBackground,
+        openAltTools:openAltTools,
+        drawLine:drawLine
     }
 }();

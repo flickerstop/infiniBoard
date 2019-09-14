@@ -137,6 +137,17 @@ html{
     filter: var(--image-filter);
 }
 
+.toolbar-icon-expand{
+    pointer-events: none;
+    position: absolute;
+    margin: 5px;
+    width: 40px;
+    height: 40px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
 .toolbar-icon.selected{
     opacity: 1.0;
     background-color: var(--highlight);
@@ -152,6 +163,21 @@ html{
     position: absolute;
     top: 0px;
     left: 0px;
+}
+
+.toolbar-slot{
+    width: 50px;
+    height: 50px;
+    float: left;
+}
+
+.toolbar-rightClickMenu{
+    position: absolute;
+    left: 50px;
+    height: 50px;
+    background-color: var(--titlebar);
+    border: 1px solid var(--highlight);
+
 }
 
 /* #endregion */
@@ -174,6 +200,16 @@ html{
 
 #colorBar-newcolor{
     position: absolute;
+    height: 40px;
+    width: 50px;
+    border: 1px solid var(--highlight);
+    opacity: 0.0;
+    cursor: pointer;
+}
+
+#colorBar-newFill{
+    position: absolute;
+    left: 50px;
     height: 40px;
     width: 50px;
     border: 1px solid var(--highlight);
@@ -425,6 +461,24 @@ html{
 
     /*#endregion*/
 
+    /*#region textures*/
+    #navBar-content-textures{
+        width: 100%;
+        height: 100%;
+    }
+
+    .navBar-content-textures-card{
+        width: 50px;
+        height: 50px;
+        margin: 3px;
+        border: 1px solid var(--main);
+        float: left;
+        background-size: 50px 50px;
+        background-repeat: no-repeat;
+        background-position: center center;
+    }
+
+    /*#endregion*/
 /*#endregion*/
 
 #drawingBoard-input{

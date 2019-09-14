@@ -127,7 +127,7 @@ function createWindow () {
         width: 1600,
         height: 1000,
         frame: false, 
-        icon: './icon.png',
+        icon: './src/frontend/images/box.png',
         webPreferences: {
             nodeIntegration: true
         }
