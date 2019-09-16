@@ -1,5 +1,10 @@
 mainMenu = function(){
 
+    /**
+     * TODO
+     * Add the most recent box to the top in it's own section then list the past boxes below
+     */
+
     let isBoxesLoaded = false;
     let isBoxesDrawn = false;
     /**
@@ -64,11 +69,24 @@ mainMenu = function(){
      */
     function loadMyBoxes(){
         let boxesArea = d3.select("#boxList").html("");
+
+
+        let sortedBoxes = boxManager.getShelf().sort(sortTime);
+
+
         //boxesArea.append("h2").html("My Boxes");
-        for(let box of boxManager.getShelf()){
-            
-            // Add main Box Item div
-            let boxItem = boxesArea.append("div").attr("class","boxList-boxItem").style("background-color","#"+box.boards[0].bgcolor);
+        let isMostRecent = true;
+        for(let box of sortedBoxes){
+            let boxItem = null;
+
+            if(isMostRecent){
+                // Add main Box Item div
+                boxItem = d3.select("#mostRecentBox").append("div").attr("class","boxList-boxItem").style("background-color","#"+box.boards[0].bgcolor).style("float","none");
+                isMostRecent = false;
+            }else{
+                // Add main Box Item div
+                boxItem = boxesArea.append("div").attr("class","boxList-boxItem").style("background-color","#"+box.boards[0].bgcolor);
+            }
 
             // Draw svg Preview
             let svg = boxItem.append("svg").attr("viewBox",`0,0,1000,1000`).attr("class","boxList-boxItem-svg-preview");
@@ -111,6 +129,14 @@ mainMenu = function(){
             });
         }
         isBoxesDrawn = true;
+
+        function sortTime(a,b) {
+            if (a.lastUsed > b.lastUsed)
+                return -1;
+            if (a.lastUsed < b.lastUsed)
+                return 1;
+            return 0;
+        }
     }
 
     
