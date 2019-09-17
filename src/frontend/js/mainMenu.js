@@ -139,10 +139,56 @@ mainMenu = function(){
         }
     }
 
+    function setTheme(themeID){
+        d3.selectAll(".settings-themeRow").style("opacity",null);
+        d3.selectAll(".settings-themeRow-checkBox").style("background-image",null);
+        if(themeID == 0){ // Dark Theme
+            d3.select("#settings-darkThemeRow").style("opacity","1");
+            d3.select("#settings-darkThemeRow-checkBox").style("background-image","url('./images/x_white.png'");
+            d3.select("#themeStyle").html(`
+            :root {
+            
+                --highlight: rgb(103, 103, 103);
+    
+                --titlebar: rgb(29, 29, 29); 
+                --sidebar: rgb(37, 37, 37); 
+                --main: rgb(49, 49, 49); 
+    
+                --accent: #e78665;
+                --text: #ecf0f1;
+                --green: #27ae60;
+                --red: #e74c3c;
+                --blue: #3498db;
+                --darkblue: #2980b9;
+                --image-filter: invert(0);
+            }`);
+        }else if(themeID == 1){ // Light Theme
+            d3.select("#settings-lightThemeRow").style("opacity","1");
+            d3.select("#settings-lightThemeRow-checkBox").style("background-image","url('./images/x_white.png'");
+            d3.select("#themeStyle").html(`
+            :root {
+                
+                --highlight: #ffffff;
+    
+                --titlebar: #a9a9a9; 
+                --sidebar: #bdc3c7; 
+                --main: #ecf0f1; 
+    
+                --text: #000000;
+                --green: #27ae60;
+                --red: #e74c3c;
+                --blue: #3498db;
+                --darkblue: #2980b9;
+                --image-filter: invert(1);
+            }`);
+        }
+    }
+
     
     return {
         init:init,
         createNewBox:createNewBox,
-        changeState:changeState
+        changeState:changeState,
+        setTheme:setTheme
     }
 }();
