@@ -1519,6 +1519,8 @@ whiteboard = function(){
         thisBoard.currentStroke = currentStroke;
         thisBoard.currentFill = currentFill;
 
+        boxManager.getBox().lastUsed = Date.now();
+
         // Send a message with the tag "save" and payload of the boardbox
         comm.sendMessage("save", boxManager.getBox());
         autoSave.isSaved = true;
