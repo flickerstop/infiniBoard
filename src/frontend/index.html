@@ -92,6 +92,9 @@
                         <div class="button-icon" style="background-image:url('./images/add_white.png')"></div>
                         New Box
                     </div>
+                    <div style="opacity: 0.3;margin-bottom: 10px;">Most Recent</div>
+                    <div id="mostRecentBox"></div>
+                    <div style="opacity: 0.3;margin-bottom: 10px;">Past Boxes</div>
                     <div id="boxList"></div>
                 </div>
                 <div id="home" class="stateSection">
@@ -101,12 +104,12 @@
                     <h2>Settings</h2>
                     <div class="settingsRow">
                         Theme
-                        <div id="settings-darkThemeRow">
-                            <div id="settings-darkThemeRow-checkBox"></div>
+                        <div class="settings-themeRow" id="settings-darkThemeRow" onclick="mainMenu.setTheme(0)">
+                            <div class="settings-themeRow-checkBox" id="settings-darkThemeRow-checkBox"></div>
                             <div id="settings-darkThemeRow-text">Dark Theme</div>
                         </div>
-                        <div id="settings-lightThemeRow">
-                            <div id="settings-lightThemeRow-checkBox"></div>
+                        <div class="settings-themeRow" id="settings-lightThemeRow" onclick="mainMenu.setTheme(1)">
+                            <div class="settings-themeRow-checkBox" id="settings-lightThemeRow-checkBox"></div>
                             <div id="settings-lightThemeRow-text">Light Theme</div>
                         </div>
                     </div>
