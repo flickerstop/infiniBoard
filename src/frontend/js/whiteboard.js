@@ -1505,7 +1505,7 @@ whiteboard = function(){
     /**
      * Send the current boardbox to the main process to save
      */
-    function save(){
+    async function save(){
         // get the pens from the color bar
         let pens = [];
         for(let pen of colorBar.pens){
@@ -2157,6 +2157,8 @@ whiteboard = function(){
                         d3.select(`#svg-layer-${layer.id}`).style("display","none");
                         d3.select("#navBar-layers-visible-"+layer.id).style("background-image","url('./images/x_white.png')")
                     }
+
+                    autoSaveTimeout();
                     
                 });
 
