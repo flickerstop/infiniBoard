@@ -2306,7 +2306,7 @@ whiteboard = function(){
             d3.select("#whiteboard-textInputArea").style("width",textDrawArea.w);
         }
         if(isYOverflow){
-            textDrawArea.h += 20;
+            textDrawArea.h += (element.scrollHeight-element.clientHeight);
             d3.select("#whiteboard-textInputArea").style("height",textDrawArea.h);
         }
             
