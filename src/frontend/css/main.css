@@ -96,6 +96,7 @@ html{
     width: calc(100% - 51px);
     height: calc(100% - 41px);
     z-index: 1;
+    touch-action: none;
 }
 
 #drawingBoard-svg{ /* Whiteboard svg */

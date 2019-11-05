@@ -1,0 +1,36 @@
+<html>
+    <head>
+        <script src="../../frontend/js/touchInput.js"></script>
+    </head>
+
+    <body>
+        <div id="test" style="background-color:black;width:500px;height:500px;touch-action: none;"></div>
+    </body>
+
+    <script>
+        
+        touchInput.setup("test",{
+            onPenDown: function(event){
+                console.log("pen down")
+            },
+            onPenMove: function(event){
+                console.log("pen move")
+            },
+            onPenUp: function(event){
+                console.log("pen up")
+            },
+            onEraserDown: function(event){
+                console.log("eraser down")
+            },
+            onEraserMove: function(event){
+                console.log("eraser move")
+            },
+            onEraserUp: function(event){
+                console.log("eraser up")
+            },
+            onTouchDraw: function(event){
+                console.log("drawing with finger");
+            }
+        });
+    </script>
+</html>

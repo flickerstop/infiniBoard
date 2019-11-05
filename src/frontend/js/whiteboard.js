@@ -1,4 +1,4 @@
-whiteboard = function(){
+let whiteboard = function(){
 
     /**
      * Mouse enter vs mouse over
@@ -10,6 +10,7 @@ whiteboard = function(){
 
     let svg = null; // hold d3 object of the svg
     let isDrawing = false; // Is the user currently drawing
+    let isErasing = false;
     let buffer = []; // Buffer for the currently drawing ling
     let lastPointTime = 0; // Time of the last drawing point
     
@@ -133,10 +134,83 @@ whiteboard = function(){
         svg.temp = svg.parent.append("g").attr("id","temp-line");
         svg.layers = [];
 
+
+        //TODO Setting up types of input
         svg.parent.on("mousedown",mouseDown);
         svg.parent.on("mouseup",mouseUp)
         svg.parent.on("mousemove", mouseMove);
 
+        touchInput.setup("drawingBoard",{
+            onPenDown: function(event){
+                startPenTool();
+            },
+            onPenMove: function(event){
+                // Get the current mouse coordinates
+                mouse = {
+                    // xy based on svg location
+                    x: (event.offsetX*viewbox.scale)+viewbox.x,
+                    y: (event.offsetY*viewbox.scale)+viewbox.y,
+                    // last xy
+                    lx: mouse.x,
+                    ly: mouse.y,
+                    // xy based on main panel position
+                    gx: event.pageX,
+                    gy: event.pageY,
+                    // last xy
+                    lgx: mouse.gx,
+                    lgy: mouse.gy
+                }
+
+                penToolMoving();
+            },
+            onPenUp: function(event){
+                endPenTool(true);
+                isDrawing = false;        
+                mouseDownPoint = null;
+            },
+            onEraserDown: function(event){
+                isErasing = true;
+            },
+            onEraserUp: function(event){
+                isErasing = true;
+            },
+            onEraserMove: function(event){
+                // Get the current mouse coordinates
+                mouse = {
+                    // xy based on svg location
+                    x: (event.offsetX*viewbox.scale)+viewbox.x,
+                    y: (event.offsetY*viewbox.scale)+viewbox.y,
+                    // last xy
+                    lx: mouse.x,
+                    ly: mouse.y,
+                    // xy based on main panel position
+                    gx: event.pageX,
+                    gy: event.pageY,
+                    // last xy
+                    lgx: mouse.gx,
+                    lgy: mouse.gy
+                }
+
+                //FIXME:
+                /**
+                 * Issue: Unable to find an event that fires when touch input starts over another 
+                 * element then drags over the element you wish to delete.
+                 */
+                //FIXME
+
+                //console.log(document.elementFromPoint(mouse.x, mouse.y));
+
+                // Delete the line from the array
+                // deleteLine(line.id);
+                // // set the save timeout
+                // autoSaveTimeout();
+                // selectedElement = null;
+                // overTextArea = null;
+            },
+            onTouchDraw: function(event){
+                console.log("drawing with finger");
+            }
+        });
         
         // Look through all the layers
         for(let layer of thisBoard.layers){
@@ -643,18 +717,7 @@ whiteboard = function(){
         }
 
         if((isPen()||isCustomShape()) && isLeftClick()){
-            isDrawing = true;
-
-            let isNewPen = true;
-            // check if this line is a new color
-            for(let pen of thisBoard.pens){
-                if(pen == currentColor){
-                    isNewPen = false;
-                }
-            }
-            if(isNewPen){
-                colorBar.addPen(currentColor);
-            }
+            startPenTool();
         }
         else if((isEraser() || isLine() || isRect() || isLink()) && isLeftClick()){
             isDrawing = true;
@@ -867,67 +930,7 @@ whiteboard = function(){
         function isRightClick(){return d3.event.button==2}
         function isMiddleClick(){return d3.event.button==1}
         if(isPen() || isLink() || isCustomShape()){
-            if(buffer.length > 1){
-                // Draw the line in the buffer
-
-                if(isPen()){
-                    let line = newLine(buffer,0,currentColor,currentStroke,null);
-                    drawLine(line);
-                    
-                    // clear the buffer
-                    buffer = [];
-                }else if(isLink()){
-                    // Make sure the line goes back to the start
-                    buffer.push({x:buffer[0].x,y:buffer[0].y});
-
-                    // Create a new popup getting what board to link to
-                    popup.newBoard((isNewBoard,boardData)=>{
-                        if(isNewBoard){ // If a new board is to be created
-                            let newBoardID = boxManager.newBoard(boardData);
-                            
-                            let line = newLine(buffer,2,currentColor,currentStroke,null,newBoardID);
-                            drawLine(line);
-                            save();
-                        }else{ // If no new board is created
-                            if(boardData != null){ // If they didn't close the popup
-                                let line = newLine(buffer,2,currentColor,currentStroke,null,boardData.id);
-                                drawLine(line);
-                                
-                                save();
-                            }else{ // If they closed the popup
-                                console.log("popup closed");
-                            }
-                        }
-                        // clear the buffer
-                        buffer = [];
-                    });
-                }else if(isCustomShape()){
-                    // Make sure the line goes back to the start
-                    buffer.push({x:buffer[0].x,y:buffer[0].y});
-
-                    let line = null;
-                    if(currentToolAltCode == 0){
-                        line = newLine(buffer,5,currentColor,currentStroke,currentFill);
-                    }else if(currentToolAltCode == 1){
-                        line = newLine(buffer,5,"none",currentStroke,currentFill);
-                    }else if(currentToolAltCode == 2){
-                        line = newLine(buffer,5,currentColor,currentStroke,"none");
-                    }
-
-                    drawLine(line);
-                    
-                    // clear the buffer
-                    buffer = [];
-                }
-
-
-                autoSaveTimeout();
-            }
-            // clear the temp line
-            d3.select("#temp-line").html(null);
-
-            // Save in x seconds
-            
+            endPenTool();            
         }
         if(isHand() || isMiddleClick()){
             mouseDownPoint = null;
@@ -1111,46 +1114,7 @@ whiteboard = function(){
             }
         }
         if(isPen() || isLink()){
-            let currentTime = Date.now();
-            
-            // if the user is drawing, add the x,y to the buffer
-            if(isDrawing){
-                // if it has been x milliseconds since the last coordinate saved
-                if(currentTime>=lastPointTime+10){
-                    if(holdShift.isHeld){
-                        // if the x distance from the lastX is greater than the y, draw a line only on the x axis
-                        if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
-                            lastPointTime = currentTime;
-                            svg.temp.append("circle")
-                                .attr("fill",currentColor)
-                                .attr("r",currentStroke/2)
-                                .attr("cx",mouse.x)
-                                .attr("cy",holdShift.y);
-
-                            buffer.push({x:mouse.x,y:holdShift.y});
-
-                        }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
-                            lastPointTime = currentTime;
-                            svg.temp.append("circle")
-                                .attr("fill",currentColor)
-                                .attr("r",currentStroke/2)
-                                .attr("cx",holdShift.x)
-                                .attr("cy",mouse.y);
-                            
-                            buffer.push({x:holdShift.x,y:mouse.y});
-                        }
-                    }else{
-                        lastPointTime = currentTime;
-                        svg.temp.append("circle")
-                            .attr("fill",currentColor)
-                            .attr("r",currentStroke/2)
-                            .attr("cx",mouse.x)
-                            .attr("cy",mouse.y);
-                        
-                        buffer.push({x:mouse.x,y:mouse.y});
-                    }
-                }
-            }
+            penToolMoving();
         }
         if(isLine()){
             if(isDrawing){
@@ -1622,7 +1586,7 @@ whiteboard = function(){
 
     // #endregion
     //==//==//==//==//==//==//
-    // tools
+    // settings tools
     // #region
 
     /**
@@ -3155,7 +3119,131 @@ whiteboard = function(){
         });
     }
     // #endregion
+    //==//==//==//==//==//==//
+    // Pen Tool
+    // #region
+    function startPenTool(){
+        isDrawing = true;
 
+        let isNewPen = true;
+        // check if this line is a new color
+        for(let pen of thisBoard.pens){
+            if(pen == currentColor){
+                isNewPen = false;
+            }
+        }
+        if(isNewPen){
+            colorBar.addPen(currentColor);
+        }
+    }
+
+    function endPenTool(isTouchInput = false){
+        if(buffer.length > 1){
+            // Draw the line in the buffer
+
+            if(isPen() || isTouchInput){
+                let line = newLine(buffer,0,currentColor,currentStroke,null);
+                drawLine(line);
+                
+                // clear the buffer
+                buffer = [];
+            }else if(isLink()){
+                // Make sure the line goes back to the start
+                buffer.push({x:buffer[0].x,y:buffer[0].y});
+
+                // Create a new popup getting what board to link to
+                popup.newBoard((isNewBoard,boardData)=>{
+                    if(isNewBoard){ // If a new board is to be created
+                        let newBoardID = boxManager.newBoard(boardData);
+                        
+                        let line = newLine(buffer,2,currentColor,currentStroke,null,newBoardID);
+                        drawLine(line);
+                        save();
+                    }else{ // If no new board is created
+                        if(boardData != null){ // If they didn't close the popup
+                            let line = newLine(buffer,2,currentColor,currentStroke,null,boardData.id);
+                            drawLine(line);
+                            
+                            save();
+                        }else{ // If they closed the popup
+                            console.log("popup closed");
+                        }
+                    }
+                    // clear the buffer
+                    buffer = [];
+                });
+            }else if(isCustomShape()){
+                // Make sure the line goes back to the start
+                buffer.push({x:buffer[0].x,y:buffer[0].y});
+
+                let line = null;
+                if(currentToolAltCode == 0){
+                    line = newLine(buffer,5,currentColor,currentStroke,currentFill);
+                }else if(currentToolAltCode == 1){
+                    line = newLine(buffer,5,"none",currentStroke,currentFill);
+                }else if(currentToolAltCode == 2){
+                    line = newLine(buffer,5,currentColor,currentStroke,"none");
+                }
+
+                drawLine(line);
+                
+                // clear the buffer
+                buffer = [];
+            }
+
+
+            autoSaveTimeout();
+        }
+        // clear the temp line
+        d3.select("#temp-line").html(null);
+
+        // Save in x seconds
+    }
+
+    function penToolMoving(){
+        let currentTime = Date.now();
+            
+        // if the user is drawing, add the x,y to the buffer
+        if(isDrawing){
+            // if it has been x milliseconds since the last coordinate saved
+            if(currentTime>=lastPointTime+10){
+                if(holdShift.isHeld){
+                    // if the x distance from the lastX is greater than the y, draw a line only on the x axis
+                    if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
+                        lastPointTime = currentTime;
+                        svg.temp.append("circle")
+                            .attr("fill",currentColor)
+                            .attr("r",currentStroke/2)
+                            .attr("cx",mouse.x)
+                            .attr("cy",holdShift.y);
+
+                        buffer.push({x:mouse.x,y:holdShift.y});
+
+                    }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
+                        lastPointTime = currentTime;
+                        svg.temp.append("circle")
+                            .attr("fill",currentColor)
+                            .attr("r",currentStroke/2)
+                            .attr("cx",holdShift.x)
+                            .attr("cy",mouse.y);
+                        
+                        buffer.push({x:holdShift.x,y:mouse.y});
+                    }
+                }else{
+                    lastPointTime = currentTime;
+                    svg.temp.append("circle")
+                        .attr("fill",currentColor)
+                        .attr("r",currentStroke/2)
+                        .attr("cx",mouse.x)
+                        .attr("cy",mouse.y);
+                    
+                    buffer.push({x:mouse.x,y:mouse.y});
+                }
+            }
+        }
+    }
+    // #endregion
+    //==//==//==//==//==//==//
 
     /**
      * Clears the whiteboard and returns home
@@ -3218,6 +3306,10 @@ whiteboard = function(){
 
     }
 
+    function getViewbox(){
+        return viewbox;
+    }
+
 
     return{
         init:init,
@@ -3230,6 +3322,7 @@ whiteboard = function(){
         closeWhiteboard:closeWhiteboard,
         generateBackground:generateBackground,
         openAltTools:openAltTools,
-        drawLine:drawLine
+        drawLine:drawLine,
+        getViewbox:getViewbox
     }
 }();
