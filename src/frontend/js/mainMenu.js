@@ -1,38 +1,8 @@
 mainMenu = function(){
 
-    /**
-     * TODO
-     * Add the most recent box to the top in it's own section then list the past boxes below
-     */
-
-    let isBoxesLoaded = false;
-    let isBoxesDrawn = false;
-    /**
-     * Does nothing atm
-     */
     function init(){
-        comm.sendSync("getBoxes","please").then((boxes)=>{
-            boxManager.setShelf(boxes);
-        });
-
-        let loadingInterval = setInterval(()=>{
-            //TODO Add loading settings
-            // Check if the boxes have been loaded from file
-            if(boxManager.getShelf()!= null && !isBoxesLoaded){
-                loadMyBoxes();
-                isBoxesLoaded = true;
-                d3.select("#splashScreen-middleCard-text").html("Rendering Previews...");
-            }
-            // If loaded, check if the boxes have been draw
-            if(isBoxesDrawn){
-                // Fade out
-                d3.select("#splashScreen").transition().duration(600).style("opacity",0).transition().duration(0).style("display","none");
-                // set to myboxes view
-                mainMenu.changeState('myBoxes');
-                // clear this interval
-                clearInterval(loadingInterval);
-            }
-        },100)
+        mainMenu.changeState('myBoxes');
+   
     }
 
     function changeState(stateID, boxName){
@@ -44,7 +14,17 @@ mainMenu = function(){
                 d3.select("#menuBar").style("display",null);
                 break;
             case "myBoxes":
-
+                // Display loading splash screen
+                d3.select("#splashScreen-middleCard-text").html("Loading Infiniboxes...");
+                d3.select("#splashScreen").style("opacity",100).style("display",null);
+                
+                comm.sendSync("getBoxes","please").then((boxes)=>{
+                    boxManager.setShelf(boxes);
+                    d3.select("#splashScreen-middleCard-text").html("Rendering Previews...");
+                    loadMyBoxes();
+                    d3.select("#splashScreen").transition().duration(600).style("opacity",0).transition().duration(0).style("display","none");
+                });
+                
                 break;
             case "whiteboard":
                 d3.select("#menuBar").style("display","none");
@@ -68,11 +48,9 @@ mainMenu = function(){
      * Menu Bar Option to show list of users boxes
      */
     function loadMyBoxes(){
+        d3.select("#mostRecentBox").html("");
         let boxesArea = d3.select("#boxList").html("");
-
-
         let sortedBoxes = boxManager.getShelf().sort(sortTime);
-
 
         //boxesArea.append("h2").html("My Boxes");
         let isMostRecent = true;
@@ -128,8 +106,7 @@ mainMenu = function(){
                 changeState("whiteboard", box.saveName);
             });
         }
-        isBoxesDrawn = true;
-
+        
         function sortTime(a,b) {
             if (a.lastUsed > b.lastUsed)
                 return -1;
