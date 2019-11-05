@@ -177,9 +177,18 @@ function saveBox(box){
 
 function loadBoxes(){
     return new Promise(async function(resolve, reject) {
+        // make sure the boxes folder exists first
+        fs.ensureDirSync(saveLocation);
+
+
         let boxes = [];
         // read all the files in the directory
         fs.readdir(saveLocation,async (err,files)=>{
+
+            // if there are no boxes created, return an empty string
+            if(files.length == 0){
+                return resolve(boxes);
+            }
             // loop through all files
             for(let file of files){
                 // Check if it's a .box file
