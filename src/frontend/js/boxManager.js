@@ -8,8 +8,8 @@
  */
 class boxManager {
     // Private fields
-    static #currentBox = null;
-    static #shelf = null;
+    static currentBox = null;
+    static shelf = null;
 
     /**
      * Sets the loaded boxes to the passed object

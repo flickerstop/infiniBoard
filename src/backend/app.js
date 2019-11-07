@@ -181,6 +181,10 @@ function createWindow () {
         console.log('f11 is pressed')
         window.webContents.openDevTools();
     });
+    globalShortcut.register('f10', function() {
+        console.log('f10 is pressed')
+        window.webContents.openDevTools();
+    });
 	globalShortcut.register('f5', function() {
 		console.log('f5 is pressed')
 		window.reload()

@@ -8,6 +8,8 @@ let whiteboard = function(){
      * https://www.w3schools.com/jquery/tryit.asp?filename=tryjquery_event_mouseleave_mouseout
      */
 
+    let layerManager = new LayerManager();
+
     let svg = null; // hold d3 object of the svg
     let isDrawing = false; // Is the user currently drawing
     let isErasing = false;
@@ -20,7 +22,6 @@ let whiteboard = function(){
     let currentToolAltCode = 0; // Used to set different versions of tools
     let currentStroke = 2; // Current selected stroke
     let currentColor = "white"; // Current selected color
-    let currentLayer = 0; // Current Selected Layer
     let currentFill = "#fffff"; // Current Selected fill
 
     let mouseDownPoint = null; // Point where the mouse was pressed down
@@ -46,7 +47,6 @@ let whiteboard = function(){
 
     let overTextArea = null; // Used to see if the mouse is over a text area to allow for editing 
     let previousTextArea = null; // Used to store the text area in it's pre-edited state
-
     /**
      * Function that runs to initialize the whiteboard and load the current board
      */
@@ -107,6 +107,9 @@ let whiteboard = function(){
         // Set this board to the board with the passed ID
         thisBoard = boxManager.getBoard(id);
 
+        // Set all the layers
+        layerManager.layers = thisBoard.layers;
+
         // Create the current viewbox
         viewbox = {
             x:0,
@@ -132,8 +135,9 @@ let whiteboard = function(){
         svg.background = svg.parent.append("g").attr("id","drawingBoard-svg-background");
         svg.layerGroup = svg.parent.append("g");
         svg.temp = svg.parent.append("g").attr("id","temp-line");
-        svg.layers = [];
 
+        // Create the svg layers
+        layerManager.createSVGLayers(svg.layerGroup);
 
         //TODO Setting up types of input
         svg.parent.on("mousedown",mouseDown);
@@ -211,25 +215,6 @@ let whiteboard = function(){
                 console.log("drawing with finger");
             }
         });
-        
-        // Look through all the layers
-        for(let layer of thisBoard.layers){
-            let svgLayer = svg.layerGroup.append("g").attr("id","svg-layer-"+layer.id);
-            // draw all the objects in the current whiteboard
-            for(let object of layer.objects){
-                drawLine(object,svgLayer);
-            }
-
-            // Check if the layer is hidden
-            if(!layer.isVisible){
-                svgLayer.style("display","none");
-            }
-
-            svg.layers.push({
-                svg:svgLayer,
-                id:layer.id
-            });
-        }
 
         // Load the previous layer/stroke/colour
         if(thisBoard.currentColor != undefined){
@@ -237,12 +222,6 @@ let whiteboard = function(){
         }else{
             currentColor = thisBoard.pens[0];
         }
-
-        // if(thisBoard.currentLayer != undefined){
-        //     currentLayer = thisBoard.currentLayer;
-        // }else{
-            currentLayer = thisBoard.layers[0];
-        // }
         
         if(thisBoard.currentStroke != undefined){
             currentStroke = thisBoard.currentStroke;
@@ -303,7 +282,7 @@ let whiteboard = function(){
         initNavBar();
 
         // Auto select the layer
-        d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container selected");
+        d3.select("#navBar-layers-container-"+layerManager.currentLayer.id).attr("class","navBar-layers-container selected");
 
         // Draw the background if needs it
         generateBackground();
@@ -371,10 +350,11 @@ let whiteboard = function(){
         // https://www.dashingd3js.com/svg-paths-and-d3js
 
         if(drawOnSvg == null){
-            drawOnSvg = svg.layers.find(x=>x.id == currentLayer.id).svg;
+            drawOnSvg = layerManager.getCurrentSVGLayer();
         }
 
         // Append a new group for the draw object
+        console.log(line.id)
         drawOnSvg = drawOnSvg.append("g").attr("id",`object${line.id}`);
 
         if(line.type == 0){ // Pen Tool
@@ -466,13 +446,13 @@ let whiteboard = function(){
                 
             if(isMouseEvents){
                 textGroup.on("mouseenter",function(){
-                    if(isCurrentLayer(line.id) && isText()){
+                    if(layerManager.onCurrentLayer(line.id) && isText()){
                         overTextArea = line;
                         d3.select(this).style("cursor", "text"); 
                     }
                 })
                 .on("mouseleave",function(){
-                    if(isCurrentLayer(line.id) && isText()){
+                    if(layerManager.onCurrentLayer(line.id) && isText()){
                         overTextArea = null;
                         d3.select(this).style("cursor", "default"); 
                     }
@@ -502,7 +482,7 @@ let whiteboard = function(){
                 .attr("id",`image${line.id}`)
                 .on("mousedown",()=>{
                     if(isMouseEvents){
-                        if((isMouse() || isRotate()) && isCurrentLayer(line.id)){
+                        if((isMouse() || isRotate()) && layerManager.onCurrentLayer(line.id)){
                             setTimeout(()=>{drawResize(line)},10);
                         }
                     }
@@ -628,7 +608,7 @@ let whiteboard = function(){
         if(isMouseEvents){
             // If the tool is the move tool, set the selected element to this one
             drawOnSvg.on("mousedown",()=>{
-                if(isMove() && d3.event.button==0 && isCurrentLayer(line.id)){ // if is move & left click & object is on the current layer
+                if(isMove() && d3.event.button==0 && layerManager.onCurrentLayer(line.id)){ // if is move & left click & object is on the current layer
                     selectedElement = line.id;
                 }
             });
@@ -636,7 +616,7 @@ let whiteboard = function(){
             // if the mouse moves over this line
             drawOnSvg.on("mousemove",()=>{
                 // if the tools is set to erasers and is drawing (mouse down)
-                if(isEraser() && isDrawing && isCurrentLayer(line.id)){
+                if(isEraser() && isDrawing && layerManager.onCurrentLayer(line.id)){
                     // Delete the line from the array
                     deleteLine(line.id);
                     // set the save timeout
@@ -1006,7 +986,7 @@ let whiteboard = function(){
         if(isMove() && selectedElement != null && imageResize == null){ // If the object was just moved
             if(tempTransform.x != null || tempTransform.y != null){ // Make sure something was moved
             
-                let line = getLine(selectedElement);
+                let line = layerManager.getObject(selectedElement);
 
                 let oldLine = JSON.parse(JSON.stringify(line));
 
@@ -1030,7 +1010,7 @@ let whiteboard = function(){
         mouseDownPoint = null;
 
         if(imageResize != null){ // If they were adjusting an image size
-            let image = getLine(imageResize.id);
+            let image = layerManager.getObject(imageResize.id);
             let oldLine = JSON.parse(JSON.stringify(image));
 
             // if nothing was resized
@@ -1276,7 +1256,7 @@ let whiteboard = function(){
             }
         }
         if(isMove() && selectedElement != null && imageResize == null){
-            let obj = getLine(selectedElement);
+            let obj = layerManager.getObject(selectedElement);
 
             tempTransform.x = mouse.x-mouseDownPoint.x+obj.transform.x;
             tempTransform.y = mouse.y-mouseDownPoint.y+obj.transform.y;
@@ -1479,9 +1459,10 @@ let whiteboard = function(){
 
         // Save current pen/layer/stroke
         thisBoard.currentColor = currentColor;
-        thisBoard.currentLayer = currentLayer;
+        thisBoard.currentLayer = layerManager.currentLayer;
         thisBoard.currentStroke = currentStroke;
         thisBoard.currentFill = currentFill;
+        thisBoard.layers = layerManager.layers;
 
         boxManager.getBox().lastUsed = Date.now();
 
@@ -1531,7 +1512,7 @@ let whiteboard = function(){
             }
         };
         // Add the object to the current layer
-        currentLayer.objects.push(obj);
+        layerManager.addNewObject(obj);
 
         if(previousTextArea == null){ // If we're editing a text area, don't add this to history
             addToHistory("add",obj);
@@ -1543,34 +1524,21 @@ let whiteboard = function(){
 
 
     function deleteLine(id,isUndo = false){
-        let location = currentLayer.objects.findIndex(x=>x.id == id);
+        let location = layerManager.getObjectIndex(id);
 
         if(location == -1){ // 2 eraser events fired resulting in no id
             return;
         }
         // Add the object to the history
         if(previousTextArea == null && isUndo == false){ // If we're editing a text area, don't add this to history
-            addToHistory("delete",null,getLine(id));
+            addToHistory("delete",null,layerManager.getObject(id));
         }
 
-        let deleted = currentLayer.objects.splice(location,1)[0];
+        let deleted = layerManager.deleteObject(location);
 
         
 
         d3.selectAll(`#object${deleted.id}`).on("click",null).remove();
-    }
-
-    function getLine(id){
-
-        for(let layer of thisBoard.layers){
-            for(let object of layer.objects){
-                if(object.id == id){
-                    return object;
-                }
-            }
-        }
-
-        return null;
     }
 
     function updateLine(line){
@@ -2093,14 +2061,11 @@ let whiteboard = function(){
         layerPanel.append("div").html("Add new layer")
             .on("click",()=>{
                 let id = boxManager.newLayer(thisBoard.id);
-                svg.layers.push({
-                    svg: svg.layerGroup.append("g").attr("id","svg-layer-"+id),
-                    id: id
-                });
+                layerManager.newSVGLayer(id,svg.layerGroup);
                 initNavBar();
             })
 
-        for(let layer of thisBoard.layers){
+        for(let layer of layerManager.layers){
             let layerContainer = layerPanel.append("div")
                 .attr("class","navBar-layers-container")
                 .attr("id","navBar-layers-container-"+layer.id);
@@ -2129,11 +2094,11 @@ let whiteboard = function(){
             let textArea = layerContainer.append("div")
                 .on("click",()=>{
                     // Check if the current layer isnt this layer
-                    if(currentLayer != layer){
-                        d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container");
+                    if(layerManager.currentLayer != layer){
+                        d3.select("#navBar-layers-container-"+layerManager.currentLayer.id).attr("class","navBar-layers-container");
                         console.log(`Change layer: ${layer.name}`);
-                        currentLayer = layer;
-                        d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container selected");
+                        layerManager.currentLayer = layer;
+                        d3.select("#navBar-layers-container-"+layerManager.currentLayer.id).attr("class","navBar-layers-container selected");
                     }else{
                         // Draw a text area where the name goes to change the name
                         util.setValueId("navBar-layers-rename-"+layer.id,layer.name);
@@ -2162,7 +2127,7 @@ let whiteboard = function(){
                 d3.select(`#svg-layer-${layer.id}`).style("display","none");
                 visibleArea.style("background-image","url('./images/x_white.png')")
             }
-            d3.select("#navBar-layers-container-"+currentLayer.id).attr("class","navBar-layers-container selected");
+            d3.select("#navBar-layers-container-"+layerManager.currentLayer.id).attr("class","navBar-layers-container selected");
         }
 
         //#endregion
@@ -2950,7 +2915,7 @@ let whiteboard = function(){
             old: oldObject,
             undone: false,
             overwritten: false,
-            layer: currentLayer.id
+            layer: layerManager.currentLayer.id
         }
         // check if the last event was undone
         if(thisBoard.history[0] != undefined && thisBoard.history[0].undone == true){
@@ -2996,23 +2961,23 @@ let whiteboard = function(){
 
         }else if(lastEvent.type == "delete"){ // Opposite of delete is adding back
             // Add the line back
-            thisBoard.layers.find(x=>x.id == lastEvent.layer).objects.push(lastEvent.old);
+            layerManager.addNewObjectSpecificLayer(lastEvent.layer,lastEvent.old);
             updateLine(lastEvent.old);
 
         }else if(lastEvent.type == "move"){ // Move back to the old position
-            let obj = getLine(lastEvent.new.id);
+            let obj = layerManager.getObject(lastEvent.new.id);
             obj.transform = lastEvent.old.transform;
             updateLine(obj);
 
         }else if(lastEvent.type == "edit"){ // Change the text back to the old text
-            let obj = getLine(lastEvent.new.id);
+            let obj = layerManager.getObject(lastEvent.new.id);
             obj.dots = lastEvent.old.dots;
             obj.color = lastEvent.old.color;
             obj.stroke = lastEvent.old.stroke;
             updateLine(obj);
 
         }else if(lastEvent.type == "resize"){ // Set the size/transform to the old one
-            let obj = getLine(lastEvent.old.id);
+            let obj = layerManager.getObject(lastEvent.old.id);
             obj.dots = lastEvent.old.dots;
             updateLine(obj);
         }
@@ -3040,26 +3005,26 @@ let whiteboard = function(){
 
         // All these events are doing what they originally did
         if(lastEvent.type == "add"){ 
-            thisBoard.layers.find(x=>x.id == lastEvent.layer).objects.push(lastEvent.new);
+            layerManager.addNewObjectSpecificLayer(lastEvent.layer,lastEvent.new);
             updateLine(lastEvent.new);
 
         }else if(lastEvent.type == "delete"){
             deleteLine(lastEvent.old.id,true);
 
         }else if(lastEvent.type == "move"){
-            let obj = getLine(lastEvent.new.id);
+            let obj = layerManager.getObject(lastEvent.new.id);
             obj.transform = lastEvent.new.transform;
             updateLine(obj);
 
         }else if(lastEvent.type == "edit"){ // Change the text back to the old text
-            let obj = getLine(lastEvent.new.id);
+            let obj = layerManager.getObject(lastEvent.new.id);
             obj.dots = lastEvent.new.dots;
             obj.color = lastEvent.new.color;
             obj.stroke = lastEvent.new.stroke;
             updateLine(obj);
 
         }else if(lastEvent.type == "resize"){
-            let obj = getLine(lastEvent.old.id);
+            let obj = layerManager.getObject(lastEvent.old.id);
             obj.dots = lastEvent.new.dots;
             updateLine(obj);
             
@@ -3069,13 +3034,6 @@ let whiteboard = function(){
         initNavBar();
     }
 
-    // #endregion
-    //==//==//==//==//==//==//
-    // Layers
-    // #region
-    function isCurrentLayer(objID){
-        return currentLayer.objects.find(x=>x.id == objID) != undefined?true:false;
-    }
     // #endregion
     //==//==//==//==//==//==//
     // Nav Bar Images

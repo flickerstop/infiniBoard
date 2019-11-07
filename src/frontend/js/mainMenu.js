@@ -6,7 +6,6 @@ mainMenu = function(){
         });
         mainMenu.changeState('myBoxes');
     }
-
     function changeState(stateID, boxName){
         d3.selectAll(".stateSection").style("display","none");
         d3.select("#" + stateID).style("display",null);
