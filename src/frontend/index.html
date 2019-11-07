@@ -62,14 +62,7 @@
                 <svg style="height: 20px" id="frame-buttons-svg"></svg>
             </div>
         </div>
-        <div id="mainPanel">
-            <div id="splashScreen">
-                <div id="splashScreen-middleCard">
-                    <div id="splashScreen-middleCard-loading">
-                    </div>
-                    <div id="splashScreen-middleCard-text">Loading Infiniboxes...</div>
-                </div>
-            </div>
+        <div id="mainPanel">            
             <div id="menuBar">
                 <div style="padding-top: 20px;">
                     <div class="menuBar-navItem button menuBar-navItem-selected" onclick="mainMenu.changeState('home');">
@@ -87,6 +80,13 @@
                 </div>
             </div>
             <div id="mainSection">
+                <div id="splashScreen">
+                    <div id="splashScreen-middleCard">
+                        <div id="splashScreen-middleCard-loading">
+                        </div>
+                        <div id="splashScreen-middleCard-text">Loading Infiniboxes...</div>
+                    </div>
+                </div>
                 <div id="myBoxes" class="stateSection">
                     <h2>My Boxes</h2>
                     <div id="newBoxButton" class="button" onclick="popup.newBoardBox(mainMenu.createNewBox)">
@@ -118,7 +118,7 @@
             </div>
             <div id="whiteboard" class="stateSection">
                     <div id="drawingBoard">
-    
+                        
                     </div>
                     <div id="toolbar">
                         <div id="toolbar-background"></div>
