@@ -20,6 +20,10 @@ const saveLocation = "./boxes/";//(process.env.APPDATA || (process.platform == '
 // #region
 let window = null;
 
+let appDataPath = app.getPath("userData");
+let settingsFilePath = appDataPath + "/settings.json";
+
+let stateChangeTimeout;
 // #endregion
 /////////////////////////////////////////////////////
 // Main Process
@@ -43,6 +47,22 @@ ipc.on('getBoxes', (event) => {
     });
 });
 
+ipc.on('updateSettings', (event, payload) => {
+    // Get the current saved settings
+    let currentSettings = getSettings();
+
+    // Update the setting
+    currentSettings[payload.settingKey] = payload.settingValue;
+
+    // Save the file again
+    fs.writeFileSync(settingsFilePath,JSON.stringify(currentSettings));
+});
+
+ipc.onReply("getSettings",(payload)=>{
+    return new Promise(async function(resolve, reject) {
+        return resolve(getSettings());
+    });
+})
 ipc.on('windowsButtons', (event, payload) => {
     switch(payload){
         case "close":
@@ -122,16 +142,27 @@ ipc.onReply("getImages",(payload)=>{
 // Local Functions
 // #region
 function createWindow () {
+
+    // Get the saved settings
+    let currentSettings = getSettings();
+    
     // Create the browser window.
     window = new BrowserWindow({
-        width: 1600,
-        height: 1000,
+        width: currentSettings.windowState.width,
+        height: currentSettings.windowState.height,
+        x: currentSettings.windowState.x,
+        y: currentSettings.windowState.y,
         frame: false, 
         icon: './src/frontend/images/box.png',
         webPreferences: {
             nodeIntegration: true
         }
     });
+    
+    // If window was maximized, then maximize...
+    if (currentSettings.windowState.isMaximized){
+        window.maximize();
+    }
 
     ipc.init(window);
 
@@ -153,7 +184,18 @@ function createWindow () {
 	globalShortcut.register('f5', function() {
 		console.log('f5 is pressed')
 		window.reload()
-	});
+    });
+    
+    // Add event listeners for changes to window state (position, size)
+    window.on('resize', ()=> {
+        // Basically if nothing was recieved on the listener for 100ms, the save function is called
+        clearTimeout(stateChangeTimeout); // clear existing timeout function
+        stateChangeTimeout = setTimeout(saveWindowState, 100 ,window.getBounds(),window.isMaximized()); // Set Timeout Function with delay of 100 seconds
+    });
+    window.on('move', ()=> {
+        clearTimeout(stateChangeTimeout);
+        stateChangeTimeout = setTimeout(saveWindowState, 100 ,window.getBounds(),window.isMaximized());
+    });
 }
 
 function saveBox(box){
@@ -202,5 +244,38 @@ function loadBoxes(){
     });
 }
 
+function getSettings(){
+
+    let defaults = {
+        windowState: {
+            height:1000,
+            width:1600,
+            x:160,
+            y:20,
+            isMaximized:false,
+        },
+        theme: 1,
+    }
+    try {
+        let currentSettings =  JSON.parse(fs.readFileSync(settingsFilePath));
+        for (const [key, value] of Object.entries(defaults)) {
+            if (!currentSettings.hasOwnProperty(key) || currentSettings[key] == null || currentSettings[key] == undefined){
+                currentSettings[key] = value;
+            }
+        }
+        return currentSettings;
+    } catch (error) {
+        return defaults;
+    }
+}
+
+function saveWindowState(winBounds, isMaximized){
+    let currentSettings = getSettings();
+
+    winBounds.isMaximized = isMaximized;
+
+    currentSettings["windowState"] = winBounds;
+    fs.writeFileSync(settingsFilePath,JSON.stringify(currentSettings));
+}
 // #endregion
 /////////////////////////////////////////////////////

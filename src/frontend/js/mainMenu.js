@@ -1,8 +1,10 @@
 mainMenu = function(){
 
     function init(){
+        comm.sendSync("getSettings",null).then((settings)=>{
+            setTheme(settings.theme)
+        });
         mainMenu.changeState('myBoxes');
-   
     }
 
     function changeState(stateID, boxName){
@@ -159,8 +161,21 @@ mainMenu = function(){
                 --image-filter: invert(1);
             }`);
         }
+        onSettingsChange("theme", themeID)
     }
 
+    /**
+     * Called when a setting has changed. Sends the changed setting to main to be saved in file.
+     * @param {String} settingKey The name of the setting being changed
+     * @param {Object} settingValue The value of the settings being changed
+     */
+    function onSettingsChange(settingKey, settingValue){
+        let setting = {
+            settingKey:settingKey,
+            settingValue:settingValue,
+        }
+        comm.sendMessage("updateSettings", setting)
+    }
     
     return {
         init:init,
