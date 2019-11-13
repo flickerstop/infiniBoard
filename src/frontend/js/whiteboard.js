@@ -43,8 +43,8 @@ let whiteboard = function(){
     let imageResize = null;
     let attachedImage = null; // If the user selected an image from the nav bar
 
-    let overTextArea = null; // Used to see if the mouse is over a text area to allow for editing 
-    let previousTextArea = null; // Used to store the text area in it's pre-edited state
+    //let ToolManager.overTextArea = null; // Used to see if the mouse is over a text area to allow for editing 
+    //let previousTextArea = null; // Used to store the text area in it's pre-edited state
     /**
      * Function that runs to initialize the whiteboard and load the current board
      */
@@ -207,7 +207,7 @@ let whiteboard = function(){
                 // // set the save timeout
                 // autoSaveTimeout();
                 // selectedElement = null;
-                // overTextArea = null;
+                // ToolManager.overTextArea = null;
             },
             onTouchDraw: function(event){
                 console.log("drawing with finger");
@@ -444,13 +444,13 @@ let whiteboard = function(){
             if(isMouseEvents){
                 textGroup.on("mouseenter",function(){
                     if(layerManager.onCurrentLayer(line.id) && toolManager.isText()){
-                        overTextArea = line;
+                        ToolManager.overTextArea = line;
                         d3.select(this).style("cursor", "text"); 
                     }
                 })
                 .on("mouseleave",function(){
                     if(layerManager.onCurrentLayer(line.id) && toolManager.isText()){
-                        overTextArea = null;
+                        ToolManager.overTextArea = null;
                         d3.select(this).style("cursor", "default"); 
                     }
                 });
@@ -619,7 +619,7 @@ let whiteboard = function(){
                     // set the save timeout
                     autoSaveTimeout();
                     selectedElement = null;
-                    overTextArea = null;
+                    ToolManager.overTextArea = null;
                 }
             });
 
@@ -692,199 +692,14 @@ let whiteboard = function(){
             attachedImage = null;
             autoSaveTimeout();
         }
-
-        if((toolManager.isPen()||toolManager.isCustomShape()) && isLeftClick()){
-            startPenTool();
-        }
         else if((toolManager.isEraser() || toolManager.isLine() || toolManager.isRect() || toolManager.isLink()) && isLeftClick()){
             toolManager.isDrawing = true;
         }
         else if(toolManager.isText() && isLeftClick()){
-            if(!isTyping()){ // If the user isn't currently typing
-
-                if(overTextArea == null){ // If the user isn't currently hovering over a text area
-                    // Setup the data for the text input area
-                    textDrawArea = {
-                        x:mouseDownPoint.x,
-                        y:mouseDownPoint.y,
-                        w: 215,
-                        h: 115,
-                        isMouseDownForMoving: false,
-                        isDraggable:true
-                    };
-
-                    // Set the font size
-                    let fontSize = 12 + (currentStroke*2);
-
-                    // Build the foreign Object that holds the text area in the svg
-                    svg.temp.append("foreignObject")
-                        .attr("id","whiteboard-textInputArea-container")
-                        .attr("x",textDrawArea.x)
-                        .attr("y",textDrawArea.y)
-                        .attr("width","100000px") // Technically the text area can't be bigger than 1000x1000
-                        .attr("height","100000px")// But that shouldn't ever happen
-                    // Build the div that borders the text area and allows for dragging
-                    .append("xhtml:div")
-                        .attr("id","whiteboard-textInputArea-moveBorder")
-                        .style("width",textDrawArea.w+20)
-                        .style("height",textDrawArea.h+20)
-                        .on("mouseenter",()=>{
-                            // Set the flag that says the mouse is over the text input area
-                            textDrawArea.isMouseOver = true;
-                        }).on("mouseleave",()=>{
-                            // Clear the flag
-                            textDrawArea.isMouseOver = false;
-                        })
-                        .on("mousedown",()=>{
-                            // Only allow the "isMouseDownForMoving" flag to only be set if the mouse isn't over the text area
-                            /*
-                                This solves the issue of when dragging starting from inside the text box and the mouse
-                                moves outside the box, it triggers the move event
-                            */
-                            if(textDrawArea.isDraggable){
-                                // Set the flag that says the mouse is held down to move the text area
-                                textDrawArea.isMouseDownForMoving = true;
-                                // Set the offset that makes it so the text area's origin isn't exactly at the mouse
-                                textDrawArea.offsetX = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[0];
-                                textDrawArea.offsetY = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[1];
-                            }
-                        }).on("mouseup",()=>{
-                            // Remove the flag
-                            textDrawArea.isMouseDownForMoving = false;
-                        })
-                    // Build the textarea
-                    .append("xhtml:textarea")
-                        .attr("id","whiteboard-textInputArea")
-                        .style("font-size",`${fontSize}px`)
-                        .style("line-height",`${fontSize}px`)
-                        .style("color",currentColor)
-                        .style("width",textDrawArea.w)
-                        .style("height",textDrawArea.h)
-                        .on("input",()=>{
-                            updateTextArea();
-                            closeRightClickMenu();
-                        })
-                        .on("mouseenter",()=>{
-                            // Flag for saying the mouse is over the text area container AND over the textarea
-                            textDrawArea.isDraggable = false;
-                        }).on("mouseleave",()=>{
-                            // Remove the flag
-                            textDrawArea.isDraggable = true;
-                        })
-
-                    // After 10 milliseconds, select focus on the textarea
-                    setTimeout(()=>{document.getElementById("whiteboard-textInputArea").focus()},10);
-                }
-                else{ // If the user is currently hovering over a text area
-                    let fontSize = 12 + (overTextArea.stroke*2);
-
-                    // Setup the data for the text input area
-                    textDrawArea = {
-                        x: overTextArea.dots.x-13 + overTextArea.transform.x,
-                        y: overTextArea.dots.y-13-fontSize+(2+Math.floor(overTextArea.stroke/5))+overTextArea.transform.y,
-                        w: 215,
-                        h: 115,
-                        isMouseDownForMoving: false,
-                        isDraggable:true
-                    };
-
-                    // Build the foreign Object that holds the text area in the svg
-                    svg.temp.append("foreignObject")
-                        .attr("id","whiteboard-textInputArea-container")
-                        .attr("x",textDrawArea.x)
-                        .attr("y",textDrawArea.y)
-                        .attr("width","100000px") // Technically the text area can't be bigger than 1000x1000
-                        .attr("height","100000px")// But that shouldn't ever happen
-                    // Build the div that borders the text area and allows for dragging
-                    .append("xhtml:div")
-                        .attr("id","whiteboard-textInputArea-moveBorder")
-                        .style("width",textDrawArea.w+20)
-                        .style("height",textDrawArea.h+20)
-                        .on("mouseenter",()=>{
-                            // Set the flag that says the mouse is over the text input area
-                            textDrawArea.isMouseOver = true;
-                        }).on("mouseleave",()=>{
-                            // Clear the flag
-                            textDrawArea.isMouseOver = false;
-                        })
-                        .on("mousedown",()=>{
-                            // Only allow the "isMouseDownForMoving" flag to only be set if the mouse isn't over the text area
-                            /*
-                                This solves the issue of when dragging starting from inside the text box and the mouse
-                                moves outside the box, it triggers the move event
-                            */
-                            if(textDrawArea.isDraggable){
-                                // Set the flag that says the mouse is held down to move the text area
-                                textDrawArea.isMouseDownForMoving = true;
-                                // Set the offset that makes it so the text area's origin isn't exactly at the mouse
-                                textDrawArea.offsetX = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[0];
-                                textDrawArea.offsetY = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[1];
-                            }
-                        }).on("mouseup",()=>{
-                            // Remove the flag
-                            textDrawArea.isMouseDownForMoving = false;
-                        })
-                    // Build the textarea
-                    .append("xhtml:textarea")
-                        .attr("id","whiteboard-textInputArea")
-                        .style("font-size",`${fontSize}px`)
-                        .style("line-height",`${fontSize}px`)
-                        .style("color",overTextArea.color)
-                        .style("width",textDrawArea.w)
-                        .style("height",textDrawArea.h)
-                        .property("value",overTextArea.dots.text)
-                        .on("input",()=>{
-                            updateTextArea();
-                            closeRightClickMenu();
-                        })
-                        .on("mouseenter",()=>{
-                            // Flag for saying the mouse is over the text area container AND over the textarea
-                            textDrawArea.isDraggable = false;
-                        }).on("mouseleave",()=>{
-                            // Remove the flag
-                            textDrawArea.isDraggable = true;
-                        });
-
-                        
-                    // Set the stroke and colour to match
-                    currentColor = overTextArea.color;
-                    currentStroke = overTextArea.stroke;
-                    d3.select("#colorBar-stroke-line").attr("stroke-width", currentStroke);
-                    d3.select("#rightClickMenu-stroke-input").attr("value",currentStroke);
-                    colorBar.changecolor(currentColor);
-                    colorBar.strokeSizeLine.attr("stroke", currentColor);
-                    initRightClickMenu();
-
-                    // Save the previous text area
-                    previousTextArea = overTextArea;
-
-                    deleteLine(overTextArea.id);
-
-                    // After 10 milliseconds, select focus on the textarea
-                    setTimeout(()=>{document.getElementById("whiteboard-textInputArea").focus()},10);
-                }
-                
-            }else{ // If they are currently using a textarea
-                // And they click anyone not over the text area
-                if(!textDrawArea.isMouseOver){
-                    // Submit the text area
-                    submitTextArea();
-                }
-            }
+            
         }
         else if(toolManager.isImage() && isLeftClick()){
-            popup.imageSelector(mouse,(image)=>{
-                let data = {
-                    x: image.x,
-                    y: image.y,
-                    w: image.width,
-                    h: image.height
-                }
-                let line = newLine(data,4,null,null,null,image.path);
-                drawLine(line);
-
-                autoSaveTimeout();
-            });
+            
         }
         else if(toolManager.isHand() || isMiddleClick()){
             //clearBackground();
@@ -909,77 +724,8 @@ let whiteboard = function(){
         if(toolManager.isPen() || toolManager.isLink() || toolManager.isCustomShape()){
             endPenTool();            
         }
-        if(toolManager.isHand() || isMiddleClick()){
-            mouseDownPoint = null;
-            generateBackground();
-        }
-        if(toolManager.isEraser()){
 
-        }
-        if(toolManager.isLine() || toolManager.isRect()){
-            if(mouseDownPoint != null){
-                buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouse.y}];
 
-                // Draw the line in the buffer
-
-                if(toolManager.isLine()){
-                    // Check if the height and width is 0
-                    if((buffer[0].x - buffer[1].x) != 0 || (buffer[0].y - buffer[1].y) != 0){
-                        if(holdShift.isHeld){
-                            svg.temp.html(null);
-        
-                            // if the x distance from the lastX is greater than the y, draw a line only on the x axis
-                            if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
-        
-                                svg.temp.append("line")
-                                    .attr("x1",mouse.x)
-                                    .attr("y1",mouseDownPoint.y)
-                                    .attr("x2",mouseDownPoint.x)
-                                    .attr("y2",mouseDownPoint.y)
-                                    .attr("stroke", currentColor)
-                                    .attr("stroke-width", currentStroke);
-        
-                                buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouseDownPoint.y}];
-                                let line = newLine(buffer,6,currentColor,currentStroke,null,toolManager.currentToolAltCode);
-                                drawLine(line);
-                            }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
-        
-
-                                buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouseDownPoint.x,y:mouse.y}];
-                                let line = newLine(buffer,6,currentColor,currentStroke,null,toolManager.currentToolAltCode);
-                                drawLine(line);
-                            }
-                        }else{
-                            let line = newLine(buffer,6,currentColor,currentStroke,null,toolManager.currentToolAltCode);
-                            drawLine(line);
-                        }
-                        
-                    }
-                }else if(toolManager.isRect()){
-                    // Check if the height or width is 0
-                    if((buffer[0].x - buffer[1].x) != 0 || (buffer[0].y - buffer[1].y) != 0){
-                        let line = null;
-                        if(toolManager.currentToolAltCode == 0){
-                            line = newLine(buffer,1,currentColor,currentStroke,currentFill);
-                        }else if(toolManager.currentToolAltCode == 1){
-                            line = newLine(buffer,1,"none",currentStroke,currentFill);
-                        }else if(toolManager.currentToolAltCode == 2){
-                            line = newLine(buffer,1,currentColor,currentStroke,"none");
-                        }
-                        drawLine(line);
-                    }
-                }
-                
-
-                // clear the buffer
-                buffer = [];
-                // clear the temp line
-                d3.select("#temp-line").html(null);
-
-                // Save in x seconds
-                autoSaveTimeout();
-            }
-        }
         if(toolManager.isMove() && selectedElement != null && imageResize == null){ // If the object was just moved
             if(tempTransform.x != null || tempTransform.y != null){ // Make sure something was moved
             
@@ -1076,11 +822,7 @@ let whiteboard = function(){
 
         if(mouseDownPoint != null){ // If the mouse has been pressed down
             if(toolManager.isHand() || mouseDownPoint.button == 1){
-                viewbox.x = viewbox.x - (mouse.gx-mouse.lgx)*viewbox.scale;
-                viewbox.y = viewbox.y - (mouse.gy-mouse.lgy)*viewbox.scale;
-
-                //generateBackground();
-                updateViewbox();
+                
             }
 
             if(holdShift.isHeld){
@@ -1088,168 +830,6 @@ let whiteboard = function(){
                     holdShift.x = mouse.x;
                     holdShift.y = mouse.y;
                 }
-            }
-        }
-        if(toolManager.isPen() || toolManager.isLink()){
-            penToolMoving();
-        }
-        if(toolManager.isLine()){
-            if(toolManager.isDrawing){
-                let coords = {};
-                if(holdShift.isHeld){
-                    // if the x distance from the lastX is greater than the y, draw a line only on the x axis
-                    if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
-                        coords.x1 = mouseDownPoint.x;
-                        coords.x2 = mouse.x;
-                        coords.y1 = mouseDownPoint.y;
-                        coords.y2 = mouseDownPoint.y;
-                    }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
-                        coords.x1 = mouseDownPoint.x;
-                        coords.x2 = mouseDownPoint.x;
-                        coords.y1 = mouseDownPoint.y;
-                        coords.y2 = mouse.y;   
-                    }
-                }else{
-                    coords.x2 = mouse.x;
-                    coords.x1 = mouseDownPoint.x;
-                    coords.y2 = mouse.y;
-                    coords.y1 = mouseDownPoint.y; 
-                }
-                svg.temp.html(null);
-
-                if(toolManager.currentToolAltCode != 3){ // If the line isn't dashed
-                    svg.temp.append("line")
-                        .attr("x1",coords.x1)
-                        .attr("y1",coords.y1)
-                        .attr("x2",coords.x2)
-                        .attr("y2",coords.y2)
-                        .attr("stroke", currentColor)
-                        .attr("stroke-width", currentStroke)
-                        .attr("stroke-linecap","round");
-                }else{ // If the line is dashed
-                    svg.temp.append("line")
-                        .attr("x1",coords.x1)
-                        .attr("y1",coords.y1)
-                        .attr("x2",coords.x2)
-                        .attr("y2",coords.y2)
-                        .attr("stroke", currentColor)
-                        .attr("stroke-width", currentStroke)
-                        .attr("stroke-dasharray",`${currentStroke*10} ${currentStroke*10}`)
-                        .attr("stroke-linecap","round");
-                }
-                
-
-                // Calculate the length of the line and arrow
-                let lineLength = (coords.x2-coords.x1)!=0?(coords.x2-coords.x1):(coords.y2-coords.y1);
-                let arrowLength = (lineLength/4);
-                
-                if(lineLength == 0){// Line is just a dot
-                    return;
-                }
-
-                // https://math.stackexchange.com/questions/1314006/drawing-an-arrow
-                let x3Change = (arrowLength/lineLength)*((coords.x1-coords.x2)*Math.cos(30* Math.PI/180)+(coords.y1-coords.y2)*Math.sin(30* Math.PI/180));
-                let y3Change = (arrowLength/lineLength)*((coords.y1-coords.y2)*Math.cos(30* Math.PI/180)-(coords.x1-coords.x2)*Math.sin(30* Math.PI/180));
-                let x4Change = (arrowLength/lineLength)*((coords.x1-coords.x2)*Math.cos(30* Math.PI/180)-(coords.y1-coords.y2)*Math.sin(30* Math.PI/180));
-                let y4Change = (arrowLength/lineLength)*((coords.y1-coords.y2)*Math.cos(30* Math.PI/180)+(coords.x1-coords.x2)*Math.sin(30* Math.PI/180));
-
-                // Opened end arrows
-                if(toolManager.currentToolAltCode == 1 || toolManager.currentToolAltCode == 2){
-                    svg.temp.append("line")
-                        .attr("x1",coords.x2)
-                        .attr("y1",coords.y2)
-                        .attr("x2",coords.x2+x3Change)
-                        .attr("y2",coords.y2+y3Change)
-                        .attr("stroke", currentColor)
-                        .attr("stroke-width", currentStroke)
-                        .attr("stroke-linecap","round");
-
-                    svg.temp.append("line")
-                        .attr("x1",coords.x2)
-                        .attr("y1",coords.y2)
-                        .attr("x2",coords.x2+x4Change)
-                        .attr("y2",coords.y2+y4Change)
-                        .attr("stroke", currentColor)
-                        .attr("stroke-width", currentStroke)
-                        .attr("stroke-linecap","round");
-                }
-                if(toolManager.currentToolAltCode == 2){
-                    svg.temp.append("line")
-                        .attr("x1",coords.x1)
-                        .attr("y1",coords.y1)
-                        .attr("x2",coords.x1-x3Change)
-                        .attr("y2",coords.y1-y3Change)
-                        .attr("stroke", currentColor)
-                        .attr("stroke-width", currentStroke)
-                        .attr("stroke-linecap","round");
-
-                    svg.temp.append("line")
-                        .attr("x1",coords.x1)
-                        .attr("y1",coords.y1)
-                        .attr("x2",coords.x1-x4Change)
-                        .attr("y2",coords.y1-y4Change)
-                        .attr("stroke", currentColor)
-                        .attr("stroke-width", currentStroke)
-                        .attr("stroke-linecap","round");
-                }
-
-                // Filled end arrows
-                if(toolManager.currentToolAltCode == 4 || toolManager.currentToolAltCode == 5){
-                    svg.temp.append("polygon")
-                        .attr("points",`${coords.x2} ${coords.y2}, ${coords.x2+x3Change} ${coords.y2+y3Change}, ${coords.x2+x4Change} ${coords.y2+y4Change}`)
-                        .style("fill",currentColor)
-                        .attr("stroke", currentColor)
-                        .attr("stroke-width", currentStroke)
-                        .attr("stroke-linecap","round");
-                }
-                if(toolManager.currentToolAltCode == 5){
-                    svg.temp.append("polygon")
-                        .attr("points",`${coords.x1} ${coords.y1}, ${coords.x1-x3Change} ${coords.y1-y3Change}, ${coords.x1-x4Change} ${coords.y1-y4Change}`)
-                        .style("fill",currentColor)
-                        .attr("stroke", currentColor)
-                        .attr("stroke-width", currentStroke)
-                        .attr("stroke-linecap","round");
-                }
-
-            }
-        }
-        if(toolManager.isRect()){
-            if(toolManager.isDrawing){
-                let height = mouseDownPoint.y>=mouse.y?mouseDownPoint.y-mouse.y:mouse.y-mouseDownPoint.y;
-                let width = mouseDownPoint.x>=mouse.x?mouseDownPoint.x-mouse.x:mouse.x-mouseDownPoint.x;
-
-                let rectX = mouseDownPoint.x>=mouse.x?mouse.x:mouseDownPoint.x;
-                let rectY = mouseDownPoint.y>=mouse.y?mouse.y:mouseDownPoint.y;
-
-                svg.temp.html(null);
-
-                if(toolManager.currentToolAltCode == 0){
-                    svg.temp.append("rect")
-                        .attr("x",rectX)
-                        .attr("y",rectY)
-                        .attr("height",height)
-                        .attr("width",width)
-                        .attr("fill", currentFill)
-                        .attr("stroke", currentColor)
-                        .attr("stroke-width", currentStroke);
-                }else if(toolManager.currentToolAltCode == 1){
-                    svg.temp.append("rect")
-                        .attr("x",rectX)
-                        .attr("y",rectY)
-                        .attr("height",height)
-                        .attr("width",width)
-                        .attr("fill", currentFill);
-                }else if(toolManager.currentToolAltCode == 2){
-                    svg.temp.append("rect")
-                        .attr("x",rectX)
-                        .attr("y",rectY)
-                        .attr("height",height)
-                        .attr("width",width)
-                        .attr("fill", "none")
-                        .attr("stroke", currentColor)
-                        .attr("stroke-width", currentStroke);
-                }
-                
             }
         }
         if(toolManager.isMove() && selectedElement != null && imageResize == null){
@@ -1339,64 +919,6 @@ let whiteboard = function(){
                 d3.select("#imageResizeCircle-br")
                     .attr("cx",imageResize.tx+imageResize.tw)
                     .attr("cy",imageResize.ty+imageResize.th);
-            }
-        }
-        if(toolManager.isCustomShape()){
-            let currentTime = Date.now();
-            
-            // if the user is drawing, add the x,y to the buffer
-            if(toolManager.isDrawing){
-                // if it has been x milliseconds since the last coordinate saved
-                if(currentTime>=lastPointTime+10){
-                    if(holdShift.isHeld){
-                        // if the x distance from the lastX is greater than the y, draw a line only on the x axis
-                        if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
-                            lastPointTime = currentTime;
-                            buffer.push({x:mouse.x,y:holdShift.y});
-                        }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
-                            lastPointTime = currentTime;
-                            buffer.push({x:holdShift.x,y:mouse.y});
-                        }
-                    }else{
-                        lastPointTime = currentTime;
-                        buffer.push({x:mouse.x,y:mouse.y});
-                    }
-
-                    // Draw the new shape
-                    svg.temp.html(null);
-
-                    // Create the line
-                    let drawLine = d3.line().curve(d3.curveCardinal);
-
-                    // for every x and y, set the value to (object passed).x
-                    drawLine.x((d)=>{
-                        return d.x;
-                    });
-                    drawLine.y((d)=>{
-                        return d.y;
-                    });
-
-                    if(toolManager.currentToolAltCode == 0){
-                        svg.temp.append("path")
-                            .attr("d", drawLine(buffer))
-                            .attr("stroke", currentColor)
-                            .attr("stroke-width", currentStroke)
-                            .attr("fill", currentFill)
-                            .attr("stroke-linecap","round");
-                    }else if(toolManager.currentToolAltCode == 1){
-                        svg.temp.append("path")
-                            .attr("d", drawLine(buffer))
-                            .attr("fill", currentFill)
-                            .attr("stroke-linecap","round");
-                    }else if(toolManager.currentToolAltCode == 2){
-                        svg.temp.append("path")
-                            .attr("d", drawLine(buffer))
-                            .attr("stroke", currentColor)
-                            .attr("stroke-width", currentStroke)
-                            .attr("fill", "none")
-                            .attr("stroke-linecap","round");
-                    }
-                }
             }
         }
         if(toolManager.isRotate()){
@@ -2135,85 +1657,6 @@ let whiteboard = function(){
         });
     }
 
-    // #endregion
-    //==//==//==//==//==//==//
-    // Text Tool
-    // #region
-    function updateTextArea(){
-
-        //#whiteboard-textInputArea
-        let fontSize = 12 + (currentStroke*2);
-        d3.select("#whiteboard-textInputArea")
-            .style("font-size",`${fontSize}px`)
-            .style("line-height",`${fontSize}px`)
-            .style("color",currentColor);
-
-        d3.select("#whiteboard-textInputArea-container")
-            .attr("x",textDrawArea.x)
-            .attr("y",textDrawArea.y);
-
-
-        let element = document.getElementById("whiteboard-textInputArea");
-
-        // Check for overflow
-        let isXOverflow = element.scrollWidth > element.clientWidth;
-        let isYOverflow = element.scrollHeight > element.clientHeight;
-
-        if(isXOverflow){
-            textDrawArea.w += (element.scrollWidth-element.clientWidth);
-            d3.select("#whiteboard-textInputArea").style("width",textDrawArea.w);
-        }
-        if(isYOverflow){
-            textDrawArea.h += (element.scrollHeight-element.clientHeight);
-            d3.select("#whiteboard-textInputArea").style("height",textDrawArea.h);
-        }
-            
-        document.getElementById("whiteboard-textInputArea").focus();
-    }
-
-    function submitTextArea(){
-        let fontSize = 12 + (currentStroke*2);
-        //When hitting enter
-
-        // If it is an empty text box
-        if(util.getValueId("whiteboard-textInputArea") == ""){
-            // clear the buffer
-            buffer = [];
-            textDrawArea = null;
-            // clear the temp line
-            d3.select("#whiteboard-textInputArea").on("input",null);
-            svg.temp.selectAll("*").remove();
-            return;
-        }
-
-        let data = {
-            text: util.getValueId("whiteboard-textInputArea"),
-            x: textDrawArea.x+13,
-            y: textDrawArea.y+13+fontSize-(2+Math.floor(currentStroke/5)) // All this math adjusts the generated text to align the text area
-        };
-
-        let line = newLine(data,3,currentColor,currentStroke,null);
-
-        // Draw the new text area
-        drawLine(line);
-
-        // If they were just editing a text area
-        if(previousTextArea != null){
-            addToHistory("edit",line,previousTextArea);
-            previousTextArea = null;
-            overTextArea = null;
-        }
-
-        // clear the buffer
-        buffer = [];
-        textDrawArea = null;
-        // clear the temp line
-        d3.select("#whiteboard-textInputArea").on("input",null);
-        svg.temp.selectAll("*").remove();
-
-        // Save in x seconds
-        autoSaveTimeout();
-    }
     // #endregion
     //==//==//==//==//==//==//
     // Background
@@ -3009,73 +2452,16 @@ let whiteboard = function(){
     //==//==//==//==//==//==//
     // Pen Tool
     // #region
-    function startPenTool(){
-        toolManager.isDrawing = true;
-
-        let isNewPen = true;
-        // check if this line is a new color
-        for(let pen of thisBoard.pens){
-            if(pen == currentColor){
-                isNewPen = false;
-            }
-        }
-        if(isNewPen){
-            colorBar.addPen(currentColor);
-        }
-    }
-
     function endPenTool(isTouchInput = false){
         if(buffer.length > 1){
             // Draw the line in the buffer
 
             if(toolManager.isPen() || isTouchInput){
-                let line = newLine(buffer,0,currentColor,currentStroke,null);
-                drawLine(line);
                 
-                // clear the buffer
-                buffer = [];
             }else if(toolManager.isLink()){
-                // Make sure the line goes back to the start
-                buffer.push({x:buffer[0].x,y:buffer[0].y});
-
-                // Create a new popup getting what board to link to
-                popup.newBoard((isNewBoard,boardData)=>{
-                    if(isNewBoard){ // If a new board is to be created
-                        let newBoardID = boxManager.newBoard(boardData);
-                        
-                        let line = newLine(buffer,2,currentColor,currentStroke,null,newBoardID);
-                        drawLine(line);
-                        save();
-                    }else{ // If no new board is created
-                        if(boardData != null){ // If they didn't close the popup
-                            let line = newLine(buffer,2,currentColor,currentStroke,null,boardData.id);
-                            drawLine(line);
-                            
-                            save();
-                        }else{ // If they closed the popup
-                            console.log("popup closed");
-                        }
-                    }
-                    // clear the buffer
-                    buffer = [];
-                });
-            }else if(toolManager.isCustomShape()){
-                // Make sure the line goes back to the start
-                buffer.push({x:buffer[0].x,y:buffer[0].y});
-
-                let line = null;
-                if(toolManager.currentToolAltCode == 0){
-                    line = newLine(buffer,5,currentColor,currentStroke,currentFill);
-                }else if(toolManager.currentToolAltCode == 1){
-                    line = newLine(buffer,5,"none",currentStroke,currentFill);
-                }else if(toolManager.currentToolAltCode == 2){
-                    line = newLine(buffer,5,currentColor,currentStroke,"none");
-                }
-
-                drawLine(line);
                 
-                // clear the buffer
-                buffer = [];
+            }else if(toolManager.isCustomShape()){
+                
             }
 
 
@@ -3085,49 +2471,6 @@ let whiteboard = function(){
         d3.select("#temp-line").html(null);
 
         // Save in x seconds
-    }
-
-    function penToolMoving(){
-        let currentTime = Date.now();
-            
-        // if the user is drawing, add the x,y to the buffer
-        if(toolManager.isDrawing){
-            // if it has been x milliseconds since the last coordinate saved
-            if(currentTime>=lastPointTime+10){
-                if(holdShift.isHeld){
-                    // if the x distance from the lastX is greater than the y, draw a line only on the x axis
-                    if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
-                        lastPointTime = currentTime;
-                        svg.temp.append("circle")
-                            .attr("fill",currentColor)
-                            .attr("r",currentStroke/2)
-                            .attr("cx",mouse.x)
-                            .attr("cy",holdShift.y);
-
-                        buffer.push({x:mouse.x,y:holdShift.y});
-
-                    }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
-                        lastPointTime = currentTime;
-                        svg.temp.append("circle")
-                            .attr("fill",currentColor)
-                            .attr("r",currentStroke/2)
-                            .attr("cx",holdShift.x)
-                            .attr("cy",mouse.y);
-                        
-                        buffer.push({x:holdShift.x,y:mouse.y});
-                    }
-                }else{
-                    lastPointTime = currentTime;
-                    svg.temp.append("circle")
-                        .attr("fill",currentColor)
-                        .attr("r",currentStroke/2)
-                        .attr("cx",mouse.x)
-                        .attr("cy",mouse.y);
-                    
-                    buffer.push({x:mouse.x,y:mouse.y});
-                }
-            }
-        }
     }
     // #endregion
     //==//==//==//==//==//==//
@@ -3197,6 +2540,14 @@ let whiteboard = function(){
         return viewbox;
     }
 
+    function getWhiteBoard() {
+        return thisBoard;
+    }
+
+    function changeTempTransform(newX,newY) {
+        tempTransform.x = newX;
+        tempTransform.y = newY;
+    }
 
     return{
         init:init,
@@ -3211,6 +2562,8 @@ let whiteboard = function(){
         drawLine:drawLine,
         getViewbox:getViewbox,
         closeMenus:closeMenus,
-        setTool:setTool
+        setTool:setTool,
+        getWhiteBoard:getWhiteBoard,
+        changeTempTransform:changeTempTransform
     }
 }();
