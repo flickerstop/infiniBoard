@@ -9,7 +9,7 @@ let whiteboard = function(){
      */
 
     let layerManager = new LayerManager();
-    let toolManager = new ToolManager();
+    let toolManager = ToolManager;
 
     let svg = null; // hold d3 object of the svg
     
@@ -674,16 +674,6 @@ let whiteboard = function(){
             closeRightClickMenu();
         }
 
-        // Get the current mouse coordinates
-        let coordinates= d3.mouse(d3.select("#drawingBoard-svg").node());
-        mouseDownPoint = {
-            x:coordinates[0],
-            y:coordinates[1],
-            vx: viewbox.x,
-            vy: viewbox.y,
-            button: d3.event.button
-        };
-
         if(attachedImage != null){ // If there is an image attached to the mouse
             attachedImage.dots.x = mouseDownPoint.x-(attachedImage.dots.w/2);
             attachedImage.dots.y = mouseDownPoint.y-(attachedImage.dots.h/2);
@@ -692,38 +682,16 @@ let whiteboard = function(){
             attachedImage = null;
             autoSaveTimeout();
         }
-        else if((toolManager.isEraser() || toolManager.isLine() || toolManager.isRect() || toolManager.isLink()) && isLeftClick()){
-            toolManager.isDrawing = true;
-        }
-        else if(toolManager.isText() && isLeftClick()){
-            
-        }
-        else if(toolManager.isImage() && isLeftClick()){
-            
-        }
-        else if(toolManager.isHand() || isMiddleClick()){
-            //clearBackground();
-        }else if(toolManager.isMouse() || isRotate()){
-            if(imageResize == null){
-                closeMenus();
-            }
-        }
-
         if(holdShift.isHeld){
             if(holdShift.x == null && holdShift.y == null){
                 holdShift.x = mouseDownPoint.x;
                 holdShift.y = mouseDownPoint.y;
             }
         }
+        toolManager.toolDown();
     }
 
     function mouseUp(){
-        function isLeftClick(){return d3.event.button==0}
-        function isRightClick(){return d3.event.button==2}
-        function isMiddleClick(){return d3.event.button==1}
-        if(toolManager.isPen() || toolManager.isLink() || toolManager.isCustomShape()){
-            endPenTool();            
-        }
 
 
         if(toolManager.isMove() && selectedElement != null && imageResize == null){ // If the object was just moved
@@ -794,26 +762,11 @@ let whiteboard = function(){
                 holdShift.y = null;
             }
         }
+
+        toolManager.toolUp();
     }
 
     function mouseMove(){
-        // Get the current mouse coordinates
-        mouse = {
-            // xy based on svg location
-            x: d3.mouse(d3.select("#drawingBoard-svg").node())[0],
-            y: d3.mouse(d3.select("#drawingBoard-svg").node())[1],
-            // last xy
-            lx: mouse.x,
-            ly: mouse.y,
-            // xy based on main panel position
-            gx: d3.mouse(d3.select("#mainPanel").node())[0],
-            gy: d3.mouse(d3.select("#mainPanel").node())[1],
-            // last xy
-            lgx: mouse.gx,
-            lgy: mouse.gy
-        }
-
-
         if(attachedImage != null){ // If there is an image attached to the mouse
             attachedImage.dots.x = mouse.x-(attachedImage.dots.w/2);
             attachedImage.dots.y = mouse.y-(attachedImage.dots.h/2);
@@ -821,10 +774,6 @@ let whiteboard = function(){
         }
 
         if(mouseDownPoint != null){ // If the mouse has been pressed down
-            if(toolManager.isHand() || mouseDownPoint.button == 1){
-                
-            }
-
             if(holdShift.isHeld){
                 if(holdShift.x == null && holdShift.y == null){
                     holdShift.x = mouse.x;
@@ -957,6 +906,8 @@ let whiteboard = function(){
                 return Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
             }
         }
+
+        toolManager.toolMove(svg.temp);
     }
 
 
@@ -1033,7 +984,7 @@ let whiteboard = function(){
         // Add the object to the current layer
         layerManager.addNewObject(obj);
 
-        if(previousTextArea == null){ // If we're editing a text area, don't add this to history
+        if(!toolManager.isEditingText()){ // If we're editing a text area, don't add this to history
             addToHistory("add",obj);
         }
         
@@ -2540,8 +2491,12 @@ let whiteboard = function(){
         return viewbox;
     }
 
-    function getWhiteBoard() {
+    function getWhiteboard() {
         return thisBoard;
+    }
+
+    function getColorBar() {
+        return colorBar;
     }
 
     function changeTempTransform(newX,newY) {
@@ -2550,20 +2505,22 @@ let whiteboard = function(){
     }
 
     return{
-        init:init,
-        getSVGSize:getSVGSize,
-        save:save,
-        getPens:getPens,
-        changecolor:changecolor,
-        changeFill:changeFill,
-        closeWhiteboard:closeWhiteboard,
-        generateBackground:generateBackground,
-        openAltTools:openAltTools,
-        drawLine:drawLine,
-        getViewbox:getViewbox,
-        closeMenus:closeMenus,
-        setTool:setTool,
-        getWhiteBoard:getWhiteBoard,
-        changeTempTransform:changeTempTransform
+        init,
+        getSVGSize,
+        save,
+        getPens,
+        changecolor,
+        changeFill,
+        closeWhiteboard,
+        generateBackground,
+        openAltTools,
+        drawLine,
+        getViewbox,
+        closeMenus,
+        setTool,
+        getWhiteboard,
+        changeTempTransform,
+        getColorBar,
+        newLine
     }
 }();

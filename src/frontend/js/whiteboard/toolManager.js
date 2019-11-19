@@ -1,55 +1,108 @@
-class ToolManager{
-    constructor(){
-        this.isDrawing = false;
-        this.isErasing = false;
-        this.currentTool = 0;
-        this.currentToolAltCode = 0;
-        this.lastPointTime = 0;
-        this.holdShift = {isHeld:false};
-        this.buffer = [];
-        this.currentColor = "FFFFFF";
-        this.currentStroke = "5";
-        this.overTextArea = false;
-        this.textDrawArea = null;
-        this.previousTextArea = null; // Used to store the text area in it's pre-edited state
-    }
+
+ToolManager = function(){
+    let isDrawing = false;
+    let isErasing = false;
+    let currentTool = {
+        id:0,
+        onDown:nothing,
+        onMove:nothing,
+        onUp:nothing
+    };
+    let currentToolAltCode = 0;
+    let lastPointTime = 0;
+    let holdShift = {isHeld:false};
+    let buffer = [];
+
+    let currentColor = "#FFFFFF";
+    let currentStroke = "5";
+    let currentFill = "#BADA55"
+
+    let overTextArea = false;
+    let textDrawArea = null;
+    let previousTextArea = null; // Used to store the text area in it's pre-edited state
+    let mouse = {
+        x:0,
+        y:0
+    };
 
 
     /**
      * Changes the current tool to the passed number
      * @param {Number} toolID number for the tool
      */
-    setTool(toolID,altCode = 0){
+    function setTool(toolID,altCode = 0){
         whiteboard.closeMenus();
 
-        d3.select("#toolbar-icon-"+this.currentTool).attr("class","toolbar-icon");
-        this.currentTool = toolID;
-        this.currentToolAltCode = altCode;
-        d3.select("#toolbar-icon-"+this.currentTool).attr("class","toolbar-icon selected");
+        d3.select("#toolbar-icon-"+currentTool.id).attr("class","toolbar-icon");
+        currentTool.id = toolID;
+        currentToolAltCode = altCode;
+        d3.select("#toolbar-icon-"+currentTool.id).attr("class","toolbar-icon selected");
 
         // Check if the new tool should be shown in the toolbar
-        if(toolID == 3){// if line
+        if(isPen()){
+            currentTool.onDown = penStart;
+            currentTool.onMove = penMove;
+            currentTool.onUp = penEnd;
+        }else if(isPan()){
+            currentTool.onDown = nothing;
+            currentTool.onMove = panMove;
+            currentTool.onUp = panEnd;
+        }else if(isEraser()){
+            currentTool.onDown = eraserStart;
+            currentTool.onMove = nothing;
+            currentTool.onUp = eraserEnd;
+        }else if(isLine()){
+            currentTool.onDown = lineStart;
+            currentTool.onMove = lineMove;
+            currentTool.onUp = lineEnd;
             d3.select("#toolbar-icon-3")
                 .style("background-image",d3.select("#toolbar-line-"+altCode).style("background-image"))
                 .attr("onclick",null)
                 .on("click",()=>{setTool(3,altCode)})
-
-        }else if(toolID == 4){// if rect
+        }else if(isRect()){
+            currentTool.onDown = rectStart;
+            currentTool.onMove = rectMove;
+            currentTool.onUp = rectEnd;
             d3.select("#toolbar-icon-4")
                 .style("background-image",d3.select("#toolbar-rect-"+altCode).style("background-image"))
                 .attr("onclick",null)
                 .on("click",()=>{setTool(4,altCode)})
-        }else if(toolID == 7){
+        }else if(isLink()){
+            currentTool.onDown = linkStart;
+            currentTool.onMove = linkMove;
+            currentTool.onUp = linkEnd;
+        }else if(isText()){
+            currentTool.onDown = textStart;
+            currentTool.onMove = nothing;
+            currentTool.onUp = nothing;
+        }else if(isMouse()){
+            currentTool.onDown = nothing;
+            currentTool.onMove = nothing;
+            currentTool.onUp = nothing;
             d3.select("#toolbar-icon-7")
                 .style("background-image","url(./images/mouse_white.png)")
                 .attr("onclick",null)
                 .on("click",()=>{setTool(7)})
-        }else if(toolID == 11){// if rect
+        }else if(isMove()){
+            currentTool.onDown = moveStart;
+            currentTool.onMove = moveMove;
+            currentTool.onUp = nothing;
+        }else if(isImage()){
+            currentTool.onDown = imageStart;
+            currentTool.onMove = nothing;
+            currentTool.onUp = nothing;
+        }else if(isCustomShape()){
+            currentTool.onDown = customShapeStart;
+            currentTool.onMove = customShapeMove;
+            currentTool.onUp = customShapeEnd;
             d3.select("#toolbar-icon-11")
                 .style("background-image",d3.select("#toolbar-customShape-"+altCode).style("background-image"))
                 .attr("onclick",null)
                 .on("click",()=>{setTool(11,altCode)})
-        }else if(toolID == 12){
+        }else if(isRotate()){
+            currentTool.onDown = nothing;
+            currentTool.onMove = nothing;
+            currentTool.onUp = nothing;
             d3.select("#toolbar-icon-7")
                 .style("background-image","url(./images/mouse_rotate_white.png)")
                 .attr("onclick",null)
@@ -57,7 +110,7 @@ class ToolManager{
         }
     }
 
-    toolShortcut(toolID){
+    function toolShortcut(toolID){
         // If they're typing and a keyboard shortcut is clicked
         if(isTyping()){
             // Ignore it
@@ -66,29 +119,45 @@ class ToolManager{
 
         closeMenus();
 
-        d3.select("#toolbar-icon-"+this.currentTool).attr("class","toolbar-icon");
-        this.currentTool = toolID;
-        d3.select("#toolbar-icon-"+this.currentTool).attr("class","toolbar-icon selected");
+        d3.select("#toolbar-icon-"+currentTool.id).attr("class","toolbar-icon");
+        currentTool.id = toolID;
+        d3.select("#toolbar-icon-"+currentTool.id).attr("class","toolbar-icon selected");
     }
 
-    isPen(){return this.currentTool==0?true:false;}
-    isHand(){return this.currentTool==1?true:false;}
-    isEraser(){return this.currentTool==2?true:false;}
-    isLine(){return this.currentTool==3?true:false;}
-    isRect(){return this.currentTool==4?true:false;}
-    isLink(){return this.currentTool==5?true:false;}
-    isText(){return this.currentTool==6?true:false;}
-    isMouse(){return this.currentTool==7?true:false;}
-    isMove(){return this.currentTool==7?true:false;} // Was changed to be the same as mouse
-    isImage(){return this.currentTool==9?true:false;}
-    isCustomShape(){return this.currentTool==11?true:false;}
-    isRotate(){return this.currentTool==12?true:false;}
+    function isPen(){return currentTool.id==0?true:false;}
+    function isPan(){return currentTool.id==1?true:false;}
+    function isEraser(){return currentTool.id==2?true:false;}
+    function isLine(){return currentTool.id==3?true:false;}
+    function isRect(){return currentTool.id==4?true:false;}
+    function isLink(){return currentTool.id==5?true:false;}
+    function isText(){return currentTool.id==6?true:false;}
+    function isMouse(){return currentTool.id==7?true:false;}
+    function isMove(){return currentTool.id==7?true:false;} // Was changed to be the same as mouse
+    function isImage(){return currentTool.id==9?true:false;}
+    function isCustomShape(){return currentTool.id==11?true:false;}
+    function isRotate(){return currentTool.id==12?true:false;}
+
+    function isEditingText(){return previousTextArea!=null?true:false}
 
 
+    function toolDown(){
+        currentTool.onDown();
+    }
+    function toolMove(param){
+        currentTool.onMove(param);
+    }
+    function toolUp(){
+        currentTool.onUp();
+    }
 
-    setMouseStart(){
+    function nothing(){
+
+    }
+
+
+    function setMouseStart(){
         let coordinates= d3.mouse(d3.select("#drawingBoard-svg").node());
-        this.mouseDownPoint = {
+        mouseDownPoint = {
             x:coordinates[0],
             y:coordinates[1],
             vx: whiteboard.getViewbox().x,
@@ -97,9 +166,9 @@ class ToolManager{
         };
     }
 
-    getMousePos(){
+    function getMousePos(){
         // Get the current mouse coordinates
-        this.mouse = {
+        mouse = {
             // xy based on svg location
             x: d3.mouse(d3.select("#drawingBoard-svg").node())[0],
             y: d3.mouse(d3.select("#drawingBoard-svg").node())[1],
@@ -117,8 +186,8 @@ class ToolManager{
     ///////////////////////
     // Pen Tool
     //#region
-    penStart(){
-        this.isDrawing = true;
+    function penStart(){
+        isDrawing = true;
 
 
         //TODO every tool should check if the colour is new!
@@ -130,80 +199,80 @@ class ToolManager{
             }
         }
         if(isNewPen){
-            colorBar.addPen(currentColor);
+            whiteboard.getColorBar().addPen(currentColor);
         }
     }
-    penMove(tempSVG){
-        this.getMousePos();
+    function penMove(tempSVG){
+        getMousePos();
 
         let currentTime = Date.now();
 
 
-        let s = this.holdShift;
-        let m = {x:this.mouse.x,y:this.mouse.y};
+        let s = holdShift;
+        let m = {x:mouse.x,y:mouse.y};
             
         // if the user is drawing, add the x,y to the buffer
-        if(this.isDrawing){
+        if(isDrawing){
             // if it has been x milliseconds since the last coordinate saved
-            if(currentTime>=this.lastPointTime+10){
+            if(currentTime>=lastPointTime+10){
                 if(s.isHeld){
                     // if the x distance from the lastX is greater than the y, draw a line only on the x axis
                     if(Math.abs(m.x-s.x)>Math.abs(m.y-s.y)){
-                        this.lastPointTime = currentTime;
+                        lastPointTime = currentTime;
                         tempSVG.append("circle")
-                            .attr("fill",this.currentColor)
-                            .attr("r",this.currentStroke/2)
+                            .attr("fill",currentColor)
+                            .attr("r",currentStroke/2)
                             .attr("cx",m.x)
                             .attr("cy",m.y);
 
-                        this.buffer.push({x:m.x,y:s.y});
+                        buffer.push({x:m.x,y:s.y});
 
                     }else if(Math.abs(m.x-s.x)<Math.abs(m.y-s.y)){
-                        this.lastPointTime = currentTime;
+                        lastPointTime = currentTime;
                         tempSVG.append("circle")
-                            .attr("fill",this.currentColor)
-                            .attr("r",this.currentStroke/2)
+                            .attr("fill",currentColor)
+                            .attr("r",currentStroke/2)
                             .attr("cx",s.x)
                             .attr("cy",m.y);
                         
-                        this.buffer.push({x:s.x,y:m.y});
+                        buffer.push({x:s.x,y:m.y});
                     }
                 }else{
-                    this.lastPointTime = currentTime;
+                    lastPointTime = currentTime;
                     tempSVG.append("circle")
-                        .attr("fill",this.currentColor)
-                        .attr("r",this.currentStroke/2)
+                        .attr("fill",currentColor)
+                        .attr("r",currentStroke/2)
                         .attr("cx",m.x)
                         .attr("cy",m.y);
                     
-                    this.buffer.push({x:m.x,y:m.y});
+                    buffer.push({x:m.x,y:m.y});
                 }
             }
         }
     }
-    penEnd(){
-        let line = whiteboard.newLine(this.buffer,0,this.currentColor,this.currentStroke,null);
+    function penEnd(){
+        let line = whiteboard.newLine(buffer,0,currentColor,currentStroke,null);
         whiteboard.drawLine(line);
         
         // clear the buffer
         buffer = [];
-        this.isDrawing = false;
-        this.mouseDownPoint = null;
+        isDrawing = false;
+        mouseDownPoint = null;
     }
     //#endregion
     ///////////////////////
     // Eraser
     //#region
-    eraserStart(){
-        this.setMouseStart();
-        this.isDrawing = true;
+    function eraserStart(){
+        setMouseStart();
+        isDrawing = true;
     }
     // eraserMove(tempSVG){
     // Handled on the objects
     // }
-    eraserEnd(){
-        this.isDrawing = false;
-        this.mouseDownPoint = null;
+    function eraserEnd(){
+        isDrawing = false;
+        mouseDownPoint = null;
     }
     //#endregion
     ///////////////////////
@@ -212,190 +281,192 @@ class ToolManager{
     // panStart(){
 
     // }
-    panMove(){ //FIXME wont work since viewbox is not accessable atm
-        viewbox.x = viewbox.x - (this.mouse.gx-this.mouse.lgx)*viewbox.scale;
-        viewbox.y = viewbox.y - (this.mouse.gy-this.mouse.lgy)*viewbox.scale;
+    function panMove(){ //FIXME wont work since viewbox is not accessable atm
+        viewbox.x = viewbox.x - (mouse.gx-mouse.lgx)*viewbox.scale;
+        viewbox.y = viewbox.y - (mouse.gy-mouse.lgy)*viewbox.scale;
 
         //generateBackground();
         updateViewbox();
     }
-    panEnd(){
-        this.mouseDownPoint = null;
+    function panEnd(){
+        mouseDownPoint = null;
         whiteboard.generateBackground();
     }
     //#endregion
     ///////////////////////
     // Line Tool
     //#region
-    lineStart(){
-        this.setMouseStart();
-        this.isDrawing = true;
+    function lineStart(){
+        setMouseStart();
+        isDrawing = true;
     }
-    lineMove(){
-        this.getMousePos();
+    function lineMove(tempSVG){
+        if(isDrawing){
+            getMousePos();
 
-        let s = this.holdShift;
-        let m = {x:this.mouse.x,y:this.mouse.y};
-        let mdp = this.mouseDownPoint;
+            let s = holdShift;
+            let m = {x:mouse.x,y:mouse.y};
+            let mdp = mouseDownPoint;
 
-        let coords = {};
+            let coords = {};
 
-        if(s.isHeld){
-            // if the x distance from the lastX is greater than the y, draw a line only on the x axis
-            if(Math.abs(m.x-s.x)>Math.abs(m.y-s.y)){
-                coords.x1 = mdp.x;
-                coords.x2 = m.x;
-                coords.y1 = mdp.y;
-                coords.y2 = mdp.y;
-            }else if(Math.abs(m.x-s.x)<Math.abs(m.y-s.y)){
-                coords.x1 = mdp.x;
-                coords.x2 = mdp.x;
-                coords.y1 = mdp.y;
-                coords.y2 = m.y;   
-            }
-        }else{
-            coords.x2 = m.x;
-            coords.x1 = mdp.x;
-            coords.y2 = m.y;
-            coords.y1 = mdp.y; 
-        }
-        svg.temp.html(null);
-
-        if(this.currentToolAltCode != 3){ // If the line isn't dashed
-            svg.temp.append("line")
-                .attr("x1",coords.x1)
-                .attr("y1",coords.y1)
-                .attr("x2",coords.x2)
-                .attr("y2",coords.y2)
-                .attr("stroke", this.currentColor)
-                .attr("stroke-width", this.currentStroke)
-                .attr("stroke-linecap","round");
-        }else{ // If the line is dashed
-            svg.temp.append("line")
-                .attr("x1",coords.x1)
-                .attr("y1",coords.y1)
-                .attr("x2",coords.x2)
-                .attr("y2",coords.y2)
-                .attr("stroke", this.currentColor)
-                .attr("stroke-width", this.currentStroke)
-                .attr("stroke-dasharray",`${this.currentStroke*10} ${this.currentStroke*10}`)
-                .attr("stroke-linecap","round");
-        }
-        
-
-        // Calculate the length of the line and arrow
-        let lineLength = (coords.x2-coords.x1)!=0?(coords.x2-coords.x1):(coords.y2-coords.y1);
-        let arrowLength = (lineLength/4);
-        
-        if(lineLength == 0){// Line is just a dot
-            return;
-        }
-
-        // https://math.stackexchange.com/questions/1314006/drawing-an-arrow
-        let x3Change = (arrowLength/lineLength)*((coords.x1-coords.x2)*Math.cos(30* Math.PI/180)+(coords.y1-coords.y2)*Math.sin(30* Math.PI/180));
-        let y3Change = (arrowLength/lineLength)*((coords.y1-coords.y2)*Math.cos(30* Math.PI/180)-(coords.x1-coords.x2)*Math.sin(30* Math.PI/180));
-        let x4Change = (arrowLength/lineLength)*((coords.x1-coords.x2)*Math.cos(30* Math.PI/180)-(coords.y1-coords.y2)*Math.sin(30* Math.PI/180));
-        let y4Change = (arrowLength/lineLength)*((coords.y1-coords.y2)*Math.cos(30* Math.PI/180)+(coords.x1-coords.x2)*Math.sin(30* Math.PI/180));
-
-        // Opened end arrows
-        if(this.currentToolAltCode == 1 || this.currentToolAltCode == 2){
-            svg.temp.append("line")
-                .attr("x1",coords.x2)
-                .attr("y1",coords.y2)
-                .attr("x2",coords.x2+x3Change)
-                .attr("y2",coords.y2+y3Change)
-                .attr("stroke", this.currentColor)
-                .attr("stroke-width", this.currentStroke)
-                .attr("stroke-linecap","round");
-
-            svg.temp.append("line")
-                .attr("x1",coords.x2)
-                .attr("y1",coords.y2)
-                .attr("x2",coords.x2+x4Change)
-                .attr("y2",coords.y2+y4Change)
-                .attr("stroke", this.currentColor)
-                .attr("stroke-width", this.currentStroke)
-                .attr("stroke-linecap","round");
-        }
-        if(this.currentToolAltCode == 2){
-            svg.temp.append("line")
-                .attr("x1",coords.x1)
-                .attr("y1",coords.y1)
-                .attr("x2",coords.x1-x3Change)
-                .attr("y2",coords.y1-y3Change)
-                .attr("stroke", this.currentColor)
-                .attr("stroke-width", this.currentStroke)
-                .attr("stroke-linecap","round");
-
-            svg.temp.append("line")
-                .attr("x1",coords.x1)
-                .attr("y1",coords.y1)
-                .attr("x2",coords.x1-x4Change)
-                .attr("y2",coords.y1-y4Change)
-                .attr("stroke", this.currentColor)
-                .attr("stroke-width", this.currentStroke)
-                .attr("stroke-linecap","round");
-        }
-
-        // Filled end arrows
-        if(this.currentToolAltCode == 4 || this.currentToolAltCode == 5){
-            svg.temp.append("polygon")
-                .attr("points",`${coords.x2} ${coords.y2}, ${coords.x2+x3Change} ${coords.y2+y3Change}, ${coords.x2+x4Change} ${coords.y2+y4Change}`)
-                .style("fill",this.currentColor)
-                .attr("stroke", this.currentColor)
-                .attr("stroke-width", this.currentStroke)
-                .attr("stroke-linecap","round");
-        }
-        if(this.currentToolAltCode == 5){
-            svg.temp.append("polygon")
-                .attr("points",`${coords.x1} ${coords.y1}, ${coords.x1-x3Change} ${coords.y1-y3Change}, ${coords.x1-x4Change} ${coords.y1-y4Change}`)
-                .style("fill",this.currentColor)
-                .attr("stroke", this.currentColor)
-                .attr("stroke-width", this.currentStroke)
-                .attr("stroke-linecap","round");
-        }
-
-    }
-    lineEnd(){
-        this.buffer = [{x:this.mouseDownPoint.x,y:this.mouseDownPoint.y},{x:this.mouse.x,y:this.mouse.y}];
-        // Check if the height and width is 0
-        if((this.buffer[0].x - this.buffer[1].x) != 0 || (this.buffer[0].y - this.buffer[1].y) != 0){
-            if(this.holdShift.isHeld){
+            if(s.isHeld){
                 // if the x distance from the lastX is greater than the y, draw a line only on the x axis
-                if(Math.abs(this.mouse.x-this.holdShift.x)>Math.abs(this.mouse.y-this.holdShift.y)){
+                if(Math.abs(m.x-s.x)>Math.abs(m.y-s.y)){
+                    coords.x1 = mdp.x;
+                    coords.x2 = m.x;
+                    coords.y1 = mdp.y;
+                    coords.y2 = mdp.y;
+                }else if(Math.abs(m.x-s.x)<Math.abs(m.y-s.y)){
+                    coords.x1 = mdp.x;
+                    coords.x2 = mdp.x;
+                    coords.y1 = mdp.y;
+                    coords.y2 = m.y;   
+                }
+            }else{
+                coords.x2 = m.x;
+                coords.x1 = mdp.x;
+                coords.y2 = m.y;
+                coords.y1 = mdp.y; 
+            }
+            tempSVG.html(null);
 
-                    this.buffer = [{x:this.mouseDownPoint.x,y:this.mouseDownPoint.y},{x:this.mouse.x,y:this.mouseDownPoint.y}];
-                    let line = newLine(this.buffer,6,this.currentColor,this.currentStroke,null,this.currentToolAltCode);
+            if(currentToolAltCode != 3){ // If the line isn't dashed
+            tempSVG.append("line")
+                    .attr("x1",coords.x1)
+                    .attr("y1",coords.y1)
+                    .attr("x2",coords.x2)
+                    .attr("y2",coords.y2)
+                    .attr("stroke", currentColor)
+                    .attr("stroke-width", currentStroke)
+                    .attr("stroke-linecap","round");
+            }else{ // If the line is dashed
+                tempSVG.append("line")
+                    .attr("x1",coords.x1)
+                    .attr("y1",coords.y1)
+                    .attr("x2",coords.x2)
+                    .attr("y2",coords.y2)
+                    .attr("stroke", currentColor)
+                    .attr("stroke-width", currentStroke)
+                    .attr("stroke-dasharray",`${currentStroke*10} ${currentStroke*10}`)
+                    .attr("stroke-linecap","round");
+            }
+            
+
+            // Calculate the length of the line and arrow
+            let lineLength = (coords.x2-coords.x1)!=0?(coords.x2-coords.x1):(coords.y2-coords.y1);
+            let arrowLength = (lineLength/4);
+            
+            if(lineLength == 0){// Line is just a dot
+                return;
+            }
+
+            // https://math.stackexchange.com/questions/1314006/drawing-an-arrow
+            let x3Change = (arrowLength/lineLength)*((coords.x1-coords.x2)*Math.cos(30* Math.PI/180)+(coords.y1-coords.y2)*Math.sin(30* Math.PI/180));
+            let y3Change = (arrowLength/lineLength)*((coords.y1-coords.y2)*Math.cos(30* Math.PI/180)-(coords.x1-coords.x2)*Math.sin(30* Math.PI/180));
+            let x4Change = (arrowLength/lineLength)*((coords.x1-coords.x2)*Math.cos(30* Math.PI/180)-(coords.y1-coords.y2)*Math.sin(30* Math.PI/180));
+            let y4Change = (arrowLength/lineLength)*((coords.y1-coords.y2)*Math.cos(30* Math.PI/180)+(coords.x1-coords.x2)*Math.sin(30* Math.PI/180));
+
+            // Opened end arrows
+            if(currentToolAltCode == 1 || currentToolAltCode == 2){
+                tempSVG.append("line")
+                    .attr("x1",coords.x2)
+                    .attr("y1",coords.y2)
+                    .attr("x2",coords.x2+x3Change)
+                    .attr("y2",coords.y2+y3Change)
+                    .attr("stroke", currentColor)
+                    .attr("stroke-width", currentStroke)
+                    .attr("stroke-linecap","round");
+
+                tempSVG.append("line")
+                    .attr("x1",coords.x2)
+                    .attr("y1",coords.y2)
+                    .attr("x2",coords.x2+x4Change)
+                    .attr("y2",coords.y2+y4Change)
+                    .attr("stroke", currentColor)
+                    .attr("stroke-width", currentStroke)
+                    .attr("stroke-linecap","round");
+            }
+            if(currentToolAltCode == 2){
+                tempSVG.append("line")
+                    .attr("x1",coords.x1)
+                    .attr("y1",coords.y1)
+                    .attr("x2",coords.x1-x3Change)
+                    .attr("y2",coords.y1-y3Change)
+                    .attr("stroke", currentColor)
+                    .attr("stroke-width", currentStroke)
+                    .attr("stroke-linecap","round");
+
+                tempSVG.append("line")
+                    .attr("x1",coords.x1)
+                    .attr("y1",coords.y1)
+                    .attr("x2",coords.x1-x4Change)
+                    .attr("y2",coords.y1-y4Change)
+                    .attr("stroke", currentColor)
+                    .attr("stroke-width", currentStroke)
+                    .attr("stroke-linecap","round");
+            }
+
+            // Filled end arrows
+            if(currentToolAltCode == 4 || currentToolAltCode == 5){
+                tempSVG.append("polygon")
+                    .attr("points",`${coords.x2} ${coords.y2}, ${coords.x2+x3Change} ${coords.y2+y3Change}, ${coords.x2+x4Change} ${coords.y2+y4Change}`)
+                    .style("fill",currentColor)
+                    .attr("stroke", currentColor)
+                    .attr("stroke-width", currentStroke)
+                    .attr("stroke-linecap","round");
+            }
+            if(currentToolAltCode == 5){
+                tempSVG.append("polygon")
+                    .attr("points",`${coords.x1} ${coords.y1}, ${coords.x1-x3Change} ${coords.y1-y3Change}, ${coords.x1-x4Change} ${coords.y1-y4Change}`)
+                    .style("fill",currentColor)
+                    .attr("stroke", currentColor)
+                    .attr("stroke-width", currentStroke)
+                    .attr("stroke-linecap","round");
+            }
+        }
+    }
+    function lineEnd(){
+        buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouse.y}];
+        // Check if the height and width is 0
+        if((buffer[0].x - buffer[1].x) != 0 || (buffer[0].y - buffer[1].y) != 0){
+            if(holdShift.isHeld){
+                // if the x distance from the lastX is greater than the y, draw a line only on the x axis
+                if(Math.abs(mouse.x-holdShift.x)>Math.abs(mouse.y-holdShift.y)){
+
+                    buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouseDownPoint.y}];
+                    let line = whiteboard.newLine(buffer,6,currentColor,currentStroke,null,currentToolAltCode);
                     whiteboard.drawLine(line);
-                }else if(Math.abs(this.mouse.x-this.holdShift.x)<Math.abs(this.mouse.y-this.holdShift.y)){
+                }else if(Math.abs(mouse.x-holdShift.x)<Math.abs(mouse.y-holdShift.y)){
 
-                    this.buffer = [{x:this.mouseDownPoint.x,y:this.mouseDownPoint.y},{x:this.mouseDownPoint.x,y:this.mouse.y}];
-                    let line = newLine(this.buffer,6,this.currentColor,this.currentStroke,null,this.currentToolAltCode);
+                    buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouseDownPoint.x,y:mouse.y}];
+                    let line = whiteboard.newLine(buffer,6,currentColor,currentStroke,null,currentToolAltCode);
                     whiteboard.drawLine(line);
                 }
             }else{
-                let line = newLine(this.buffer,6,this.currentColor,this.currentStroke,null,this.currentToolAltCode);
+                let line = whiteboard.newLine(buffer,6,currentColor,currentStroke,null,currentToolAltCode);
                 whiteboard.drawLine(line);
             }
             
         }
+        isDrawing = false;
     }
     //#endregion
     ///////////////////////
     // Rect Tool
     //#region
-    rectStart(){
-        this.setMouseStart();
-        this.isDrawing = true;
+    function rectStart(){
+        setMouseStart();
+        isDrawing = true;
     }
-    rectMove(tempSVG){
-        this.getMousePos();
+    function rectMove(tempSVG){
+        if(isDrawing){
+            getMousePos();
 
-        //let s = this.holdShift;
-        let m = {x:this.mouse.x,y:this.mouse.y};
-        let mdp = this.mouseDownPoint;
+            //let s = holdShift;
+            let m = {x:mouse.x,y:mouse.y};
+            let mdp = mouseDownPoint;
 
-        if(toolManager.isDrawing){
             let height = mdp.y>=m.y?mdp.y-m.y:m.y-mdp.y;
             let width = mdp.x>=m.x?mdp.x-m.x:m.x-mdp.x;
 
@@ -404,227 +475,231 @@ class ToolManager{
 
             tempSVG.html(null);
 
-            if(this.currentToolAltCode == 0){
-                tempSVGappend("rect")
-                    .attr("x",rectX)
-                    .attr("y",rectY)
-                    .attr("height",height)
-                    .attr("width",width)
-                    .attr("fill", this.currentFill)
-                    .attr("stroke", this.currentColor)
-                    .attr("stroke-width", this.currentStroke);
-            }else if(this.currentToolAltCode == 1){
+            if(currentToolAltCode == 0){
                 tempSVG.append("rect")
                     .attr("x",rectX)
                     .attr("y",rectY)
                     .attr("height",height)
                     .attr("width",width)
-                    .attr("fill", this.currentFill);
-            }else if(this.currentToolAltCode == 2){
+                    .attr("fill", currentFill)
+                    .attr("stroke", currentColor)
+                    .attr("stroke-width", currentStroke);
+            }else if(currentToolAltCode == 1){
+                tempSVG.append("rect")
+                    .attr("x",rectX)
+                    .attr("y",rectY)
+                    .attr("height",height)
+                    .attr("width",width)
+                    .attr("fill", currentFill);
+            }else if(currentToolAltCode == 2){
                 tempSVG.append("rect")
                     .attr("x",rectX)
                     .attr("y",rectY)
                     .attr("height",height)
                     .attr("width",width)
                     .attr("fill", "none")
-                    .attr("stroke", this.currentColor)
-                    .attr("stroke-width", this.currentStroke);
+                    .attr("stroke", currentColor)
+                    .attr("stroke-width", currentStroke);
             }
-            
         }
     }
-    rectEnd(){
-        this.buffer = [{x:this.mouseDownPoint.x,y:this.mouseDownPoint.y},{x:this.mouse.x,y:this.mouse.y}];
+    function rectEnd(){
+        buffer = [{x:mouseDownPoint.x,y:mouseDownPoint.y},{x:mouse.x,y:mouse.y}];
 
         // Check if the height or width is 0
-        if((this.buffer[0].x - this.buffer[1].x) != 0 || (this.buffer[0].y - this.buffer[1].y) != 0){
+        if((buffer[0].x - buffer[1].x) != 0 || (buffer[0].y - buffer[1].y) != 0){
             let line = null;
-            if(this.currentToolAltCode == 0){
-                line = whiteboard.newLine(this.buffer,1,this.currentColor,this.currentStroke,this.currentFill);
-            }else if(this.currentToolAltCode == 1){
-                line = whiteboard.newLine(this.buffer,1,"none",this.currentStroke,this.currentFill);
-            }else if(this.currentToolAltCode == 2){
-                line = whiteboard.newLine(this.buffer,1,this.currentColor,this.currentStroke,"none");
+            if(currentToolAltCode == 0){
+                line = whiteboard.newLine(buffer,1,currentColor,currentStroke,currentFill);
+            }else if(currentToolAltCode == 1){
+                line = whiteboard.newLine(buffer,1,"none",currentStroke,currentFill);
+            }else if(currentToolAltCode == 2){
+                line = whiteboard.newLine(buffer,1,currentColor,currentStroke,"none");
             }
             whiteboard.drawLine(line);
         }
+        isDrawing = false;
     }
     //#endregion
     ///////////////////////
     // Custom Shape Tool
     //#region
-    customShapeStart(){
-        this.setMouseStart();
-        this.isDrawing = true;
+    function customShapeStart(){
+        setMouseStart();
+        isDrawing = true;
     }
-    customShapeMove(tempSVG){
-        let currentTime = Date.now();
-            
-        this.getMousePos();
+    function customShapeMove(tempSVG){
+        if(isDrawing){
+            let currentTime = Date.now();
+                
+            getMousePos();
 
-        let s = this.holdShift;
-        let m = {x:this.mouse.x,y:this.mouse.y};
-        let mdp = this.mouseDownPoint;
+            let s = holdShift;
+            let m = {x:mouse.x,y:mouse.y};
+            let mdp = mouseDownPoint;
 
-        // if it has been x milliseconds since the last coordinate saved
-        if(currentTime>=this.lastPointTime+10){
-            if(s.isHeld){
-                // if the x distance from the lastX is greater than the y, draw a line only on the x axis
-                if(Math.abs(m.x-s.x)>Math.abs(m.y-s.y)){
+            // if it has been x milliseconds since the last coordinate saved
+            if(currentTime>=lastPointTime+10){
+                if(s.isHeld){
+                    // if the x distance from the lastX is greater than the y, draw a line only on the x axis
+                    if(Math.abs(m.x-s.x)>Math.abs(m.y-s.y)){
+                        lastPointTime = currentTime;
+                        buffer.push({x:m.x,y:s.y});
+                    }else if(Math.abs(m.x-s.x)<Math.abs(m.y-s.y)){
+                        lastPointTime = currentTime;
+                        buffer.push({x:s.x,y:m.y});
+                    }
+                }else{
                     lastPointTime = currentTime;
-                    this.buffer.push({x:m.x,y:s.y});
-                }else if(Math.abs(m.x-s.x)<Math.abs(m.y-s.y)){
-                    lastPointTime = currentTime;
-                    this.buffer.push({x:s.x,y:m.y});
+                    buffer.push({x:m.x,y:m.y});
                 }
-            }else{
-                lastPointTime = currentTime;
-                this.buffer.push({x:m.x,y:m.y});
-            }
 
-            // Draw the new shape
-            tempSVG.html(null);
+                // Draw the new shape
+                tempSVG.html(null);
 
-            // Create the line
-            let drawLine = d3.line().curve(d3.curveCardinal);
+                // Create the line
+                let drawLine = d3.line().curve(d3.curveCardinal);
 
-            // for every x and y, set the value to (object passed).x
-            drawLine.x((d)=>{
-                return d.x;
-            });
-            drawLine.y((d)=>{
-                return d.y;
-            });
+                // for every x and y, set the value to (object passed).x
+                drawLine.x((d)=>{
+                    return d.x;
+                });
+                drawLine.y((d)=>{
+                    return d.y;
+                });
 
-            if(this.currentToolAltCode == 0){
-                tempSVG.append("path")
-                    .attr("d", drawLine(this.buffer))
-                    .attr("stroke", this.currentColor)
-                    .attr("stroke-width", this.currentStroke)
-                    .attr("fill", this.currentFill)
-                    .attr("stroke-linecap","round");
-            }else if(this.currentToolAltCode == 1){
-                tempSVG.append("path")
-                    .attr("d", drawLine(this.buffer))
-                    .attr("fill", this.currentFill)
-                    .attr("stroke-linecap","round");
-            }else if(this.currentToolAltCode == 2){
-                tempSVG.append("path")
-                    .attr("d", drawLine(this.buffer))
-                    .attr("stroke", this.currentColor)
-                    .attr("stroke-width", this.currentStroke)
-                    .attr("fill", "none")
-                    .attr("stroke-linecap","round");
+                if(currentToolAltCode == 0){
+                    tempSVG.append("path")
+                        .attr("d", drawLine(buffer))
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("fill", currentFill)
+                        .attr("stroke-linecap","round");
+                }else if(currentToolAltCode == 1){
+                    tempSVG.append("path")
+                        .attr("d", drawLine(buffer))
+                        .attr("fill", currentFill)
+                        .attr("stroke-linecap","round");
+                }else if(currentToolAltCode == 2){
+                    tempSVG.append("path")
+                        .attr("d", drawLine(buffer))
+                        .attr("stroke", currentColor)
+                        .attr("stroke-width", currentStroke)
+                        .attr("fill", "none")
+                        .attr("stroke-linecap","round");
+                }
             }
         }
     }
-    customShapeEnd(){
+    function customShapeEnd(){
         // Make sure the line goes back to the start
-        this.buffer.push({x:this.buffer[0].x,y:this.buffer[0].y});
+        buffer.push({x:buffer[0].x,y:buffer[0].y});
 
         let line = null;
-        if(this.currentToolAltCode == 0){
-            line = newLine(this.buffer,5,this.currentColor,this.currentStroke,this.currentFill);
-        }else if(this.currentToolAltCode == 1){
-            line = newLine(this.buffer,5,"none",this.currentStroke,this.currentFill);
-        }else if(this.currentToolAltCode == 2){
-            line = newLine(this.buffer,5,this.currentColor,this.currentStroke,"none");
+        if(currentToolAltCode == 0){
+            line = whiteboard.newLine(buffer,5,currentColor,currentStroke,currentFill);
+        }else if(currentToolAltCode == 1){
+            line = whiteboard.newLine(buffer,5,"none",currentStroke,currentFill);
+        }else if(currentToolAltCode == 2){
+            line = whiteboard.newLine(buffer,5,currentColor,currentStroke,"none");
         }
 
-        drawLine(line);
+        whiteboard.drawLine(line);
 
-        // clear the this.buffer
-        this.buffer = [];
+        // clear the buffer
+        buffer = [];
+
+        isDrawing = false;
     }
     //#endregion
     ///////////////////////
     // Link Tool
     //#region
-    linkStart(){
-        this.setMouseStart();
-        this.isDrawing = true;
+    function linkStart(){
+        setMouseStart();
+        isDrawing = true;
     }
-    linkMove(){
-        this.getMousePos();
+    function linkMove(){
+        getMousePos();
 
         let currentTime = Date.now();
 
 
-        let s = this.holdShift;
-        let m = {x:this.mouse.x,y:this.mouse.y};
+        let s = holdShift;
+        let m = {x:mouse.x,y:mouse.y};
             
         // if it has been x milliseconds since the last coordinate saved
-        if(currentTime>=this.lastPointTime+10){
+        if(currentTime>=lastPointTime+10){
             if(s.isHeld){
                 // if the x distance from the lastX is greater than the y, draw a line only on the x axis
                 if(Math.abs(m.x-s.x)>Math.abs(m.y-s.y)){
-                    this.lastPointTime = currentTime;
+                    lastPointTime = currentTime;
                     tempSVG.append("circle")
-                        .attr("fill",this.currentColor)
-                        .attr("r",this.currentStroke/2)
+                        .attr("fill",currentColor)
+                        .attr("r",currentStroke/2)
                         .attr("cx",m.x)
                         .attr("cy",m.y);
 
-                    this.buffer.push({x:m.x,y:s.y});
+                    buffer.push({x:m.x,y:s.y});
 
                 }else if(Math.abs(m.x-s.x)<Math.abs(m.y-s.y)){
-                    this.lastPointTime = currentTime;
+                    lastPointTime = currentTime;
                     tempSVG.append("circle")
-                        .attr("fill",this.currentColor)
-                        .attr("r",this.currentStroke/2)
+                        .attr("fill",currentColor)
+                        .attr("r",currentStroke/2)
                         .attr("cx",s.x)
                         .attr("cy",m.y);
                     
-                    this.buffer.push({x:s.x,y:m.y});
+                    buffer.push({x:s.x,y:m.y});
                 }
             }else{
-                this.lastPointTime = currentTime;
+                lastPointTime = currentTime;
                 tempSVG.append("circle")
-                    .attr("fill",this.currentColor)
-                    .attr("r",this.currentStroke/2)
+                    .attr("fill",currentColor)
+                    .attr("r",currentStroke/2)
                     .attr("cx",m.x)
                     .attr("cy",m.y);
                 
-                this.buffer.push({x:m.x,y:m.y});
+                buffer.push({x:m.x,y:m.y});
             }
         }
     }
-    linkEnd(){
+    function linkEnd(){
         // Make sure the line goes back to the start
-        this.buffer.push({x:this.buffer[0].x,y:this.buffer[0].y});
+        buffer.push({x:buffer[0].x,y:buffer[0].y});
 
         // Create a new popup getting what board to link to
         popup.newBoard((isNewBoard,boardData)=>{
             if(isNewBoard){ // If a new board is to be created
                 let newBoardID = boxManager.newBoard(boardData);
                 
-                let line = whiteboard.newLine(this.buffer,2,this.currentColor,this.currentStroke,null,newBoardID);
+                let line = whiteboard.newLine(buffer,2,currentColor,currentStroke,null,newBoardID);
                 whiteboard.drawLine(line);
             }else{ // If no new board is created
                 if(boardData != null){ // If they didn't close the popup
-                    let line = whiteboard.newLine(this.buffer,2,this.currentColor,this.currentStroke,null,boardData.id);
+                    let line = whiteboard.newLine(buffer,2,currentColor,currentStroke,null,boardData.id);
                     whiteboard.drawLine(line);
                 }else{ // If they closed the popup
                     console.log("popup closed");
                 }
             }
-            // clear the this.buffer
-            this.buffer = [];
+            // clear the buffer
+            buffer = [];
         });
     }
     //#endregion
     ///////////////////////
     // Text Tool
     //#region
-    textStart(tempSVG){
-        this.setMouseStart();
+    function textStart(tempSVG){
+        setMouseStart();
         if(!isTyping()){ // If the user isn't currently typing
 
-            if(this.overTextArea == null){ // If the user isn't currently hovering over a text area
+            if(overTextArea == null){ // If the user isn't currently hovering over a text area
                 // Setup the data for the text input area
-                this.textDrawArea = {
-                    x:this.mouseDownPoint.x,
-                    y:this.mouseDownPoint.y,
+                textDrawArea = {
+                    x:mouseDownPoint.x,
+                    y:mouseDownPoint.y,
                     w: 215,
                     h: 115,
                     isMouseDownForMoving: false,
@@ -632,26 +707,26 @@ class ToolManager{
                 };
 
                 // Set the font size
-                let fontSize = 12 + (this.currentStroke*2);
+                let fontSize = 12 + (currentStroke*2);
 
                 // Build the foreign Object that holds the text area in the svg
                 tempSVG.append("foreignObject")
                     .attr("id","whiteboard-textInputArea-container")
-                    .attr("x",this.textDrawArea.x)
-                    .attr("y",this.textDrawArea.y)
+                    .attr("x",textDrawArea.x)
+                    .attr("y",textDrawArea.y)
                     .attr("width","100000px") // Technically the text area can't be bigger than 1000x1000
                     .attr("height","100000px")// But that shouldn't ever happen
                 // Build the div that borders the text area and allows for dragging
                 .append("xhtml:div")
                     .attr("id","whiteboard-textInputArea-moveBorder")
-                    .style("width",this.textDrawArea.w+20)
-                    .style("height",this.textDrawArea.h+20)
+                    .style("width",textDrawArea.w+20)
+                    .style("height",textDrawArea.h+20)
                     .on("mouseenter",()=>{
                         // Set the flag that says the mouse is over the text input area
-                        this.textDrawArea.isMouseOver = true;
+                        textDrawArea.isMouseOver = true;
                     }).on("mouseleave",()=>{
                         // Clear the flag
-                        this.textDrawArea.isMouseOver = false;
+                        textDrawArea.isMouseOver = false;
                     })
                     .on("mousedown",()=>{
                         // Only allow the "isMouseDownForMoving" flag to only be set if the mouse isn't over the text area
@@ -659,16 +734,16 @@ class ToolManager{
                             This solves the issue of when dragging starting from inside the text box and the mouse
                             moves outside the box, it triggers the move event
                         */
-                        if(this.textDrawArea.isDraggable){
+                        if(textDrawArea.isDraggable){
                             // Set the flag that says the mouse is held down to move the text area
-                            this.textDrawArea.isMouseDownForMoving = true;
+                            textDrawArea.isMouseDownForMoving = true;
                             // Set the offset that makes it so the text area's origin isn't exactly at the mouse
-                            this.textDrawArea.offsetX = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[0];
-                            this.textDrawArea.offsetY = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[1];
+                            textDrawArea.offsetX = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[0];
+                            textDrawArea.offsetY = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[1];
                         }
                     }).on("mouseup",()=>{
                         // Remove the flag
-                        this.textDrawArea.isMouseDownForMoving = false;
+                        textDrawArea.isMouseDownForMoving = false;
                     })
                 // Build the textarea
                 .append("xhtml:textarea")
@@ -676,30 +751,30 @@ class ToolManager{
                     .style("font-size",`${fontSize}px`)
                     .style("line-height",`${fontSize}px`)
                     .style("color",currentColor)
-                    .style("width",this.textDrawArea.w)
-                    .style("height",this.textDrawArea.h)
+                    .style("width",textDrawArea.w)
+                    .style("height",textDrawArea.h)
                     .on("input",()=>{
                         updateTextArea();
                         closeRightClickMenu();
                     })
                     .on("mouseenter",()=>{
                         // Flag for saying the mouse is over the text area container AND over the textarea
-                        this.textDrawArea.isDraggable = false;
+                        textDrawArea.isDraggable = false;
                     }).on("mouseleave",()=>{
                         // Remove the flag
-                        this.textDrawArea.isDraggable = true;
+                        textDrawArea.isDraggable = true;
                     })
 
                 // After 10 milliseconds, select focus on the textarea
                 setTimeout(()=>{document.getElementById("whiteboard-textInputArea").focus()},10);
             }
             else{ // If the user is currently hovering over a text area
-                let fontSize = 12 + (this.overTextArea.stroke*2);
+                let fontSize = 12 + (overTextArea.stroke*2);
 
                 // Setup the data for the text input area
-                this.textDrawArea = {
-                    x: this.overTextArea.dots.x-13 + this.overTextArea.transform.x,
-                    y: this.overTextArea.dots.y-13-fontSize+(2+Math.floor(this.overTextArea.stroke/5))+this.overTextArea.transform.y,
+                textDrawArea = {
+                    x: overTextArea.dots.x-13 + overTextArea.transform.x,
+                    y: overTextArea.dots.y-13-fontSize+(2+Math.floor(overTextArea.stroke/5))+overTextArea.transform.y,
                     w: 215,
                     h: 115,
                     isMouseDownForMoving: false,
@@ -709,21 +784,21 @@ class ToolManager{
                 // Build the foreign Object that holds the text area in the svg
                 tempSVG.append("foreignObject")
                     .attr("id","whiteboard-textInputArea-container")
-                    .attr("x",this.textDrawArea.x)
-                    .attr("y",this.textDrawArea.y)
+                    .attr("x",textDrawArea.x)
+                    .attr("y",textDrawArea.y)
                     .attr("width","100000px") // Technically the text area can't be bigger than 1000x1000
                     .attr("height","100000px")// But that shouldn't ever happen
                 // Build the div that borders the text area and allows for dragging
                 .append("xhtml:div")
                     .attr("id","whiteboard-textInputArea-moveBorder")
-                    .style("width",this.textDrawArea.w+20)
-                    .style("height",this.textDrawArea.h+20)
+                    .style("width",textDrawArea.w+20)
+                    .style("height",textDrawArea.h+20)
                     .on("mouseenter",()=>{
                         // Set the flag that says the mouse is over the text input area
-                        this.textDrawArea.isMouseOver = true;
+                        textDrawArea.isMouseOver = true;
                     }).on("mouseleave",()=>{
                         // Clear the flag
-                        this.textDrawArea.isMouseOver = false;
+                        textDrawArea.isMouseOver = false;
                     })
                     .on("mousedown",()=>{
                         // Only allow the "isMouseDownForMoving" flag to only be set if the mouse isn't over the text area
@@ -731,52 +806,52 @@ class ToolManager{
                             This solves the issue of when dragging starting from inside the text box and the mouse
                             moves outside the box, it triggers the move event
                         */
-                        if(this.textDrawArea.isDraggable){
+                        if(textDrawArea.isDraggable){
                             // Set the flag that says the mouse is held down to move the text area
-                            this.textDrawArea.isMouseDownForMoving = true;
+                            textDrawArea.isMouseDownForMoving = true;
                             // Set the offset that makes it so the text area's origin isn't exactly at the mouse
-                            this.textDrawArea.offsetX = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[0];
-                            this.textDrawArea.offsetY = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[1];
+                            textDrawArea.offsetX = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[0];
+                            textDrawArea.offsetY = d3.mouse(d3.select("#whiteboard-textInputArea-moveBorder").node())[1];
                         }
                     }).on("mouseup",()=>{
                         // Remove the flag
-                        this.textDrawArea.isMouseDownForMoving = false;
+                        textDrawArea.isMouseDownForMoving = false;
                     })
                 // Build the textarea
                 .append("xhtml:textarea")
                     .attr("id","whiteboard-textInputArea")
                     .style("font-size",`${fontSize}px`)
                     .style("line-height",`${fontSize}px`)
-                    .style("color",this.overTextArea.color)
-                    .style("width",this.textDrawArea.w)
-                    .style("height",this.textDrawArea.h)
-                    .property("value",this.overTextArea.dots.text)
+                    .style("color",overTextArea.color)
+                    .style("width",textDrawArea.w)
+                    .style("height",textDrawArea.h)
+                    .property("value",overTextArea.dots.text)
                     .on("input",()=>{
                         updateTextArea();
                         closeRightClickMenu();
                     })
                     .on("mouseenter",()=>{
                         // Flag for saying the mouse is over the text area container AND over the textarea
-                        this.textDrawArea.isDraggable = false;
+                        textDrawArea.isDraggable = false;
                     }).on("mouseleave",()=>{
                         // Remove the flag
-                        this.textDrawArea.isDraggable = true;
+                        textDrawArea.isDraggable = true;
                     });
 
                     
                 // Set the stroke and colour to match
-                this.currentColor = this.overTextArea.color;
-                this.currentStroke = this.overTextArea.stroke;
-                d3.select("#colorBar-stroke-line").attr("stroke-width", this.currentStroke);
-                d3.select("#rightClickMenu-stroke-input").attr("value",this.currentStroke);
-                colorBar.changecolor(this.currentColor);
-                colorBar.strokeSizeLine.attr("stroke", this.currentColor);
+                currentColor = overTextArea.color;
+                currentStroke = overTextArea.stroke;
+                d3.select("#colorBar-stroke-line").attr("stroke-width", currentStroke);
+                d3.select("#rightClickMenu-stroke-input").attr("value",currentStroke);
+                colorBar.changecolor(currentColor);
+                colorBar.strokeSizeLine.attr("stroke", currentColor);
                 initRightClickMenu();
 
                 // Save the previous text area
-                previousTextArea = this.overTextArea;
+                previousTextArea = overTextArea;
 
-                deleteLine(this.overTextArea.id);
+                deleteLine(overTextArea.id);
 
                 // After 10 milliseconds, select focus on the textarea
                 setTimeout(()=>{document.getElementById("whiteboard-textInputArea").focus()},10);
@@ -784,7 +859,7 @@ class ToolManager{
             
         }else{ // If they are currently using a textarea
             // And they click anyone not over the text area
-            if(!this.textDrawArea.isMouseOver){
+            if(!textDrawArea.isMouseOver){
                 // Submit the text area
                 submitTextArea();
             }
@@ -800,8 +875,8 @@ class ToolManager{
     ///////////////////////
     // Image Tool
     //#region
-    imageStart(){
-        popup.imageSelector(this.mouse,(image)=>{
+    function imageStart(){
+        popup.imageSelector(mouse,(image)=>{
             let data = {
                 x: image.x,
                 y: image.y,
@@ -816,17 +891,17 @@ class ToolManager{
     ///////////////////////
     // Move Tool
     //#region
-    moveStart(){
+    function moveStart(){
 
     }
-    moveMove(){
+    function moveMove(){
         let obj = layerManager.getObject(selectedElement);
 
-        whiteboard.changeTempTransform(this.mouse.x-this.mouseDownPoint.x+obj.transform.x,this.mouse.y-this.mouseDownPoint.y+obj.transform.y)
+        whiteboard.changeTempTransform(mouse.x-mouseDownPoint.x+obj.transform.x,mouse.y-mouseDownPoint.y+obj.transform.y)
         whiteboard.updateLine(obj);
         whiteboard.autoSaveTimeout();
     }
-    moveEnd(){
+    function moveEnd(){
 
     }
     //#endregion
@@ -839,7 +914,20 @@ class ToolManager{
     //#region
     //#endregion
 
-}
+
+    return{
+        setTool,
+        toolShortcut,
+        toolDown,
+        toolMove,
+        toolUp,
+        isMove,
+        isMouse,
+        isEraser,
+        isRotate,
+        isEditingText
+    }
+}();
 
 
 //==//==//==//==//==//==//
@@ -888,7 +976,7 @@ function submitTextArea(){
         textDrawArea = null;
         // clear the temp line
         d3.select("#whiteboard-textInputArea").on("input",null);
-        svg.temp.selectAll("*").remove();
+        tempSVG.selectAll("*").remove();
         return;
     }
 
@@ -915,7 +1003,7 @@ function submitTextArea(){
     textDrawArea = null;
     // clear the temp line
     d3.select("#whiteboard-textInputArea").on("input",null);
-    svg.temp.selectAll("*").remove();
+    tempSVG.selectAll("*").remove();
 
     // Save in x seconds
     autoSaveTimeout();
